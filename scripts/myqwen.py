@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -347,6 +347,7 @@ class MyQwen3DecoderLayer(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
+        residual_source: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_value: Optional[Cache] = None,
@@ -357,8 +358,8 @@ class MyQwen3DecoderLayer(nn.Module):
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,  # necessary, but kept here for BC
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
-        
-        residual = hidden_states
+        if residual_source is None:
+            residual_source = hidden_states
 
         hidden_states = self.input_layernorm(hidden_states)
 
@@ -374,7 +375,7 @@ class MyQwen3DecoderLayer(nn.Module):
             position_embeddings=position_embeddings,
             **kwargs,
         )
-        hidden_states = residual + attn_output_wo_res
+        hidden_states = residual_source + attn_output_wo_res
 
         # Fully Connected
         residual = hidden_states
@@ -462,6 +463,19 @@ class Qwen3Model(Qwen3PreTrainedModel):
         super().__init__(config)
         self.padding_idx = config.pad_token_id
         self.vocab_size = config.vocab_size
+        attention_stride_pattern = self._normalize_layer_pattern(
+            config.attention_stride_pattern,
+            default_value=1,
+            name="attention_stride_pattern",
+        )
+        residual_source_pattern = self._normalize_layer_pattern(
+            config.residual_source_pattern,
+            default_value=-1,
+            name="residual_source_pattern",
+        )
+        self.attention_stride_pattern = self._validate_attention_stride_pattern(attention_stride_pattern)
+        self.residual_source_pattern = self._validate_residual_source_pattern(residual_source_pattern)
+        self._uses_stride_attention = any(stride != 1 for stride in self.attention_stride_pattern)
 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
         self.layers = nn.ModuleList(
@@ -472,7 +486,41 @@ class Qwen3Model(Qwen3PreTrainedModel):
         self.gradient_checkpointing = False
 
         # Initialize weights and apply final processing
-        # self.post_init()
+        self.post_init()
+
+    def _normalize_layer_pattern(self, pattern: Optional[List[int]], default_value: int, name: str) -> List[int]:
+        if pattern is None:
+            return [default_value] * self.config.num_hidden_layers
+        if len(pattern) != self.config.num_hidden_layers:
+            raise ValueError(
+                f"`{name}` must have length {self.config.num_hidden_layers}, got {len(pattern)}."
+            )
+        return [int(value) for value in pattern]
+
+    def _validate_attention_stride_pattern(self, pattern: List[int]) -> List[int]:
+        if len(pattern) != self.config.num_hidden_layers:
+            raise ValueError(
+                f"`attention_stride_pattern` must have length {self.config.num_hidden_layers}, got {len(pattern)}."
+            )
+        if any(stride < 1 for stride in pattern):
+            raise ValueError("All values in `attention_stride_pattern` must be positive integers.")
+        return [int(stride) for stride in pattern]
+
+    def _validate_residual_source_pattern(self, pattern: List[int]) -> List[int]:
+        if len(pattern) != self.config.num_hidden_layers:
+            raise ValueError(
+                f"`residual_source_pattern` must have length {self.config.num_hidden_layers}, got {len(pattern)}."
+            )
+        normalized = [int(source) for source in pattern]
+        for layer_idx, source in enumerate(normalized):
+            if source == -1:
+                continue
+            if source < 0 or source >= layer_idx:
+                raise ValueError(
+                    "`residual_source_pattern` uses 0-based layer-output indices. "
+                    f"Layer {layer_idx} can only use -1 or a source in [0, {layer_idx - 1}], got {source}."
+                )
+        return normalized
 
     def get_input_embeddings(self):
         return self.embed_tokens
@@ -541,19 +589,31 @@ class Qwen3Model(Qwen3PreTrainedModel):
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
         all_expert_labels = () if output_expert_labels else None
+        layer_hidden_states = []
 
-        for decoder_layer in self.layers[: self.config.num_hidden_layers]:
+        for layer_idx, decoder_layer in enumerate(self.layers):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
+
+            residual_source_idx = self.residual_source_pattern[layer_idx]
+            residual_source = None if residual_source_idx == -1 else layer_hidden_states[residual_source_idx]
+            layer_attention_mask = self._apply_attention_stride_mask(
+                causal_mask,
+                stride=self.attention_stride_pattern[layer_idx],
+                cache_position=cache_position,
+                dtype=inputs_embeds.dtype,
+            )
 
             if self.gradient_checkpointing and self.training:
                 layer_outputs = self._gradient_checkpointing_func(
                     partial(decoder_layer.__call__, **flash_attn_kwargs),
                     hidden_states,
-                    causal_mask,
+                    residual_source,
+                    layer_attention_mask,
                     position_ids,
                     past_key_values,
                     output_attentions,
+                    output_expert_labels,
                     use_cache,
                     cache_position,
                     position_embeddings,
@@ -561,7 +621,8 @@ class Qwen3Model(Qwen3PreTrainedModel):
             else:
                 layer_outputs = decoder_layer(
                     hidden_states,
-                    attention_mask=causal_mask,
+                    residual_source=residual_source,
+                    attention_mask=layer_attention_mask,
                     position_ids=position_ids,
                     past_key_value=past_key_values,
                     output_attentions=output_attentions,
@@ -573,6 +634,7 @@ class Qwen3Model(Qwen3PreTrainedModel):
                 )
 
             hidden_states = layer_outputs[0]
+            layer_hidden_states.append(hidden_states)
 
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
@@ -599,6 +661,25 @@ class Qwen3Model(Qwen3PreTrainedModel):
 
         return output
 
+    def _apply_attention_stride_mask(
+        self,
+        causal_mask: Optional[torch.Tensor],
+        stride: int,
+        cache_position: torch.Tensor,
+        dtype: torch.dtype,
+    ) -> Optional[torch.Tensor]:
+        if stride == 1 or causal_mask is None:
+            return causal_mask
+
+        min_dtype = torch.finfo(dtype).min
+        target_length = causal_mask.shape[-1]
+        key_positions = torch.arange(target_length, device=causal_mask.device)
+        anchor_mask = (key_positions + 1) % stride == 0
+        self_mask = key_positions.unsqueeze(0) == cache_position.reshape(-1, 1).to(causal_mask.device)
+        allowed_mask = anchor_mask.unsqueeze(0) | self_mask
+        allowed_mask = allowed_mask[None, None, :, :]
+        return causal_mask.masked_fill(~allowed_mask, min_dtype)
+
     def _update_causal_mask(
         self,
         attention_mask: torch.Tensor,
@@ -608,6 +689,11 @@ class Qwen3Model(Qwen3PreTrainedModel):
         output_attentions: bool = False,
     ):
         if self.config._attn_implementation == "flash_attention_2":
+            if self._uses_stride_attention:
+                raise ValueError(
+                    "Layer-wise stride attention requires an explicit 4D additive mask. "
+                    "Please use `attn_implementation='eager'` or `attn_implementation='sdpa'`."
+                )
             if attention_mask is not None and past_key_values is not None:
                 is_padding_right = attention_mask[:, -1].sum().item() != input_tensor.size()[0]
                 if is_padding_right:
@@ -632,6 +718,7 @@ class Qwen3Model(Qwen3PreTrainedModel):
             self.config._attn_implementation == "sdpa"
             and not (using_static_cache or using_sliding_window_cache)
             and not output_attentions
+            and not self._uses_stride_attention
         ):
             if AttentionMaskConverter._ignore_causal_mask_sdpa(
                 attention_mask,
