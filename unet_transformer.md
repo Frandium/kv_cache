@@ -100,6 +100,8 @@ $$
 
 ## 3. 架构直觉
 
+### 3.1 原始 U-Net 直觉
+
 U-Net Transformer 的直觉是把 Transformer 的深度方向改成“先收缩，再展开”。
 
 输入和输出两端仍然是 token 级别，因为语言建模最终需要精确 next-token prediction：
@@ -172,141 +174,143 @@ $$
 
 这不是简单为了省 KV 而压缩 sequence length。更准确地说，它假设“语义抽象层的有效序列长度本来就应该更短”，然后用这个结构性假设带来系统收益。
 
-## 4. 尚存技术问题
+### 3.2 物理 U-Net 迁移到语言模型的核心困难
 
-目前这个 idea 需要区分两类问题。
+如果直接把这个原始 U-Net 直觉实现成物理的 sequence length 变化，会立刻遇到几个技术问题。
 
-U-Net 迁移到 Transformer 的核心挑战可以概括为：
+第一，压缩比例和语义切分并不是最本质的困难。我们可以先固定一个 schedule，例如：
 
-> U-Net 在视觉任务中处理的是固定长度、非因果的全局到全局映射，例如用当前 256 个像素预测下一步去噪后的 256 个像素；而语言模型处理的是变长、因果的 prefix 到 next-token 映射，例如用当前 256 个 token 预测第 257 个 token，因此 token 间因果约束和序列长度动态增长使得视觉 U-Net 的下采样/上采样逻辑无法直接迁移到 Transformer。
+$$
+N \rightarrow N/4 \rightarrow N/16 \rightarrow N/4 \rightarrow N
+$$
 
-第一类问题包括压缩比例、局部残差、以及 downsampling 是否必须严格按语义边界切分。这些问题重要，但可以先用一个固定设计绕开，不必一开始追求最优。
+也可以先不要求 downsampling 严格对齐实体、事件、段落或代码结构。语言虽然不像图像那样强局部连续，但局部 token window 仍然有足够的短语、句法和块结构；远处相关信息也可以通过 attention 继续访问。因此，第一版不必把问题变成“如何找到完美语义边界”。
 
-第二类问题才是当前最关键的：这个 U-Net 形态如何适配 predict-next-token 的训练范式，并保证训练和推理行为一致。尤其是 causal constraint、padding/boundary、以及 decode 阶段的增量更新问题。
+第二，残差连接本身也不是不可解决的问题。经典 U-Net 的 skip connection 是同分辨率相连；如果物理 sequence length 确实变成 $N, N/4, N/16, N/4, N$，那么可以在 decoder 恢复到相同长度时再连接 encoder 侧对应表示。问题不在于 residual 能不能连，而在于这种物理降采样/升采样是否适合语言模型。
 
-### 4.1 压缩与残差
+真正困难的是第三点：语言模型是 causal prefix-to-next-token 映射，而不是视觉 U-Net 中固定长度、非因果的 dense-to-dense 映射。
 
-#### 4.1.1 压缩比例
-压缩比例可以先不做动态学习，而采用一个固定 schedule。
+如果真的把 4 个 token fuse 成 1 个 latent token，那么训练时会遇到未来泄露：预测第 2 个 token 时，不能使用由第 1-4 个 token 共同形成的 latent token。推理时也会遇到动态边界：当 prefix 长度为 40 时，中间层可能有 3 个 latent tokens；当 prefix 长度变成 41 时，最后一个 group 又变成 partial state。于是模型必须回答：如何处理未满 4 个 token 的 group？如何 upsample 回变长 prefix？如何保证 batch training 中每个位置的计算图与逐 token decode 一致？
 
-例如，一个 15 层模型可以设计为：
+也就是说，原始物理 U-Net 的核心技术问题不是“能否压缩”，而是：
+
+> 如何在不破坏 causal next-token prediction 和批训练并行性的前提下，实现一种等价于中间低分辨率表示的结构？
+
+下面的 mask-based 方案正是为了解决这个问题。
+
+### 3.3 通过 attention mask 实现 U-Net 式多尺度结构
+
+进一步讨论后，一个更可实现的版本是：不在训练时真的改变 hidden states 的 sequence length，而是通过不同层的 attention mask 设计，强迫模型形成多尺度的信息访问结构。
+
+也就是说，所有层在训练时仍然保持：
+
+$$
+H_\ell \in \mathbb{R}^{N \times d}
+$$
+
+但不同层使用不同稀疏度的 causal attention mask。
+
+在普通 causal attention 中，第 $i$ 个 token 可以看到所有历史位置：
+
+$$
+\{1,2,3,\ldots,i\}
+$$
+
+在 stride-$s$ 的稀疏层中，第 $i$ 个 token 只允许看到：
+
+$$
+\{s,2s,3s,\ldots,\lfloor i/s \rfloor s\} \cup \{i\}
+$$
+
+例如 stride 为 4 时，第 $i$ 个 token 只能看到：
+
+$$
+\{4,8,12,\ldots,i\}
+$$
+
+stride 为 16 时，第 $i$ 个 token 只能看到：
+
+$$
+\{16,32,48,\ldots,i\}
+$$
+
+这里的 $i$ 表示当前 token 自己。这个 self position 保证当前 token 在该层仍然能完成自己的前向计算；但如果 $i$ 不是该层的 anchor position，例如 $i$ 不是 4 的倍数或 16 的倍数，那么它的 K/V 在推理结束后不需要长期缓存，因为未来 token 的 mask 不会再访问它。
+
+因此，U-Net 的“降采样/升采样”不再通过物理改变 tensor shape 实现，而是通过 attention mask 的稀疏度调度实现。
+
+一个 15 层模型可以采用如下 U-shaped mask schedule：
 
 $$
 \begin{aligned}
-&\text{layers } 1-3: && N \\
-&\text{layers } 4-6: && N/4 \\
-&\text{layers } 7-9: && N/16 \\
-&\text{layers } 10-12: && N/4 \\
-&\text{layers } 13-15: && N
+&\text{layers } 1-3: && \text{stride } 1 \\
+&\text{layers } 4-6: && \text{stride } 4 \\
+&\text{layers } 7-9: && \text{stride } 16 \\
+&\text{layers } 10-12: && \text{stride } 4 \\
+&\text{layers } 13-15: && \text{stride } 1
 \end{aligned}
 $$
 
-也可以更简单地描述为：每 3 层 downsample 一次，每次 sequence length 变为原来的 $1/4$；到第 7-9 层达到最短 bottleneck；然后从第 10 层开始每 3 层 upsample 一次，逐步回到 token 长度。
-
-这样做的好处是先把问题离散化：不纠结不同数据是否需要不同压缩率，而是先验证“中间层 sequence length 大幅缩短后，模型是否仍能完成 next-token prediction 和长上下文任务”。
-
-固定压缩比例不一定是最终方案。它只是第一版实验设计。只要固定 schedule 能跑通，后面再讨论动态压缩、内容自适应压缩、或者任务相关压缩才有意义。
-
-#### 4.1.2不强求显式语义切分
-
-一个容易陷入的误区是：既然我们说中间层代表高层语义，那么 downsampling 就必须严格按照实体、事件、段落、函数、论证结构等语义边界切分。
-
-这未必必要。
-
-语言不像图像那样具有强局部连续性，但也不是完全离散的随机序列。局部 token window 往往仍然包含较强的短语、句法、段落和代码块结构。因此，第一版 downsampling 可以先使用相对简单的局部聚合，例如每 4 个 token fuse 成 1 个 latent token。
-
-如果远处有相关语义，模型仍然可以通过 attention 去访问远处位置。也就是说，我们不必要求“同一个语义对象必须在 downsampling 时被放进同一个窗口”。downsampling 的作用不是完成所有 semantic grounding，而是降低中间层的序列分辨率，让后续 attention 在更短的 latent sequence 上完成跨位置的信息整合。
-
-因此，第一版可以采用更弱的假设：
-
-> 局部 fuse 不需要精确对齐完整语义对象；它只需要提供一个较粗粒度的局部表示，后续层可以通过 attention 继续组合远程相关信息。
-
-这样可以避免一开始就把问题变成“如何发现完美语义边界”。真正需要检验的是：即使用简单局部 fuse，模型是否会在训练中自动学出足够有用的中间表示。
-
-#### 4.1.3 残差传播
-
-残差传播也可以先采用一个固定、对称的 U-Net 设计。
-
-相邻 3 层之间正常传递 residual；encoder 侧的高分辨率表示通过 skip connection 传给 decoder 侧对应分辨率。例如：
+这对应原始 U-Net 直觉中的：
 
 $$
-\text{layer } 3 \rightarrow \text{layer } 13 \quad \text{layer } 6 \rightarrow \text{layer } 10
+N \rightarrow N/4 \rightarrow N/16 \rightarrow N/4 \rightarrow N
 $$
 
-也就是说，第 3 层输出的 token-level residual 可以传递到第 13 层，用于恢复 token 级别细节。类似地，中间分辨率的 residual 也可以在 U-Net 的对称位置相连。
+但实际训练时每层仍然是长度 $N$。变化的是：中间层的 attention matrix 被强制稀疏化，只能访问更粗粒度的 anchor tokens。
 
-这个设计的直觉是：
+这个设计可以解释为：
 
-- bottleneck 不负责无损保存所有局部细节；
-- skip path 负责把低层精确信息送到上采样阶段；
-- 中间短序列负责全局语义整合和长程依赖；
-- 每个尺度内部保留 3 层连续计算，避免每一层都改变 sequence length 导致训练过于不稳定。
+- stride-1 层保留完整 token-level 访问能力；
+- stride-4 层强迫模型把局部 4-token 范围的信息逐渐 fuse 到 anchor positions；
+- stride-16 层只访问更稀疏的 anchor positions，从而承担更高层、更低分辨率的语义整合；
+- 后续 stride-4 和 stride-1 层恢复更细粒度的 token-level 表达能力。
 
-这里仍然有一个系统问题需要后续计算：skip path 本身会不会重新引入大量 token-level memory。如果 skip residual 只在一次 forward 内使用，而不作为 decode 阶段每层都要长期保存和反复访问的 KV cache，那么它的系统代价和标准 Transformer 的 full-layer KV cache 不同。这个区别需要在实现里明确。
+这个方案解决了直接迁移视觉 U-Net 时遇到的几个核心技术问题：
 
-### 4.2 核心问题：如何适配现有范式
-
-#### 4.2.1 如何适配 predict-next-token 训练
-
-U-Net 在图像任务里通常能看到完整输入。但语言模型自回归生成时不能泄露未来。
-
-这个问题比“如何语义切分”更关键。因为 U-Net Transformer 仍然要使用标准语言模型训练目标：
+- **避免动态 upsampling**：模型不需要从 100 个 bottleneck tokens 物理生成 10,000 个 token states。所有层始终有 $N$ 个位置，因此输出长度天然等于输入 prefix 长度。所谓升维，只是 attention mask 从 stride-16 放宽回 stride-4，再放宽回 stride-1。
+- **天然适配 batch training**：训练时每个样本仍然是标准的长度 $N$ causal LM 训练。区别只是不同层使用不同 attention mask。模型仍然可以一次性并行计算所有位置的 next-token loss，不需要为每个 prefix 构造不同长度的 partial bottleneck，也不需要处理动态 upsample 出几个 token 的问题。
+- **不破坏残差连接**：因为所有层的 hidden states 都是 $N \times d$，所以标准 Transformer residual 可以照常使用：
 
 $$
-\mathcal{L}
-= - \sum_t \log p(x_{t+1} \mid x_{\le t})
+H_{\ell+1} = H_\ell + \operatorname{Block}_\ell(H_\ell)
 $$
 
-因此，第 $t$ 个位置的预测只能依赖 $x_{\le t}$，不能因为 fuse/downsample/upsample 操作看到未来 token。
+- **保留 long skip 的实验自由度**：也可以选择额外加入类似 U-Net 的 long skip connection，例如 encoder 侧 stride-1 或 stride-4 层连到 decoder 侧相同 stride 的层。由于 shape 始终相同，这些 residual/skip 设计都变成可做 ablation 的自由度，而不是结构障碍。
+- **直接支持推理阶段的 KV cache 压缩**：以 stride-4 层为例，未来 token 只会访问 $4,8,12,16,\ldots$，因此该层中非 anchor positions 的 KV 在当前 token 前向计算结束后可以直接丢弃。类似地，stride-16 层只需要长期缓存 $16,32,48,\ldots$。
 
-如果每 4 个 token fuse 一次，一个直接问题是：训练时第 1-4 个 token 可以形成一个 latent token，但预测第 2 个 token 时不能使用第 3、4 个 token 的信息。也就是说，naive non-causal pooling 会破坏 next-token prediction。
+这意味着训练阶段可以保留完整序列并使用稀疏 mask；推理阶段则根据 mask 规则只缓存未来会被访问的 anchor KV。
 
-需要澄清：
-
-- fuse 操作是否必须是 causal fuse；
-- 一个 coarse token 在时间上代表哪个 causal frontier；
-- 第 $t$ 个 fine token 能访问哪些 coarse tokens；
-- upsampling 后的 token 表示如何保持 causal mask；
-- 训练时 chunk 内未来 token 是否会泄露给当前位置。
-
-这本质上是在问：U-Net 结构如何在不破坏自回归因果性的前提下，嵌入 decoder-only language model。
-
-#### 4.2.2 训练和推理行为如何保持一致
-
-另一个关键问题是训练和推理的一致性。
-
-训练时通常一次给定完整序列，模型可以并行计算所有位置。但推理时是逐 token 生成：
+例如输入长度为 40、需要预测第 41 个 token 时：
 
 $$
-x_1, x_2, \ldots, x_t
-\rightarrow
-x_{t+1}
+\begin{aligned}
+&\text{stride-1 layers:} && \{1,2,\ldots,40\} \\
+&\text{stride-4 layers:} && \{4,8,12,\ldots,40\} \cup \{40\} \\
+&\text{stride-16 layers:} && \{16,32\} \cup \{40\}
+\end{aligned}
 $$
 
-如果 downsampling 规则是“每 4 个 token fuse 一次”，那么推理时会出现边界状态：
+其中 40 是当前 frontier token。若某一层的 stride 为 16，40 可以参与当前预测，但它不是长期 anchor；未来如果 mask 不再访问 40，则该层的 40 号 KV 可以被丢弃。等生成到 48 时，48 才成为 stride-16 的长期 anchor。
 
-- 当前已经生成 1 个 token，还不够组成一个完整 4-token group；
-- 当前已经生成 2 个 token，group 仍然不完整；
-- 当前已经生成 3 个 token，还差一个 token 才能 fuse；
-- 当前生成到第 4 个 token，才形成一个完整 coarse token。
+因此，这个方案的核心可以概括为：
 
-训练时如果总是使用完整 4-token group，而推理时最后一个 group 经常是不完整的，就会产生 train-test mismatch。
+> 训练时通过 U-shaped sparse causal attention mask 强迫模型在中间层只访问粗粒度 anchor tokens；推理时利用同一 mask 规则，只保留未来会被访问的 anchor KV，从而实现中间层 KV cache 压缩。
 
-这也是 padding 问题的本质：一条数据末尾如果空出了 1-3 个位置，到底应该如何 fuse？这些 padding 在训练中是否参与形成 coarse token？如果训练时用 padding 补齐，而推理时没有真实未来 token，也会造成行为不一致。
+这不是传统意义上的物理 U-Net，而是一个 mask-based U-Net Transformer，或者说 U-shaped sparse attention schedule Transformer。
 
-需要解决：
+## 4. 尚存技术问题
 
-- 不完整 group 如何表示；
-- padding 是否参与 downsampling；
-- coarse token 是否在 group 未满时就产生一个 partial state；
-- partial state 在新 token 到来后如何更新；
-- 训练时是否要模拟推理中的 partial group 状态；
-- decode 阶段是否需要增量维护每个尺度的 latent cache。
+经过 3.3 的转向后，原始物理 U-Net 中最麻烦的动态 upsampling、变长 bottleneck、batch training 不一致等问题，被 attention mask 方案解决。剩下值得单独实验的问题主要是 residual 和 long skip 的设计。
 
-一种可能方向是把 fuse 设计成 causal streaming operator，而不是静态 pooling。也就是说，每个尺度维护自己的增量状态；新 token 到来后，只更新受影响的局部 latent units，而不是重算整个 U-Net。
+### 4.1 Residual 和 long skip 的 ablation
 
-但这会带来新的问题：如果 coarse unit 可以随着第 1、2、3、4 个 token 逐步更新，那么第 1 个 token 的预测阶段看到的是 partial coarse unit，第 4 个 token 之后看到的是 completed coarse unit。训练时也必须复现这种状态演化，否则推理和训练仍然不一致。
+在 mask-based 方案中，所有层长度都是 $N$，所以标准 Transformer residual 一定可以照常使用。
 
-所以当前最核心的技术问题可以表述为：
+但是否加入类似 U-Net 的长 skip connection 仍然值得实验：
 
-> 如何定义一个 causal, streaming-compatible 的 downsample/upsample 机制，使得模型既能用标准 next-token prediction 训练，又能在 decode 阶段增量更新，并且训练时看到的计算图与推理时一致？
+- **standard residual only**：只使用普通逐层 residual；
+- **gated long skip**：从 encoder 侧相同 stride 的层连到 decoder 侧；
+- **concat/projection skip**：把浅层表示 concat 或 project 后融合；
+- **no long skip vs. long skip**：观察模型是否绕过中间稀疏层。
+
+这里的关键风险是：长 skip 可能帮助保留 token 细节，也可能让模型不再依赖中间层 anchor hierarchy。因此它应该作为 ablation，而不是第一版架构的必要条件。
