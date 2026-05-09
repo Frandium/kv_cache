@@ -58,7 +58,7 @@ def prepare_model(local_rank, world_size, device, args):
     config = AutoConfig.from_pretrained(args.config_dir, trust_remote_code=True)
     config.attention_stride_pattern = [
         1,1,1,1,1,1,1,1,1,
-        4,4,4,4,4,4,4,4,4,
+        1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1
     ]
     config.residual_source_pattern = [
