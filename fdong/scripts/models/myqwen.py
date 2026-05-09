@@ -68,127 +68,6 @@ class MyQwen3MLP(nn.Module):
         return down_proj
 
 
-class MyQwen3ExpertMLP(nn.Module):
-    def __init__(self, config):
-        super().__init__()
-        self.config = config
-        self.hidden_size = config.hidden_size
-        if config.moe_type == "multihead":
-            self.intermediate_size = int(config.moe_intermediate_size * 3 / (2 * config.moe_head_num + 1)) + 1
-            # print(f"multihead moe intermediate size: {self.intermediate_size}")
-        else:
-            self.intermediate_size = config.moe_intermediate_size
-        self.gate_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
-        self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
-        if config.moe_type == "multihead":
-            self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size // config.moe_head_num, bias=False)
-        else:
-            self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
-        # nn.init.zeros_(self.down_proj.weight)
-        self.act_fn = ACT2FN[config.hidden_act]
-
-    def forward(self, x):
-        down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
-        return down_proj
-
-
-class MyQwen3SparseMoeBlock(nn.Module):
-    def __init__(self, config):
-        super().__init__()
-        self.num_experts = config.num_experts
-        self.top_k = config.num_experts_per_tok
-        self.norm_topk_prob = config.norm_topk_prob
-
-        # gating
-        if config.moe_type == "multihead":
-            self.gate = nn.Linear(config.hidden_size // config.moe_head_num, config.num_experts, bias=False)
-        else:
-            self.gate = nn.Linear(config.hidden_size, config.num_experts, bias=False)
-        self.shared_expert = MyQwen3ExpertMLP(config)
-        self.experts = nn.ModuleList(
-            [MyQwen3ExpertMLP(config) for _ in range(self.num_experts)]
-        )
-
-    def forward(self, hidden_states, gating_reference = None) -> torch.Tensor:
-        if gating_reference is None:
-            gating_reference = hidden_states
-        shared_expert_output = self.shared_expert(hidden_states)
-        
-        batch_size, sequence_length, hidden_dim = hidden_states.shape
-        batch_size, sequence_length, gating_dim = gating_reference.shape
-
-        hidden_states = hidden_states.view(-1, hidden_dim)
-        gating_reference = gating_reference.view(-1, gating_dim)
-        # router_logits: (batch * sequence_length, n_experts)
-        router_logits = self.gate(gating_reference)
-
-        routing_weights = F.softmax(router_logits, dim=1, dtype=torch.float)
-        routing_weights, selected_experts = torch.topk(routing_weights, self.top_k, dim=-1)
-        if self.norm_topk_prob:  # only diff with mixtral sparse moe block!
-            routing_weights /= routing_weights.sum(dim=-1, keepdim=True)
-        # we cast back to the input dtype
-        routing_weights = routing_weights.to(hidden_states.dtype)
-
-        final_hidden_states = torch.zeros(
-            (batch_size * sequence_length, gating_dim), dtype=hidden_states.dtype, device=hidden_states.device
-        )
-
-        # One hot encode the selected experts to create an expert mask
-        # this will be used to easily index which expert is going to be sollicitated
-        expert_mask = torch.nn.functional.one_hot(selected_experts, num_classes=self.num_experts).permute(2, 1, 0)
-
-        # Loop over all available experts in the model and perform the computation on each expert
-        for expert_idx in range(self.num_experts):
-            expert_layer = self.experts[expert_idx]
-            idx, top_x = torch.where(expert_mask[expert_idx])
-
-            # Index the correct hidden states and compute the expert hidden state for
-            # the current expert. We need to make sure to multiply the output hidden
-            # states by `routing_weights` on the corresponding tokens (top-1 and top-2)
-            current_state = hidden_states[None, top_x].reshape(-1, hidden_dim)
-            current_hidden_states = expert_layer(current_state) * routing_weights[top_x, idx, None]
-
-            # However `index_add_` only support torch tensors for indexing so we'll use
-            # the `top_x` tensor here.
-            final_hidden_states.index_add_(0, top_x, current_hidden_states.to(hidden_states.dtype))
-
-        final_hidden_states = final_hidden_states.reshape(batch_size, sequence_length, gating_dim) + shared_expert_output
-
-        return final_hidden_states, selected_experts
-
-
-class MyQwen3MultiheadMoeBlock(nn.Module):
-    def __init__(self, config):
-        super().__init__()
-        self.num_experts = config.num_experts
-        self.top_k = config.num_experts_per_tok
-        self.norm_topk_prob = config.norm_topk_prob
-        self.head_num = config.moe_head_num
-        self.head_size = config.hidden_size // config.moe_head_num
-
-        self.head_moes = nn.ModuleList(
-            [MyQwen3SparseMoeBlock(config) for _ in range(self.head_num)]
-        )
-
-    def forward(self, hidden_states, gating_reference = None) -> torch.Tensor:
-        if gating_reference is None:
-            gating_reference = hidden_states
-        
-        bs, sequence_length, hidden_dim = hidden_states.shape
-        gating_reference = gating_reference.reshape(bs, sequence_length, self.head_num, self.head_size)
-        gating_reference = gating_reference.permute(2, 0, 1, 3) # (head_num, bs, seq_len, head_size)
-        
-        final_output = []
-        for i in range(self.head_num):
-            head_output, selected_experts = self.head_moes[i](hidden_states, gating_reference = gating_reference[i])
-            final_output.append(head_output)
-        
-        final_output = torch.cat(final_output, dim=-1)
-        
-        return final_output, selected_experts
-
-
-
 def rotate_half(x):
     """Rotates half the hidden dims of the input."""
     x1 = x[..., : x.shape[-1] // 2]
@@ -327,19 +206,7 @@ class MyQwen3DecoderLayer(nn.Module):
         self.layer_idx = layer_idx
         self.hidden_size = config.hidden_size
         self.self_attn = MyQwen3Attention(config=config, layer_idx=layer_idx)
-        print(f"init mlp {layer_idx}, moe_type {config.moe_type}")
-        if config.moe_type == "moe": # [none, moe, multihead]
-            self.mlp = MyQwen3SparseMoeBlock(config)
-            self.gating_reference = config.gating_reference
-        elif config.moe_type == "multihead":
-            self.gating_reference = config.gating_reference
-            self.mlp = MyQwen3MultiheadMoeBlock(config)
-        elif config.moe_type == "none":
-            self.mlp = MyQwen3MLP(config)
-        else:
-            print("moe_type error")
-            sys.exit()
-        self.moe_type = config.moe_type
+        self.mlp = MyQwen3MLP(config)
 
         self.input_layernorm = Qwen3RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = Qwen3RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -380,10 +247,7 @@ class MyQwen3DecoderLayer(nn.Module):
         # Fully Connected
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
-        if self.moe_type != "none" and self.gating_reference == "oracle":
-            hidden_states = self.mlp(hidden_states, attn_output_wo_res)
-        else: # switch
-            hidden_states = self.mlp(hidden_states)
+        hidden_states = self.mlp(hidden_states)
 
         if isinstance(hidden_states, tuple):
             hidden_states, expert_labels = hidden_states

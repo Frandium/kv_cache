@@ -14,7 +14,7 @@ NUM_WORKERS=4
 CONFIG_DIR="../../../Qwen3-0.6B"
 DATA_DIR="../../../dclm/global-shard_01_of_10"
 
-RUN_NAME="normal-transformer"
+RUN_NAME="unet-4"
 
 # ========== 使用 RUN_NAME 构建路径和文件名 ==========
 CKPT_DIR="../checkpoints/${RUN_NAME}"
@@ -43,6 +43,6 @@ nohup torchrun \
     --nproc_per_node=8 \
     --master_addr=localhost \
     --master_port=12345 \
-    pretrain_qwen.py ${ARGS}\
+    multi_thread_train.py ${ARGS}\
     >>../logs/${RUN_NAME}.log 2>&1 &
 

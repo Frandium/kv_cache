@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader, DistributedSampler
 from transformers import AutoConfig, AutoTokenizer, get_cosine_schedule_with_warmup
 
 from models import MyQwen3ForCausalLM
-from utils import SyntheticIndexedRetrievalDataset, TokenizedJSONLData, pruned_Data
+from utils import TokenizedJSONLData
 
 
 def parse_int_list(value):
@@ -46,16 +46,6 @@ def add_common_training_args(parser: argparse.ArgumentParser):
     parser.add_argument("--attention_stride_pattern", type=parse_int_list, default=None)
     parser.add_argument("--residual_source_pattern", type=parse_int_list, default=None)
 
-    parser.add_argument("--synthetic_num_samples", type=int, default=10000)
-    parser.add_argument("--synthetic_content_length", type=int, default=None)
-    parser.add_argument("--synthetic_block_size", type=int, default=4)
-    parser.add_argument("--synthetic_num_content_tokens", type=int, default=1024)
-    parser.add_argument("--synthetic_content_token_start", type=int, default=1)
-    parser.add_argument("--synthetic_query_token_start", type=int, default=None)
-    parser.add_argument("--synthetic_separator_token_id", type=int, default=0)
-    parser.add_argument("--synthetic_seed", type=int, default=0)
-    parser.add_argument("--synthetic_with_replacement", action="store_true", default=False)
-
 
 def parse_common_args():
     parser = argparse.ArgumentParser(description="Training configuration")
@@ -66,11 +56,15 @@ def parse_common_args():
 @torch.no_grad()
 def prepare_model(local_rank, world_size, device, args):
     config = AutoConfig.from_pretrained(args.config_dir, trust_remote_code=True)
-    model = MyQwen3ForCausalLM(
-        config,
-        attention_stride_pattern=args.attention_stride_pattern,
-        residual_source_pattern=args.residual_source_pattern,
-    ).to(device)
+    config.attention_stride_pattern = [
+        1,1,1,1,1,1,1,1,1,
+        4,4,4,4,4,4,4,4,4,
+        1,1,1,1,1,1,1,1,1,1
+    ]
+    config.residual_source_pattern = [
+        -1 for _ in range(config.num_hidden_layers)    
+    ]
+    model = MyQwen3ForCausalLM(config).to(device)
 
     if world_size > 1:
         model = DDP(model, device_ids=[device])
@@ -81,31 +75,9 @@ def prepare_model(local_rank, world_size, device, args):
     return model
 
 
-def prepare_dataset(args):
-    if args.dataset_type == "synthetic_indexed":
-        return SyntheticIndexedRetrievalDataset(
-            num_samples=args.synthetic_num_samples,
-            max_seq_len=args.seq_len,
-            content_length=args.synthetic_content_length,
-            block_size=args.synthetic_block_size,
-            num_content_tokens=args.synthetic_num_content_tokens,
-            content_token_start=args.synthetic_content_token_start,
-            query_token_start=args.synthetic_query_token_start,
-            separator_token_id=args.synthetic_separator_token_id,
-            sample_patterns_without_replacement=not args.synthetic_with_replacement,
-            seed=args.synthetic_seed,
-        )
-
-    tokenizer = AutoTokenizer.from_pretrained(args.config_dir, trust_remote_code=True)
-    if args.dataset_type == "jsonl":
-        return TokenizedJSONLData(args.data_dir, args.seq_len, tokenizer)
-    if args.dataset_type == "pruned":
-        return pruned_Data(args.data_dir, args.seq_len, tokenizer, args.per)
-    raise ValueError(f"Unsupported dataset_type: {args.dataset_type}")
-
-
 def prepare_data(local_rank, world_size, args):
-    dataset = prepare_dataset(args)
+    tokenizer = AutoTokenizer.from_pretrained(args.config_dir, trust_remote_code=True)
+    dataset =  TokenizedJSONLData(args.data_dir, args.seq_len, tokenizer)
     print(f"Construct dataset, total {len(dataset)} samples.")
     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=local_rank, shuffle=args.data_shuffle)
     dataloader = DataLoader(dataset, batch_size=args.local_batch_size, num_workers=args.num_workers, sampler=sampler)

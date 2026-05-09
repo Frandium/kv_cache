@@ -35,4 +35,4 @@ ARGS+=" --ckpt_dir $CKPT_DIR"  # ← 关键：传入构建好的路径
 ARGS+=" --optimizer $OPTIMIZER"
 ARGS+=" --lr $LR"
 
-python single_thread_debug_qwen.py ${ARGS}
+python single_thread_debug.py ${ARGS}
