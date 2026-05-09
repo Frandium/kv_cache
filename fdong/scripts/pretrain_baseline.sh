@@ -11,8 +11,8 @@ OPTIMIZER="AdamW"
 LR=1e-4
 
 NUM_WORKERS=4
-CONFIG_DIR="../../Qwen3-0.6B"
-DATA_DIR="../../dclm/global-shard_01_of_10"
+CONFIG_DIR="../../../Qwen3-0.6B"
+DATA_DIR="../../../dclm/global-shard_01_of_10"
 
 RUN_NAME="normal-transformer"
 

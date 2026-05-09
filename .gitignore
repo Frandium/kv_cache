@@ -23,5 +23,7 @@ env/
 # Training artifacts
 fdong/checkpoints/
 fdong/figures/
-fdong/logs
+fdong/logs/
+fdong/scripts/draw_loss.py
+fdong/scripts/clean_checkpoints.py
 
