@@ -7,12 +7,11 @@ from statistics import mean
 
 # Edit this block before each experiment, then run:
 #   python fdong/scripts/extract_train_log.py
-EXPERIMENT_NAME = "baseline"
+EXPERIMENT_NAME = "unet-4"
 LOG_FILE = f"../logs/{EXPERIMENT_NAME}.log"
 OUTPUT_DIR = f"../experiments/{EXPERIMENT_NAME}"
-SAMPLE_EVERY = 100
-AGGREGATE_WINDOW = 100
-TAIL_LINES = 200
+RETRIEVED_LINES = 100
+TAIL_LINES = 100
 
 CONFIG_HEADER = "Training Configuration:"
 CONFIG_RE = re.compile(r"^\s{2,}([A-Za-z0-9_]+):\s*(.*)\s*$")
@@ -159,13 +158,15 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     config, records, lines = parse_log(log_path)
-    sampled = sample_records(records, SAMPLE_EVERY)
-    aggregated = aggregate_records(records, AGGREGATE_WINDOW)
+    sample_every = len(records) // RETRIEVED_LINES
+    aggregate_window = len(records) // RETRIEVED_LINES
+    sampled = sample_records(records, sample_every)
+    aggregated = aggregate_records(records, aggregate_window)
     summary = build_summary(experiment_name, log_path, config, records)
     summary.update(
         {
-            "sample_every": SAMPLE_EVERY,
-            "aggregate_window": AGGREGATE_WINDOW,
+            "sample_every": sample_every,
+            "aggregate_window": aggregate_window,
             "tail_lines": TAIL_LINES,
             "outputs": {
                 "summary": "summary.json",
