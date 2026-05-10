@@ -7,9 +7,9 @@ from statistics import mean
 
 # Edit this block before each experiment, then run:
 #   python fdong/scripts/extract_train_log.py
-LOG_FILE = "../logs/baseline.log"
-EXPERIMENT_NAME = None
-OUTPUT_DIR = "../experiments/baseline"
+EXPERIMENT_NAME = "baseline"
+LOG_FILE = f"../logs/{EXPERIMENT_NAME}.log"
+OUTPUT_DIR = f"../experiments/{EXPERIMENT_NAME}"
 SAMPLE_EVERY = 100
 AGGREGATE_WINDOW = 100
 TAIL_LINES = 200
