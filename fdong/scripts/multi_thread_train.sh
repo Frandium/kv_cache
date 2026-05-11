@@ -14,7 +14,11 @@ NUM_WORKERS=4
 CONFIG_DIR="../../../Qwen3-0.6B"
 DATA_DIR="../../../dclm/global-shard_01_of_10"
 
-RUN_NAME="baseline"
+RUN_NAME="unet-4-8-4"
+
+ATTENTION_STRIDE_PATTERN="1,1,1,1,1,1,4,4,4,4,4,4,8,8,8,8,4,4,4,4,4,4,1,1,1,1,1,1"
+RESIDUAL_SOURCE_PATTERN="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1"
+
 
 # ========== 使用 RUN_NAME 构建路径和文件名 ==========
 CKPT_DIR="../checkpoints/${RUN_NAME}"
@@ -29,6 +33,9 @@ ARGS+=" --num_workers $NUM_WORKERS"
 ARGS+=" --config_dir $CONFIG_DIR"
 ARGS+=" --data_dir $DATA_DIR"
 ARGS+=" --ckpt_dir $CKPT_DIR"  # ← 关键：传入构建好的路径
+ARGS+=" --attention_stride_pattern=${ATTENTION_STRIDE_PATTERN}"
+ARGS+=" --residual_source_pattern=${RESIDUAL_SOURCE_PATTERN}"
+
 
 
 # 处理布尔参数
