@@ -388,9 +388,9 @@ $$
 
 ### 5.4 下一步 TODO
 
-#### 5.4.1 Anchor-only KV decode 验证
+#### 5.4.1 推理形态下的 Anchor-only KV decode 验证
 
-这是下一步最关键的系统正确性实验。
+这是下一步最关键的系统正确性实验。当前训练结果说明 `unet-4` 没有明显破坏 LM loss，但还没有证明推理阶段真的实现了 KV cache 节省。
 
 需要比较同一个 `unet-4` checkpoint 的三种推理路径：
 
@@ -398,21 +398,20 @@ $$
 - `unet-4 anchor-only KV decode`：stride 层只保留未来会访问的 anchor KV；
 - `baseline full KV decode`：普通 dense baseline。
 
-对于 `unet-4`，如果 full KV decode 和 anchor-only KV decode 的 logits 完全一致或数值误差极小，就说明该 mask 规则确实支持推理阶段 KV cache 压缩。
+对于 `unet-4`，如果 full KV decode 和 anchor-only KV decode 的 logits 完全一致或数值误差极小，就说明该 mask 规则确实支持推理阶段 KV cache 压缩。这个实验需要同时记录：
 
-这个实验验证的是机制正确性，不主要验证模型能力。
+- 每一层实际缓存的 KV token 数量；
+- 相比 full KV 的 cache size reduction；
+- 每一步 logits 的最大误差和平均误差；
+- top-1 token 是否一致；
+- 生成文本是否一致；
+- decode latency 和显存占用。
 
-#### 5.4.2 Held-out validation loss
+这个实验验证的是机制正确性和系统收益，不主要验证模型能力。它回答的问题是：
 
-当前结果主要来自 training loss。下一步需要在固定 held-out validation set 上比较：
+> 训练时设计的 stride mask，是否真的允许推理时丢弃非 anchor KV？
 
-- baseline validation loss；
-- `unet-4` validation loss；
-- 不同 checkpoint 的 validation loss，例如 `5k / 10k / 20k / 35k`。
-
-如果 validation loss 也贴近 baseline，说明 `unet-4` 不是只在训练数据上表现接近，而是具有相近泛化能力。
-
-#### 5.4.3 按 position modulo stride 分析 token loss
+#### 5.4.2 按 position modulo stride 分析 token loss
 
 这是一个很有信息量的诊断实验。
 
@@ -431,11 +430,24 @@ $$
 
 如果模型真的在利用 anchor hierarchy，可能会看到 anchor 周围或特定 modulo 位置出现不同的学习动态。
 
-#### 5.4.4 长程能力评估
+#### 5.4.3 下游任务与长程能力评估
 
-普通网页/新闻语料未必包含足够密集、可控的长程依赖，因此 training loss 接近并不必然说明长程语义压缩成功。
+当前结果主要来自 training loss。下一步需要在下游任务上验证模型能力是否接近 baseline。
 
-需要补充更针对性的 evaluation：
+第一阶段不一定要求任务严格依赖长距离信息。即使是普通任务，也可以先回答一个重要 sanity check：
+
+> `unet-4` 是否只是在训练 loss 上接近 baseline，还是在常规能力评估上也没有明显退化？
+
+因此可以先比较：
+
+- held-out validation loss；
+- 普通 language modeling perplexity；
+- 常规 short-context QA / completion / reading comprehension；
+- 不同 checkpoint 的评估结果，例如 `5k / 10k / 20k / 35k`。
+
+在普通任务稳定之后，再补充更针对性的长程 evaluation。普通网页/新闻语料未必包含足够密集、可控的长程依赖，因此 training loss 或普通任务接近 baseline，并不必然说明长程语义压缩成功。
+
+长程任务可以包括：
 
 - needle-in-a-haystack retrieval；
 - synthetic key-value retrieval；
@@ -446,17 +458,34 @@ $$
 
 这些任务的目标是回答：当中间层只能访问 anchor KV 时，模型是否还能恢复远处的精确信息和组合关系。
 
-#### 5.4.5 Ablation
+#### 5.4.4 KV cache 压缩比例与结构 ablation
 
-为了证明 U-shaped sparse attention schedule 本身有贡献，需要做结构消融：
+为了确认这个方法的系统-能力 trade-off，需要调整 KV cache 压缩参数，观察压缩比例更激进时会发生什么。
+
+首先需要比较不同 stride 强度：
 
 - dense baseline；
+- `unet-2`；
 - `unet-4`；
+- `unet-8`；
+- `unet-16`。
+
+目标是画出一条 trade-off curve：
+
+$$
+\text{KV cache saving} \quad \text{vs.} \quad \text{validation/downstream loss}
+$$
+
+如果 `unet-4` 几乎不掉点，`unet-8` 小幅掉点，`unet-16` 明显掉点，就说明该方法存在可调的系统-能力边界，而不是一个偶然有效或无效的二元结果。
+
+其次，为了证明 U-shaped sparse attention schedule 本身有贡献，还需要做结构消融：
+
 - uniform stride-4；
 - only middle stride-4；
-- stride-8 / stride-16 variants；
+- stride-4/16/4 U-shape；
 - 去掉最后 dense recovery layers；
-- 加入或不加入 long skip connection。
+- 加入或不加入 long skip connection；
+- 在相同 KV cache budget 下比较 U-shaped sparse、uniform sparse 和随机 sparse。
 
 如果 U-shaped schedule 在相同 KV cache budget 下优于 uniform sparse 或随机 sparse，才能更有力地支持“层次化 coarse-to-fine attention schedule”这个设计假设。
 
@@ -466,7 +495,7 @@ $$
 
 > 在已确认启用 stride attention mask 的情况下，`unet-4` 的训练 loss 几乎贴近 dense baseline，说明该结构具有初步可训练性，并且可能以很小的 LM loss 代价换取中间层推理 KV cache 压缩。
 
-但接下来必须补上 anchor-only KV decode、held-out validation、position modulo loss analysis 和长程检索评估。只有这些实验都站住，才能把这个 idea 从“训练上看起来没有坏掉”推进到“确实实现了高效且能力可保留的推理 KV cache 压缩”。
+但接下来必须补上三类验证：第一，推理形态下的 anchor-only KV decode，证明该结构真的能节省 KV cache；第二，下游任务和长程任务，证明能力没有明显退化；第三，不同压缩比例和结构消融，明确系统收益与模型能力之间的 trade-off。只有这些实验都站住，才能把这个 idea 从“训练上看起来没有坏掉”推进到“确实实现了高效且能力可保留的推理 KV cache 压缩”。
 
 ## 6. Synthetic 数据生成方案
 

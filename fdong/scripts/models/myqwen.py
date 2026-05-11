@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -30,6 +30,119 @@ from transformers.utils import (
 )
 from transformers.utils.deprecation import deprecate_kwarg
 from .qwen3config import Qwen3Config
+
+
+class AnchorOnlyDynamicCache(Cache):
+    """
+    Dynamic cache variant for mask-based U-Net Transformer inference.
+
+    Attention is computed with the current token's K/V still present, so the
+    current position can attend to itself exactly as it did during training.
+    After each layer finishes attention, non-anchor K/V entries are removed
+    from stride layers because future positions can never attend to them.
+    """
+
+    def __init__(self, attention_stride_pattern: List[int]):
+        try:
+            super().__init__()
+        except TypeError:
+            pass
+        self.attention_stride_pattern = [int(stride) for stride in attention_stride_pattern]
+        self.key_cache: List[torch.Tensor] = []
+        self.value_cache: List[torch.Tensor] = []
+        self.position_cache: List[torch.Tensor] = []
+        self._seen_tokens = 0
+
+    def __len__(self):
+        return len(self.key_cache)
+
+    def _ensure_layer(self, layer_idx: int):
+        while len(self.key_cache) <= layer_idx:
+            self.key_cache.append(None)
+            self.value_cache.append(None)
+            self.position_cache.append(None)
+
+    def update(
+        self,
+        key_states: torch.Tensor,
+        value_states: torch.Tensor,
+        layer_idx: int,
+        cache_kwargs: Optional[Dict] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        self._ensure_layer(layer_idx)
+        cache_kwargs = cache_kwargs or {}
+        cache_position = cache_kwargs.get("cache_position")
+        if cache_position is None:
+            start = self._seen_tokens
+            cache_position = torch.arange(start, start + key_states.shape[-2], device=key_states.device)
+        cache_position = cache_position.to(device=key_states.device, dtype=torch.long)
+
+        if cache_position.numel() > 0:
+            self._seen_tokens = max(self._seen_tokens, int(cache_position.max().item()) + 1)
+
+        if self.key_cache[layer_idx] is None:
+            self.key_cache[layer_idx] = key_states
+            self.value_cache[layer_idx] = value_states
+            self.position_cache[layer_idx] = cache_position
+        else:
+            self.key_cache[layer_idx] = torch.cat([self.key_cache[layer_idx], key_states], dim=-2)
+            self.value_cache[layer_idx] = torch.cat([self.value_cache[layer_idx], value_states], dim=-2)
+            self.position_cache[layer_idx] = torch.cat([self.position_cache[layer_idx], cache_position], dim=0)
+
+        return self.key_cache[layer_idx], self.value_cache[layer_idx]
+
+    def prune_layer(self, layer_idx: int):
+        if layer_idx >= len(self.key_cache) or self.key_cache[layer_idx] is None:
+            return
+
+        stride = self.attention_stride_pattern[layer_idx]
+        if stride == 1:
+            return
+
+        positions = self.position_cache[layer_idx]
+        keep_mask = (positions + 1) % stride == 0
+        self.key_cache[layer_idx] = self.key_cache[layer_idx][:, :, keep_mask, :]
+        self.value_cache[layer_idx] = self.value_cache[layer_idx][:, :, keep_mask, :]
+        self.position_cache[layer_idx] = positions[keep_mask]
+
+    def get_layer_positions(self, layer_idx: int) -> Optional[torch.Tensor]:
+        if layer_idx >= len(self.position_cache):
+            return None
+        return self.position_cache[layer_idx]
+
+    def get_seq_length(self, layer_idx: int = 0) -> int:
+        return self._seen_tokens
+
+    def get_usable_length(self, new_seq_length: int, layer_idx: int = 0) -> int:
+        return self.get_seq_length(layer_idx)
+
+    def get_max_cache_shape(self) -> Optional[int]:
+        return None
+
+    def get_max_length(self) -> Optional[int]:
+        return None
+
+    def reorder_cache(self, beam_idx: torch.LongTensor):
+        for layer_idx in range(len(self.key_cache)):
+            if self.key_cache[layer_idx] is not None:
+                self.key_cache[layer_idx] = self.key_cache[layer_idx].index_select(0, beam_idx.to(self.key_cache[layer_idx].device))
+                self.value_cache[layer_idx] = self.value_cache[layer_idx].index_select(0, beam_idx.to(self.value_cache[layer_idx].device))
+
+    def crop(self, max_length: int):
+        for layer_idx in range(len(self.key_cache)):
+            if self.key_cache[layer_idx] is None:
+                continue
+            keep_mask = self.position_cache[layer_idx] < max_length
+            self.key_cache[layer_idx] = self.key_cache[layer_idx][:, :, keep_mask, :]
+            self.value_cache[layer_idx] = self.value_cache[layer_idx][:, :, keep_mask, :]
+            self.position_cache[layer_idx] = self.position_cache[layer_idx][keep_mask]
+        self._seen_tokens = min(self._seen_tokens, max_length)
+
+    def get_cache_lengths(self) -> Dict[int, int]:
+        lengths = {}
+        for layer_idx, key_states in enumerate(self.key_cache):
+            lengths[layer_idx] = 0 if key_states is None else key_states.shape[-2]
+        return lengths
 
 
 class Qwen3RMSNorm(nn.Module):
@@ -400,6 +513,7 @@ class Qwen3Model(Qwen3PreTrainedModel):
         past_key_values: Optional[Cache] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
         use_cache: Optional[bool] = None,
+        anchor_only_kv_cache: bool = False,
         output_attentions: Optional[bool] = None,
         output_expert_labels:Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
@@ -429,7 +543,10 @@ class Qwen3Model(Qwen3PreTrainedModel):
             inputs_embeds = self.embed_tokens(input_ids)
 
         if use_cache and past_key_values is None:
-            past_key_values = DynamicCache()
+            if anchor_only_kv_cache:
+                past_key_values = AnchorOnlyDynamicCache(self.attention_stride_pattern)
+            else:
+                past_key_values = DynamicCache()
 
         if cache_position is None:
             past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
@@ -465,6 +582,13 @@ class Qwen3Model(Qwen3PreTrainedModel):
                 causal_mask,
                 stride=self.attention_stride_pattern[layer_idx],
                 cache_position=cache_position,
+                key_positions=self._get_layer_key_positions(
+                    past_key_values=past_key_values,
+                    layer_idx=layer_idx,
+                    cache_position=cache_position,
+                    target_length=causal_mask.shape[-1] if causal_mask is not None else None,
+                    device=inputs_embeds.device,
+                ),
                 dtype=inputs_embeds.dtype,
             )
 
@@ -500,6 +624,9 @@ class Qwen3Model(Qwen3PreTrainedModel):
             hidden_states = layer_outputs[0]
             layer_hidden_states.append(hidden_states)
 
+            if use_cache and anchor_only_kv_cache and hasattr(past_key_values, "prune_layer"):
+                past_key_values.prune_layer(layer_idx)
+
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
             
@@ -530,19 +657,56 @@ class Qwen3Model(Qwen3PreTrainedModel):
         causal_mask: Optional[torch.Tensor],
         stride: int,
         cache_position: torch.Tensor,
+        key_positions: Optional[torch.Tensor],
         dtype: torch.dtype,
     ) -> Optional[torch.Tensor]:
-        if stride == 1 or causal_mask is None:
+        if causal_mask is None:
+            return causal_mask
+
+        if key_positions is None:
+            key_positions = torch.arange(causal_mask.shape[-1], device=causal_mask.device)
+            uses_sparse_positions = False
+        else:
+            key_positions = key_positions.to(causal_mask.device)
+            default_positions = torch.arange(key_positions.numel(), device=causal_mask.device)
+            uses_sparse_positions = not torch.equal(key_positions, default_positions)
+
+        target_length = key_positions.numel()
+        causal_mask = causal_mask[:, :, :, :target_length]
+        if uses_sparse_positions:
+            min_dtype = torch.finfo(dtype).min
+            query_positions = cache_position.reshape(-1, 1).to(causal_mask.device)
+            future_mask = key_positions.unsqueeze(0) > query_positions
+            causal_mask = torch.zeros_like(causal_mask).masked_fill(future_mask[None, None, :, :], min_dtype)
+
+        if stride == 1:
             return causal_mask
 
         min_dtype = torch.finfo(dtype).min
-        target_length = causal_mask.shape[-1]
-        key_positions = torch.arange(target_length, device=causal_mask.device)
         anchor_mask = (key_positions + 1) % stride == 0
         self_mask = key_positions.unsqueeze(0) == cache_position.reshape(-1, 1).to(causal_mask.device)
         allowed_mask = anchor_mask.unsqueeze(0) | self_mask
         allowed_mask = allowed_mask[None, None, :, :]
         return causal_mask.masked_fill(~allowed_mask, min_dtype)
+
+    def _get_layer_key_positions(
+        self,
+        past_key_values: Optional[Cache],
+        layer_idx: int,
+        cache_position: torch.Tensor,
+        target_length: Optional[int],
+        device: torch.device,
+    ) -> Optional[torch.Tensor]:
+        if isinstance(past_key_values, AnchorOnlyDynamicCache):
+            previous_positions = past_key_values.get_layer_positions(layer_idx)
+            current_positions = cache_position.to(device=device, dtype=torch.long)
+            if previous_positions is None:
+                return current_positions
+            return torch.cat([previous_positions.to(device=device), current_positions], dim=0)
+
+        if target_length is None:
+            return None
+        return torch.arange(target_length, device=device, dtype=torch.long)
 
     def _update_causal_mask(
         self,
@@ -743,6 +907,7 @@ class MyQwen3ForCausalLM(Qwen3PreTrainedModel, GenerationMixin):
         inputs_embeds: Optional[torch.FloatTensor] = None,
         labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
+        anchor_only_kv_cache: bool = False,
         output_attentions: Optional[bool] = None,
         output_expert_labels:Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
@@ -794,6 +959,7 @@ class MyQwen3ForCausalLM(Qwen3PreTrainedModel, GenerationMixin):
             past_key_values=past_key_values,
             inputs_embeds=inputs_embeds,
             use_cache=use_cache,
+            anchor_only_kv_cache=anchor_only_kv_cache,
             output_attentions=output_attentions,
             output_expert_labels = output_expert_labels,
             output_hidden_states=output_hidden_states,
@@ -822,4 +988,3 @@ class MyQwen3ForCausalLM(Qwen3PreTrainedModel, GenerationMixin):
             output.expert_labels = outputs.expert_labels
         
         return output
-
