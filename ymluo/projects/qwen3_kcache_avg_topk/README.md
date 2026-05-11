@@ -9,7 +9,7 @@ For patched layers:
 1. Split the current K cache into consecutive blocks of 10 tokens.
 2. Average the keys inside each block.
 3. Compute attention scores between the current query and the averaged keys.
-4. Keep the top 10% highest-scoring blocks.
+4. Keep the top 30% highest-scoring blocks by default.
 5. Run exact attention with the original K cache and V cache tokens belonging to
    those selected blocks.
 
@@ -30,7 +30,7 @@ Useful overrides:
 PROMPT="Explain long-context inference." \
 MAX_NEW_TOKENS=256 \
 BLOCK_SIZE=10 \
-TOPK_RATIO=0.10 \
+TOPK_RATIO=0.30 \
 FIRST_SPARSE_LAYER=3 \
 LAST_SPARSE_LAYER=27 \
 bash projects/qwen3_kcache_avg_topk/scripts/run_generate.sh
@@ -53,7 +53,13 @@ Outputs are written to:
 ```text
 projects/qwen3_kcache_avg_topk/outputs/eval/metrics.json
 projects/qwen3_kcache_avg_topk/outputs/eval/metrics.csv
+projects/qwen3_kcache_avg_topk/outputs/eval/head_energy_by_layer_head.json
+projects/qwen3_kcache_avg_topk/outputs/eval/head_energy_by_layer_head.csv
 ```
+
+For the sparse run, `head_energy_by_layer_head.*` reports each layer/head's
+average attention energy after top-k selection. Energy is computed as the full
+attention softmax probability mass assigned to the selected original tokens.
 
 Useful quick-test overrides:
 
