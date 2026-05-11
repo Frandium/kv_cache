@@ -26,6 +26,16 @@ class EvalMetrics:
     sequences: int
     mean_keep_block_ratio: float | None = None
     mean_keep_token_ratio: float | None = None
+    mean_attention_energy: float | None = None
+
+
+@dataclass
+class HeadEnergyMetric:
+    name: str
+    layer: int
+    head: int
+    mean_energy: float
+    samples: int
 
 
 def str2bool(value: str | bool) -> bool:
@@ -52,7 +62,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--eval_baseline", type=str2bool, default=True)
     parser.add_argument("--eval_sparse", type=str2bool, default=True)
     parser.add_argument("--block_size", type=int, default=10)
-    parser.add_argument("--topk_ratio", type=float, default=0.10)
+    parser.add_argument("--topk_ratio", type=float, default=0.30)
     parser.add_argument("--first_sparse_layer", type=int, default=3)
     parser.add_argument("--last_sparse_layer", type=int, default=27)
     parser.add_argument("--min_blocks_to_keep", type=int, default=1)
@@ -110,7 +120,7 @@ def _iter_sparse_modules(model) -> list[torch.nn.Module]:
     return [
         module
         for module in model.modules()
-        if hasattr(module, "_kcache_avg_topk_last_keep_blocks")
+        if hasattr(module, "kcache_avg_topk_config")
     ]
 
 
@@ -119,13 +129,18 @@ def score_sequences_decode(
     sequences: list[torch.Tensor],
     device: torch.device,
     name: str,
-) -> EvalMetrics:
+) -> tuple[EvalMetrics, list[HeadEnergyMetric]]:
     total_nll = 0.0
     total_prob = 0.0
     total_tokens = 0
     keep_ratio_sum = 0.0
     keep_token_ratio_sum = 0.0
     keep_ratio_count = 0
+    energy_sums: dict[int, torch.Tensor] = {}
+    energy_counts: dict[int, int] = {}
+    total_energy_sum = 0.0
+    total_energy_count = 0
+    sparse_modules = _iter_sparse_modules(model)
 
     model.eval()
     with torch.inference_mode():
@@ -145,16 +160,41 @@ def score_sequences_decode(
                 total_prob += float(token_log_prob.exp())
                 total_tokens += 1
 
-                sparse_modules = _iter_sparse_modules(model)
                 if sparse_modules:
-                    for module in sparse_modules:
+                    for module_idx, module in enumerate(sparse_modules):
                         num_blocks = getattr(module, "_kcache_avg_topk_last_num_blocks", 0)
                         keep_blocks = getattr(module, "_kcache_avg_topk_last_keep_blocks", 0)
                         kv_len = getattr(module, "_kcache_avg_topk_last_kv_len", 0)
                         if num_blocks > 0 and kv_len > 0:
                             keep_ratio_sum += keep_blocks / num_blocks
-                            keep_token_ratio_sum += min(keep_blocks * module.kcache_avg_topk_config.block_size, kv_len) / kv_len
+                            kept_tokens = min(
+                                keep_blocks * module.kcache_avg_topk_config.block_size,
+                                kv_len,
+                            )
+                            keep_token_ratio_sum += kept_tokens / kv_len
                             keep_ratio_count += 1
+
+                            energy = getattr(
+                                module,
+                                "_kcache_avg_topk_last_attention_energy",
+                                None,
+                            )
+                            if energy is not None:
+                                energy_cpu = energy.float().detach().cpu()
+                                if energy_cpu.ndim == 3:
+                                    head_sum = energy_cpu.sum(dim=(0, 2))
+                                    sample_count = int(energy_cpu.shape[0] * energy_cpu.shape[2])
+                                    layer_idx = getattr(module, "layer_idx", None)
+                                    if layer_idx is None:
+                                        layer_idx = module_idx
+                                    layer_idx = int(layer_idx)
+                                    if layer_idx not in energy_sums:
+                                        energy_sums[layer_idx] = torch.zeros_like(head_sum)
+                                        energy_counts[layer_idx] = 0
+                                    energy_sums[layer_idx] += head_sum
+                                    energy_counts[layer_idx] += sample_count
+                                    total_energy_sum += float(head_sum.sum())
+                                    total_energy_count += sample_count * head_sum.numel()
 
                 if pos + 1 < input_ids.shape[1]:
                     outputs = model(
@@ -169,7 +209,21 @@ def score_sequences_decode(
         raise ValueError("No tokens were scored. Check dataset_path/min_tokens/max_sequences.")
 
     loss = total_nll / total_tokens
-    return EvalMetrics(
+    head_energy_rows: list[HeadEnergyMetric] = []
+    for layer_idx in sorted(energy_sums):
+        mean_by_head = energy_sums[layer_idx] / energy_counts[layer_idx]
+        for head_idx, mean_energy in enumerate(mean_by_head.tolist()):
+            head_energy_rows.append(
+                HeadEnergyMetric(
+                    name=name,
+                    layer=layer_idx,
+                    head=head_idx,
+                    mean_energy=float(mean_energy),
+                    samples=energy_counts[layer_idx],
+                )
+            )
+
+    metrics = EvalMetrics(
         name=name,
         loss=loss,
         ppl=math.exp(min(loss, 80.0)),
@@ -179,14 +233,24 @@ def score_sequences_decode(
         sequences=len(sequences),
         mean_keep_block_ratio=(keep_ratio_sum / keep_ratio_count if keep_ratio_count else None),
         mean_keep_token_ratio=(keep_token_ratio_sum / keep_ratio_count if keep_ratio_count else None),
+        mean_attention_energy=(
+            total_energy_sum / total_energy_count if total_energy_count else None
+        ),
     )
+    return metrics, head_energy_rows
 
 
-def write_outputs(output_dir: Path, rows: list[EvalMetrics], args: argparse.Namespace) -> None:
+def write_outputs(
+    output_dir: Path,
+    rows: list[EvalMetrics],
+    head_energy_rows: list[HeadEnergyMetric],
+    args: argparse.Namespace,
+) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "args": vars(args),
         "metrics": [asdict(row) for row in rows],
+        "head_energy": [asdict(row) for row in head_energy_rows],
     }
     if len(rows) == 2:
         base = rows[0]
@@ -209,6 +273,24 @@ def write_outputs(output_dir: Path, rows: list[EvalMetrics], args: argparse.Name
         writer.writeheader()
         for row in rows:
             writer.writerow(asdict(row))
+    if head_energy_rows:
+        head_energy_payload = [asdict(row) for row in head_energy_rows]
+        (output_dir / "head_energy_by_layer_head.json").write_text(
+            json.dumps(head_energy_payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        with (output_dir / "head_energy_by_layer_head.csv").open(
+            "w",
+            newline="",
+            encoding="utf-8",
+        ) as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=list(asdict(head_energy_rows[0]).keys()),
+            )
+            writer.writeheader()
+            for row in head_energy_rows:
+                writer.writerow(asdict(row))
 
 
 def main() -> None:
@@ -245,8 +327,11 @@ def main() -> None:
     model.config.use_cache = True
 
     rows: list[EvalMetrics] = []
+    head_energy_rows: list[HeadEnergyMetric] = []
     if args.eval_baseline:
-        rows.append(score_sequences_decode(model, sequences, device, "baseline"))
+        metrics, energy_rows = score_sequences_decode(model, sequences, device, "baseline")
+        rows.append(metrics)
+        head_energy_rows.extend(energy_rows)
 
     if args.eval_sparse:
         cfg = KCacheAvgTopKConfig(
@@ -258,7 +343,9 @@ def main() -> None:
         )
         patched_layers = patch_qwen3_kcache_avg_topk(model, cfg)
         print(f"patched sparse layers: {patched_layers}")
-        rows.append(score_sequences_decode(model, sequences, device, "kcache_avg_topk"))
+        metrics, energy_rows = score_sequences_decode(model, sequences, device, "kcache_avg_topk")
+        rows.append(metrics)
+        head_energy_rows.extend(energy_rows)
 
     for row in rows:
         print(
@@ -272,9 +359,16 @@ def main() -> None:
                 f"{row.name}: mean_keep_block_ratio={row.mean_keep_block_ratio:.6f} "
                 f"mean_keep_token_ratio={row.mean_keep_token_ratio:.6f}"
             )
+        if row.mean_attention_energy is not None:
+            print(f"{row.name}: mean_attention_energy={row.mean_attention_energy:.6f}")
 
-    write_outputs(Path(args.output_dir), rows, args)
+    write_outputs(Path(args.output_dir), rows, head_energy_rows, args)
     print(f"saved metrics to {Path(args.output_dir) / 'metrics.json'}")
+    if head_energy_rows:
+        print(
+            "saved head energy to "
+            f"{Path(args.output_dir) / 'head_energy_by_layer_head.csv'}"
+        )
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ class KCacheAvgTopKConfig:
 
     enabled: bool = True
     block_size: int = 10
-    topk_ratio: float = 0.10
+    topk_ratio: float = 0.30
     first_sparse_layer: int = 3
     last_sparse_layer: int = 27
     min_blocks_to_keep: int = 1
@@ -50,6 +50,13 @@ def _build_block_token_mask(
     # selected_blocks: [batch, heads, q_len, keep_blocks]
     token_blocks = torch.arange(kv_len, device=selected_blocks.device) // block_size
     return (token_blocks.view(1, 1, 1, 1, kv_len) == selected_blocks.unsqueeze(-1)).any(dim=-2)
+
+
+def _clear_last_topk_stats(module: nn.Module) -> None:
+    module._kcache_avg_topk_last_kv_len = 0
+    module._kcache_avg_topk_last_num_blocks = 0
+    module._kcache_avg_topk_last_keep_blocks = 0
+    module._kcache_avg_topk_last_attention_energy = None
 
 
 def _avg_block_topk_attention(
@@ -98,9 +105,12 @@ def _avg_block_topk_attention(
     scores = torch.matmul(query, full_key.transpose(-2, -1)) * scaling
     if attention_mask is not None:
         scores = scores + attention_mask[..., :q_len, :kv_len]
-    scores = scores.masked_fill(~token_mask, torch.finfo(scores.dtype).min)
 
-    attn = F.softmax(scores.float(), dim=-1).to(query.dtype)
+    full_attn = F.softmax(scores.float(), dim=-1)
+    selected_energy = full_attn.masked_fill(~token_mask, 0.0).sum(dim=-1)
+
+    sparse_scores = scores.masked_fill(~token_mask, torch.finfo(scores.dtype).min)
+    attn = F.softmax(sparse_scores.float(), dim=-1).to(query.dtype)
     attn = F.dropout(attn, p=dropout, training=module.training)
     output = torch.matmul(attn, full_value)
     output = output.transpose(1, 2).contiguous()
@@ -108,6 +118,7 @@ def _avg_block_topk_attention(
     module._kcache_avg_topk_last_kv_len = int(kv_len)
     module._kcache_avg_topk_last_num_blocks = int(num_blocks)
     module._kcache_avg_topk_last_keep_blocks = int(keep_blocks)
+    module._kcache_avg_topk_last_attention_energy = selected_energy.detach()
     return output, attn
 
 
@@ -121,6 +132,7 @@ def kcache_avg_topk_qwen3_attention_forward(
     **kwargs,
 ):
     cfg: KCacheAvgTopKConfig = self.kcache_avg_topk_config
+    _clear_last_topk_stats(self)
 
     if cfg.prefill_uses_full_attention and hidden_states.shape[-2] != 1:
         return self._kcache_avg_topk_original_forward(

@@ -27,4 +27,6 @@ python "${PROJECT_DIR}/src/analyze_qwen3_kcache_norms.py" \
   --top_fraction "${TOP_FRACTION:-0.30}" \
   --energy_thresholds "${ENERGY_THRESHOLDS:-50,75,90,95,98,100}" \
   --save_attention_token_rows "${SAVE_ATTENTION_TOKEN_ROWS:-true}" \
+  --compute_pruned_loss_ppl "${COMPUTE_PRUNED_LOSS_PPL:-true}" \
+  --save_pruned_token_rows "${SAVE_PRUNED_TOKEN_ROWS:-true}" \
   --save_norm_tensors "${SAVE_NORM_TENSORS:-false}"

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import inspect
 import json
 import math
 from pathlib import Path
@@ -78,6 +79,29 @@ class RunningStats:
             f"{prefix}_min": self.min_value,
             f"{prefix}_max": self.max_value,
         }
+
+
+class AttentionPruneContext:
+    def __init__(self) -> None:
+        self.enabled = False
+        self.threshold = 1.0
+        self.start = 0
+        self.source_attentions: tuple[torch.Tensor, ...] | list[torch.Tensor] | None = None
+
+    def activate(
+        self,
+        threshold: float,
+        start: int,
+        source_attentions: tuple[torch.Tensor, ...] | list[torch.Tensor],
+    ) -> None:
+        self.enabled = True
+        self.threshold = threshold
+        self.start = start
+        self.source_attentions = source_attentions
+
+    def deactivate(self) -> None:
+        self.enabled = False
+        self.source_attentions = None
 
 
 def str2bool(value: str | bool) -> bool:
@@ -160,6 +184,21 @@ def parse_args() -> argparse.Namespace:
         type=str2bool,
         default=True,
         help="Write one row per layer/head/query token with top-k counts and loss/PPL.",
+    )
+    parser.add_argument(
+        "--compute_pruned_loss_ppl",
+        type=str2bool,
+        default=True,
+        help=(
+            "Re-run each chunk with attention positions pruned to the requested "
+            "energy thresholds and write threshold-specific model loss/PPL."
+        ),
+    )
+    parser.add_argument(
+        "--save_pruned_token_rows",
+        type=str2bool,
+        default=True,
+        help="Write one row per energy threshold and target token for pruned model loss/PPL.",
     )
     parser.add_argument("--save_norm_tensors", type=str2bool, default=False)
     return parser.parse_args()
@@ -408,6 +447,190 @@ def histogram_rows(
     return rows
 
 
+def valid_attention_mask(
+    attention: torch.Tensor,
+    start: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    if attention.ndim != 3:
+        raise ValueError(f"Expected attention shape [heads, query, key], got {tuple(attention.shape)}")
+
+    _, query_count, key_count = attention.shape
+    device = attention.device
+    query_indices = torch.arange(start, start + query_count, device=device, dtype=torch.long)
+    valid_counts = (query_indices + 1).clamp(max=key_count)
+    key_indices = torch.arange(key_count, device=device, dtype=torch.long)
+    mask = key_indices.view(1, 1, key_count) < valid_counts.view(1, query_count, 1)
+    return mask.expand(attention.shape[0], query_count, key_count), valid_counts
+
+
+def sorted_attention_by_energy(
+    attention: torch.Tensor,
+    start: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    valid_mask, valid_counts = valid_attention_mask(attention, start)
+    sort_scores = attention.float().masked_fill(~valid_mask, -1.0)
+    _, sorted_indices = torch.sort(sort_scores, dim=-1, descending=True)
+    sorted_valid_mask = torch.gather(valid_mask, dim=-1, index=sorted_indices)
+    sorted_values = torch.gather(attention.float(), dim=-1, index=sorted_indices)
+    sorted_values = sorted_values.masked_fill(~sorted_valid_mask, 0.0)
+    denom = attention.float().masked_fill(~valid_mask, 0.0).sum(dim=-1).clamp_min(1e-12)
+    cumulative_energy = sorted_values.cumsum(dim=-1) / denom.unsqueeze(-1)
+    return sorted_indices, cumulative_energy, valid_mask, valid_counts
+
+
+def threshold_counts_from_cumulative(
+    cumulative_energy: torch.Tensor,
+    valid_counts: torch.Tensor,
+    threshold: float,
+) -> torch.Tensor:
+    heads, query_count, _ = cumulative_energy.shape
+    valid_counts_by_head = valid_counts.view(1, query_count).expand(heads, query_count)
+    if math.isclose(threshold, 1.0):
+        return valid_counts_by_head
+    counts = (cumulative_energy < threshold).sum(dim=-1).long() + 1
+    return torch.minimum(counts, valid_counts_by_head)
+
+
+def build_threshold_keep_mask(
+    attention: torch.Tensor,
+    start: int,
+    threshold: float,
+) -> torch.Tensor:
+    sorted_indices, cumulative_energy, valid_mask, valid_counts = sorted_attention_by_energy(attention, start)
+    if math.isclose(threshold, 1.0):
+        return valid_mask
+
+    counts = threshold_counts_from_cumulative(cumulative_energy, valid_counts, threshold)
+    rank = torch.arange(attention.shape[-1], device=attention.device, dtype=torch.long)
+    keep_sorted = rank.view(1, 1, -1) < counts.unsqueeze(-1)
+    keep = torch.zeros_like(valid_mask)
+    keep.scatter_(dim=-1, index=sorted_indices, src=keep_sorted)
+    return keep & valid_mask
+
+
+def make_additive_prune_mask(
+    keep_mask: torch.Tensor,
+    device: torch.device,
+    dtype: torch.dtype,
+) -> torch.Tensor:
+    if not dtype.is_floating_point:
+        dtype = torch.float32
+    additive_mask = torch.zeros(
+        (1, keep_mask.shape[0], keep_mask.shape[1], keep_mask.shape[2]),
+        device=device,
+        dtype=dtype,
+    )
+    min_value = torch.finfo(dtype).min
+    return additive_mask.masked_fill(~keep_mask.to(device=device).unsqueeze(0), min_value)
+
+
+def get_attention_mask_arg_index(module: torch.nn.Module) -> int | None:
+    try:
+        parameters = list(inspect.signature(module.forward).parameters)
+    except (TypeError, ValueError):
+        return None
+    try:
+        return parameters.index("attention_mask")
+    except ValueError:
+        return None
+
+
+def find_attention_modules(model: torch.nn.Module) -> list[tuple[int, str, torch.nn.Module]]:
+    candidates: list[tuple[int, str, torch.nn.Module]] = []
+    for name, module in model.named_modules():
+        if not all(hasattr(module, attr) for attr in ("q_proj", "k_proj", "v_proj", "o_proj")):
+            continue
+
+        layer_idx = getattr(module, "layer_idx", None)
+        if layer_idx is None:
+            parts = name.split(".")
+            for idx, part in enumerate(parts[:-1]):
+                if part == "layers" and parts[idx + 1].isdigit():
+                    layer_idx = int(parts[idx + 1])
+                    break
+        if layer_idx is None:
+            layer_idx = len(candidates)
+        candidates.append((int(layer_idx), name, module))
+
+    candidates.sort(key=lambda item: item[0])
+    return candidates
+
+
+def install_attention_prune_hooks(
+    model: torch.nn.Module,
+    prune_context: AttentionPruneContext,
+) -> list[Any]:
+    handles: list[Any] = []
+    attention_modules = find_attention_modules(model)
+    if not attention_modules:
+        raise RuntimeError("Could not find Qwen/LLaMA-style attention modules to install pruning hooks.")
+
+    for layer_idx, _, module in attention_modules:
+        attention_mask_arg_index = get_attention_mask_arg_index(module)
+
+        def hook(
+            hooked_module: torch.nn.Module,
+            args: tuple[Any, ...],
+            kwargs: dict[str, Any],
+            *,
+            layer_idx: int = layer_idx,
+            attention_mask_arg_index: int | None = attention_mask_arg_index,
+        ) -> tuple[tuple[Any, ...], dict[str, Any]] | None:
+            if (
+                not prune_context.enabled
+                or prune_context.source_attentions is None
+                or math.isclose(prune_context.threshold, 1.0)
+            ):
+                return None
+
+            source_attention = prune_context.source_attentions[layer_idx]
+            if source_attention.ndim != 4:
+                raise ValueError(
+                    f"Expected source attention shape [batch, heads, query, key], "
+                    f"got {tuple(source_attention.shape)}"
+                )
+            keep_mask = build_threshold_keep_mask(
+                source_attention[0].float(),
+                prune_context.start,
+                prune_context.threshold,
+            )
+
+            base_mask = kwargs.get("attention_mask")
+            base_mask_from_args = False
+            args_list = list(args)
+            if base_mask is None and attention_mask_arg_index is not None and attention_mask_arg_index < len(args_list):
+                base_mask = args_list[attention_mask_arg_index]
+                base_mask_from_args = True
+
+            hidden_states = kwargs.get("hidden_states")
+            if hidden_states is None and args_list:
+                hidden_states = args_list[0]
+            if hidden_states is None:
+                raise RuntimeError("Cannot infer attention mask device because hidden_states was not passed.")
+
+            mask_device = base_mask.device if isinstance(base_mask, torch.Tensor) else hidden_states.device
+            mask_dtype = base_mask.dtype if isinstance(base_mask, torch.Tensor) else hidden_states.dtype
+            additive_mask = make_additive_prune_mask(keep_mask, mask_device, mask_dtype)
+            if isinstance(base_mask, torch.Tensor):
+                base_mask = base_mask[:, :, : additive_mask.shape[-2], : additive_mask.shape[-1]]
+                new_mask = base_mask + additive_mask
+            else:
+                new_mask = additive_mask
+
+            if base_mask_from_args and attention_mask_arg_index is not None:
+                args_list[attention_mask_arg_index] = new_mask
+            else:
+                kwargs = dict(kwargs)
+                kwargs["attention_mask"] = new_mask
+
+            return tuple(args_list), kwargs
+
+        handles.append(module.register_forward_pre_hook(hook, with_kwargs=True))
+
+    print(f"installed attention pruning hooks on {len(attention_modules)} modules", flush=True)
+    return handles
+
+
 def build_attention_token_fields(thresholds: list[float]) -> list[str]:
     fields = [
         "layer",
@@ -432,6 +655,31 @@ def build_attention_token_fields(thresholds: list[float]) -> list[str]:
     return fields
 
 
+def build_pruned_summary_fields() -> list[str]:
+    return [
+        "energy_threshold",
+        "loss_count",
+        "loss_mean",
+        "loss_std",
+        "loss_min",
+        "loss_max",
+        "ppl_count",
+        "ppl_mean",
+        "ppl_std",
+        "ppl_min",
+        "ppl_max",
+    ]
+
+
+def compute_token_losses(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    losses = F.cross_entropy(logits.float(), targets.to(logits.device), reduction="none").detach().cpu()
+    ppls = torch.tensor([safe_exp(float(loss)) for loss in losses], dtype=torch.float32)
+    return losses, ppls
+
+
 def update_attention_metrics(
     attentions: tuple[torch.Tensor, ...] | list[torch.Tensor],
     start: int,
@@ -452,8 +700,6 @@ def update_attention_metrics(
 
     query_indices = torch.arange(start, start + valid_query_count, dtype=torch.long)
     target_indices = query_indices + 1
-    valid_counts_cpu = query_indices + 1
-
     for layer_idx, attention in enumerate(attentions):
         if attention is None:
             raise RuntimeError(
@@ -473,11 +719,8 @@ def update_attention_metrics(
                 flush=True,
             )
 
-        denom = layer_attention.sum(dim=-1).clamp_min(1e-12)
-        sorted_attention = torch.sort(layer_attention, dim=-1, descending=True).values
-        cumulative_energy = sorted_attention.cumsum(dim=-1) / denom.unsqueeze(-1)
-
-        valid_counts = valid_counts_cpu.to(cumulative_energy.device)
+        _, cumulative_energy, _, valid_counts = sorted_attention_by_energy(layer_attention, start)
+        valid_counts_cpu = valid_counts.detach().cpu()
         top_counts = torch.ceil(valid_counts.float() * top_fraction).long().clamp(min=1)
         top_counts = torch.minimum(top_counts, torch.full_like(top_counts, key_count))
         top_gather = top_counts.view(1, valid_query_count, 1).expand(num_heads, valid_query_count, 1) - 1
@@ -487,11 +730,7 @@ def update_attention_metrics(
         threshold_fractions: dict[float, torch.Tensor] = {}
         valid_counts_by_head = valid_counts.view(1, valid_query_count).expand(num_heads, valid_query_count)
         for threshold in energy_thresholds:
-            if math.isclose(threshold, 1.0):
-                counts = valid_counts_by_head
-            else:
-                counts = (cumulative_energy < threshold).sum(dim=-1).long() + 1
-                counts = torch.minimum(counts, valid_counts_by_head)
+            counts = threshold_counts_from_cumulative(cumulative_energy, valid_counts, threshold)
             threshold_counts[threshold] = counts
             threshold_fractions[threshold] = counts.float() / valid_counts_by_head.float()
 
@@ -532,7 +771,7 @@ def update_attention_metrics(
                         row.extend([count_value, fraction_value])
                     attention_writer.writerow(row)
 
-        del layer_attention, denom, sorted_attention, cumulative_energy
+        del layer_attention, cumulative_energy
 
 
 def run_causal_attention_analysis(
@@ -545,6 +784,8 @@ def run_causal_attention_analysis(
     top_fraction: float,
     energy_thresholds: list[float],
     save_attention_token_rows: bool,
+    compute_pruned_loss_ppl: bool,
+    save_pruned_token_rows: bool,
 ) -> tuple[Any, dict[str, Any]]:
     if chunk_size <= 0:
         raise ValueError("--chunk_size must be positive.")
@@ -557,6 +798,8 @@ def run_causal_attention_analysis(
 
     token_loss_path = output_dir / "token_loss_ppl.csv"
     attention_token_path = output_dir / "attention_token_topk.csv"
+    pruned_summary_path = output_dir / "attention_pruned_loss_ppl_by_threshold.csv"
+    pruned_token_path = output_dir / "attention_pruned_token_loss_ppl.csv"
     top_fraction_energy_stats: dict[tuple[int, int], RunningStats] = {}
     top_fraction_count_stats: dict[tuple[int, int], RunningStats] = {}
     threshold_count_stats: dict[tuple[int, int, float], RunningStats] = {}
@@ -564,6 +807,18 @@ def run_causal_attention_analysis(
     loss_stats = RunningStats()
     ppl_stats = RunningStats()
     past_key_values = None
+    pruned_thresholds = [threshold for threshold in energy_thresholds if not math.isclose(threshold, 1.0)]
+    pruned_past_key_values: dict[float, Any] = {threshold: None for threshold in pruned_thresholds}
+    pruned_loss_stats: dict[float, RunningStats] = {
+        threshold: RunningStats() for threshold in energy_thresholds
+    }
+    pruned_ppl_stats: dict[float, RunningStats] = {
+        threshold: RunningStats() for threshold in energy_thresholds
+    }
+    prune_context = AttentionPruneContext()
+    prune_handles: list[Any] = []
+    if compute_pruned_loss_ppl and pruned_thresholds:
+        prune_handles = install_attention_prune_hooks(model, prune_context)
 
     attention_handle = None
     attention_writer = None
@@ -572,9 +827,31 @@ def run_causal_attention_analysis(
         attention_writer = csv.writer(attention_handle)
         attention_writer.writerow(build_attention_token_fields(energy_thresholds))
 
+    pruned_token_handle = None
+    pruned_token_writer = None
+    if compute_pruned_loss_ppl and save_pruned_token_rows:
+        pruned_token_handle = pruned_token_path.open("w", newline="", encoding="utf-8")
+        pruned_token_writer = csv.writer(pruned_token_handle)
+        pruned_token_writer.writerow(
+            [
+                "energy_threshold",
+                "query_token_index",
+                "target_token_index",
+                "target_token_id",
+                "target_token_piece",
+                "target_text",
+                "loss",
+                "ppl",
+            ]
+        )
+
     print(f"writing per-token loss/PPL: {token_loss_path}", flush=True)
     if save_attention_token_rows:
         print(f"writing per-token attention top-k rows: {attention_token_path}", flush=True)
+    if compute_pruned_loss_ppl:
+        print(f"writing pruned attention loss/PPL summary: {pruned_summary_path}", flush=True)
+        if save_pruned_token_rows:
+            print(f"writing pruned attention token loss/PPL: {pruned_token_path}", flush=True)
 
     model.eval()
     try:
@@ -627,8 +904,7 @@ def run_causal_attention_analysis(
                     if valid_query_count > 0:
                         logits = outputs.logits[0, :valid_query_count, :].float()
                         targets = input_ids[0, start + 1 : start + valid_query_count + 1].to(logits.device)
-                        losses = F.cross_entropy(logits, targets, reduction="none").detach().cpu()
-                        ppls = torch.tensor([safe_exp(float(loss)) for loss in losses], dtype=torch.float32)
+                        losses, ppls = compute_token_losses(logits, targets)
                         loss_stats.update(losses)
                         ppl_stats.update(ppls)
 
@@ -668,13 +944,94 @@ def run_causal_attention_analysis(
                             threshold_fraction_stats,
                         )
 
+                        if compute_pruned_loss_ppl:
+                            for threshold in energy_thresholds:
+                                if not math.isclose(threshold, 1.0):
+                                    continue
+                                pruned_loss_stats[threshold].update(losses)
+                                pruned_ppl_stats[threshold].update(ppls)
+                                if pruned_token_writer is not None:
+                                    for offset in range(valid_query_count):
+                                        target_idx = start + offset + 1
+                                        target_id = int(input_ids[0, target_idx])
+                                        pruned_token_writer.writerow(
+                                            [
+                                                threshold,
+                                                start + offset,
+                                                target_idx,
+                                                target_id,
+                                                token_piece(tokenizer, target_id),
+                                                token_text(tokenizer, target_id),
+                                                float(losses[offset]),
+                                                float(ppls[offset]),
+                                            ]
+                                        )
+
+                            for threshold in pruned_thresholds:
+                                print(
+                                    f"pruned forward chunk {chunk_idx}/{total_chunks}: "
+                                    f"energy={threshold_field(threshold)} tokens {start}-{end - 1}",
+                                    flush=True,
+                                )
+                                prune_context.activate(threshold, start, outputs.attentions)
+                                pruned_chunk = input_ids[:, start:end].to(input_device)
+                                pruned_kwargs: dict[str, Any] = {
+                                    "input_ids": pruned_chunk,
+                                    "use_cache": True,
+                                    "return_dict": True,
+                                    "output_attentions": False,
+                                    "output_hidden_states": False,
+                                    "cache_position": torch.arange(start, end, device=input_device),
+                                }
+                                if pruned_past_key_values[threshold] is not None:
+                                    pruned_kwargs["past_key_values"] = pruned_past_key_values[threshold]
+
+                                pruned_outputs = model_forward(model, pruned_kwargs)
+                                prune_context.deactivate()
+                                pruned_past_key_values[threshold] = pruned_outputs.past_key_values
+                                if pruned_past_key_values[threshold] is None:
+                                    raise RuntimeError(
+                                        "Model did not return past_key_values during pruned forward."
+                                    )
+
+                                pruned_logits = pruned_outputs.logits[0, :valid_query_count, :]
+                                pruned_targets = input_ids[0, start + 1 : start + valid_query_count + 1]
+                                pruned_losses, pruned_ppls = compute_token_losses(
+                                    pruned_logits,
+                                    pruned_targets,
+                                )
+                                pruned_loss_stats[threshold].update(pruned_losses)
+                                pruned_ppl_stats[threshold].update(pruned_ppls)
+                                if pruned_token_writer is not None:
+                                    for offset in range(valid_query_count):
+                                        target_idx = start + offset + 1
+                                        target_id = int(input_ids[0, target_idx])
+                                        pruned_token_writer.writerow(
+                                            [
+                                                threshold,
+                                                start + offset,
+                                                target_idx,
+                                                target_id,
+                                                token_piece(tokenizer, target_id),
+                                                token_text(tokenizer, target_id),
+                                                float(pruned_losses[offset]),
+                                                float(pruned_ppls[offset]),
+                                            ]
+                                        )
+                                del pruned_outputs, pruned_chunk
+
                     del outputs, chunk
                     if input_device.type == "cuda":
                         torch.cuda.empty_cache()
                     print(f"completed chunk {chunk_idx}/{total_chunks}: {end}/{total_tokens} tokens", flush=True)
     finally:
+        prune_context.deactivate()
         if attention_handle is not None:
             attention_handle.close()
+        if pruned_token_handle is not None:
+            pruned_token_handle.close()
+        for handle in prune_handles:
+            handle.remove()
 
     top_fraction_rows: list[dict[str, Any]] = []
     top_prefix = top_fraction_field(top_fraction)
@@ -734,13 +1091,27 @@ def run_causal_attention_analysis(
     write_csv(output_dir / "attention_top_fraction_energy_by_head.csv", top_fraction_rows, top_fraction_fields)
     write_csv(output_dir / "attention_energy_thresholds_by_head.csv", threshold_rows, threshold_fields)
 
+    pruned_summary_rows: list[dict[str, Any]] = []
+    if compute_pruned_loss_ppl:
+        for threshold in energy_thresholds:
+            row = {"energy_threshold": threshold}
+            row.update(pruned_loss_stats[threshold].row("loss"))
+            row.update(pruned_ppl_stats[threshold].row("ppl"))
+            pruned_summary_rows.append(row)
+        write_csv(pruned_summary_path, pruned_summary_rows, build_pruned_summary_fields())
+
     return past_key_values, {
         "token_loss_path": str(token_loss_path),
         "attention_token_path": str(attention_token_path) if save_attention_token_rows else None,
         "top_fraction_path": str(output_dir / "attention_top_fraction_energy_by_head.csv"),
         "threshold_path": str(output_dir / "attention_energy_thresholds_by_head.csv"),
+        "pruned_loss_ppl_path": str(pruned_summary_path) if compute_pruned_loss_ppl else None,
+        "pruned_token_loss_ppl_path": (
+            str(pruned_token_path) if compute_pruned_loss_ppl and save_pruned_token_rows else None
+        ),
         "loss": loss_stats.row("loss"),
         "ppl": ppl_stats.row("ppl"),
+        "pruned_loss_ppl_by_threshold": pruned_summary_rows,
         "energy_thresholds": energy_thresholds,
         "top_fraction": top_fraction,
         "loss_bearing_tokens": total_tokens - 1,
@@ -937,6 +1308,8 @@ def main() -> None:
         args.top_fraction,
         energy_thresholds,
         args.save_attention_token_rows,
+        args.compute_pruned_loss_ppl,
+        args.save_pruned_token_rows,
     )
 
     print("summarizing k-cache norm tensors", flush=True)

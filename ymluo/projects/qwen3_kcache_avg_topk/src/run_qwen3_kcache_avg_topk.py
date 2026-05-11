@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--do_sample", type=str2bool, default=True)
     parser.add_argument("--bf16", type=str2bool, default=True)
     parser.add_argument("--block_size", type=int, default=10)
-    parser.add_argument("--topk_ratio", type=float, default=0.10)
+    parser.add_argument("--topk_ratio", type=float, default=0.30)
     parser.add_argument("--first_sparse_layer", type=int, default=3)
     parser.add_argument("--last_sparse_layer", type=int, default=27)
     parser.add_argument("--min_blocks_to_keep", type=int, default=1)

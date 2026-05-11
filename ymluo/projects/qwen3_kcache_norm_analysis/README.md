@@ -5,6 +5,7 @@ This project runs Qwen3-0.6B on a short prefix from a DCLM text shard and writes
 - per-token next-token loss and PPL
 - per-layer/head attention energy captured by the top 30% attention entries
 - per-token top-k counts needed to reach 50%, 75%, 90%, 95%, 98%, and 100% attention energy
+- model loss/PPL after pruning attention positions to those energy thresholds
 - the original K-cache norm summaries
 
 Default inputs:
@@ -28,6 +29,11 @@ sum(selected attention scores) / sum(all attention scores)
 
 Because causal attention has a different number of valid keys at each position,
 100% energy uses the full valid causal context length for that query token.
+
+The pruned loss/PPL experiment first runs the full model to get the original
+attention distribution. For each threshold, it then re-runs the chunk while
+masking out attention positions below that layer/head/query token's top-k set.
+The threshold is applied to all layers and all attention heads at the same time.
 
 ## Run
 
@@ -76,6 +82,11 @@ New attention/loss files:
 - `attention_token_topk.csv`: one row per `(layer, head, query token)` with the
   exact top-k count and fraction for each energy threshold plus the aligned
   loss/PPL.
+- `attention_pruned_loss_ppl_by_threshold.csv`: one row per energy threshold
+  with the model's loss/PPL after attention pruning. Threshold `1.0` is the
+  unpruned baseline.
+- `attention_pruned_token_loss_ppl.csv`: one row per `(energy threshold, target
+  token)` with the pruned model's token-level loss/PPL.
 - `summary.json`: metadata, global loss/PPL summary, output paths, and the
   original K-cache norm summary.
 
@@ -93,11 +104,17 @@ Original K-cache norm files are still written:
 TOP_FRACTION=0.30 \
 ENERGY_THRESHOLDS=50,75,90,95,98,100 \
 SAVE_ATTENTION_TOKEN_ROWS=true \
+COMPUTE_PRUNED_LOSS_PPL=true \
+SAVE_PRUNED_TOKEN_ROWS=true \
 bash ymluo/projects/qwen3_kcache_norm_analysis/scripts/run_analysis.sh
 ```
 
 Set `SAVE_ATTENTION_TOKEN_ROWS=false` if you only want summary CSVs and want to
 avoid writing the larger per-token/per-head file.
+
+Set `COMPUTE_PRUNED_LOSS_PPL=false` if you only want the attention energy/top-k
+statistics. Keeping it enabled is slower because each non-100% threshold requires
+an additional forward pass for every chunk.
 
 Default K-cache norm percentiles are:
 
