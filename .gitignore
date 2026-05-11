@@ -15,10 +15,10 @@ env/
 .ipynb_checkpoints/
 
 # Logs and temporary files
-*.log
 *.tmp
 *.temp
 .DS_Store
+logs/
 
 # Training artifacts
 fdong/checkpoints/

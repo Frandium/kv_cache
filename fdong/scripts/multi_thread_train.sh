@@ -14,7 +14,7 @@ NUM_WORKERS=4
 CONFIG_DIR="../../../Qwen3-0.6B"
 DATA_DIR="../../../dclm/global-shard_01_of_10"
 
-RUN_NAME="unet-4"
+RUN_NAME="baseline"
 
 # ========== 使用 RUN_NAME 构建路径和文件名 ==========
 CKPT_DIR="../checkpoints/${RUN_NAME}"
