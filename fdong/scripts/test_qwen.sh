@@ -9,16 +9,16 @@ DATA_SHUFFLE=false
 USE_BF16=true
 
 NUM_WORKERS=4
-CONFIG_DIR="../../Qwen3-0.6B"
-DATA_DIR="../../dclm/global-shard_01_of_10"
+CONFIG_DIR="../../../Qwen3-0.6B"
+DATA_DIR="../../../dclm/global-shard_01_of_10"
 
-RUN_NAME="unet-4"
+RUN_NAME="baseline"
 CKPT_DIR="../checkpoints/${RUN_NAME}"
 CKPT_STEP=35000
 CKPT_FILE=""
 OUTPUT_JSON="../experiments/${RUN_NAME}/teacher_forced_kv_decode_${CKPT_STEP}.json"
 
-ATTENTION_STRIDE_PATTERN="1,1,1,1,1,1,1,1,1,4,4,4,4,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1"
+ATTENTION_STRIDE_PATTERN="1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
 RESIDUAL_SOURCE_PATTERN="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1"
 
 ARGS=""

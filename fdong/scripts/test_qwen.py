@@ -52,10 +52,6 @@ def prepare_model(args, device):
     config.attention_stride_pattern = args.attention_stride_pattern or [1 for _ in range(config.num_hidden_layers)]
     config.residual_source_pattern = args.residual_source_pattern or [-1 for _ in range(config.num_hidden_layers)]
 
-    print(f"Model attention_stride_pattern: {config.attention_stride_pattern}", flush=True)
-    print(f"Model residual_source_pattern: {config.residual_source_pattern}", flush=True)
-    print(f"Model attn_implementation: {config._attn_implementation}", flush=True)
-
     model = MyQwen3ForCausalLM(config).to(device)
     ckpt_file = resolve_checkpoint(args)
     if ckpt_file is not None:

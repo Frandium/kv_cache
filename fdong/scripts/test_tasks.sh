@@ -1,17 +1,24 @@
-# arc_c, arc_e, boolq, hellaswag, lambada_openai, piqa, race, siqa
-task_name="mmlu_abstract_algebra,mmlu_anatomy,mmlu_astronomy,mmlu_college_biology,mmlu_college_chemistry,mmlu_high_school_world_history,mmlu_international_law,mmlu_philosophy,mmlu_world_religions,mmlu_econometrics,mmlu_high_school_geography,mmlu_sociology,mmlu_us_foreign_policy,mmlu_business_ethics,mmlu_clinical_knowledge"
+task_name="arc_easy,hellaswag,lambada_openai" # piqa, siqa
 
-# task_name="arc_challenge,arc_easy,boolq,hellaswag,lambada_openai,piqa,race,siqa,mmlu,winogrande,openbookqa"
+RUN_NAME="baseline"
+CKPT_STEP=35000
+CKPT_PATH="/mnt/workspace/df-unet-transformer/fdong/checkpoints/${RUN_NAME}/${CKPT_STEP}.pth"
+# ATTENTION_STRIDE_PATTERN="1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
+# RESIDUAL_SOURCE_PATTERN="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1"
+OUTPUT_PATH="/mnt/workspace/df-unet-transformer/fdong/experiments/${RUN_NAME}/task_results_${CKPT_STEP}.json"
+
+ARGS="pretrained=/mnt/workspace/Qwen3-0.6B,"
+ARGS+="checkpoint_path=${CKPT_PATH},"
+# ARGS+="attention_stride_pattern='${ATTENTION_STRIDE_PATTERN}',"
+# ARGS+="residual_source_pattern='${RESIDUAL_SOURCE_PATTERN}',"
+ARGS+="dtype=bfloat16"
+
+DEVICE="cuda:6"
 
 lm_eval --model hf \
-    --model_args pretrained=/mnt/workspace/fyx/fyx-markov/data_modeling/Qwen1.5-MoE-A2.7B,dtype=bfloat16 \
+    --model_args $ARGS \
     --tasks $task_name \
-    --device cuda:3 \
-    --batch_size auto \
-    # --output_path "${model_name}.json" \
+    --device $DEVICE \
+    --batch_size 32 \
+    --output_path $OUTPUT_PATH
     # --log_samples \
-
-# checkpoint_path="/mnt/workspace/active_learning/checkpoints/baseline-512/${BATCH}.pth"
-# /home/jxzhou/PLM_PER/qwen/Qwen3-0.6B \
-# /home/fdong/qwen/Qwen3-MoE-2.8B-0.8B,dtype=bfloat16,checkpoint_path=/home/fdong/lowmem_qwen/checkpoints/pretrain-switch.0.13000.pth \
-
