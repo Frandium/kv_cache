@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=2
 
 LOCAL_BATCH_SIZE=4
 TEST_BATCH_SIZE=32
@@ -12,9 +12,9 @@ NUM_WORKERS=4
 CONFIG_DIR="../../../Qwen3-0.6B"
 DATA_DIR="../../../dclm/global-shard_01_of_10"
 
-RUN_NAME="baseline"
+RUN_NAME="unet-4-8-4"
 CKPT_DIR="../checkpoints/${RUN_NAME}"
-CKPT_STEP=35000
+CKPT_STEP=10000
 CKPT_FILE=""
 OUTPUT_JSON="../experiments/${RUN_NAME}/teacher_forced_kv_decode_${CKPT_STEP}.json"
 
