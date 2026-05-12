@@ -314,3 +314,119 @@ $$
 - **no long skip vs. long skip**：观察模型是否绕过中间稀疏层。
 
 这里的关键风险是：长 skip 可能帮助保留 token 细节，也可能让模型不再依赖中间层 anchor hierarchy。因此它应该作为 ablation，而不是第一版架构的必要条件。
+
+## 5. 真实语料实验结论
+
+当前真实语料实验已经不再只是 early signal，而是基本回答了第二轮假设中的几个关键不确定性。
+
+### 5.1 KV sequence 维度可以被压缩
+
+`unet-4` 的训练 loss 几乎贴近 dense baseline。这说明在真实网页/新闻语料上，中间层只长期保留 stride anchor KV 并不会导致 optimization collapse，也不会明显破坏普通 LM training loss。
+
+更激进的 `unet-4-8-4` 也可以正常训练。它比 `unet-4` 有更高的推理 KV cache 压缩比例，同时只带来小幅、可控的 loss 代价。
+
+因此，当前实验支持一个更强的判断：
+
+> KV cache 的 sequence 维度不是只能温和压缩，而是存在一条连续的压缩-能力 trade-off curve。
+
+### 5.2 推理形态下的 KV 压缩成立
+
+之前最大的风险是：训练时使用 sparse attention mask，并不等价于推理时真的可以删除非 anchor KV。
+
+anchor-only KV decode 实验已经基本排除了这个风险。在 teacher-forced decode 中，只保留 stride 决定的 anchor KV 后，decode loss 几乎不变，而实际 KV cache token 数显著减少。
+
+这说明：
+
+> mask-based U-Net Transformer 不只是训练时的正则化技巧，它确实可以转化为推理阶段的 KV cache 压缩。
+
+### 5.3 Stride anchor 位置没有明显退化
+
+按 position modulo stride 统计 token loss 后，没有看到 anchor positions 出现系统性掉点。相反，anchor class 的 loss 通常不高于 non-anchor 平均。
+
+这说明当前结构没有通过牺牲 anchor positions 来维持整体 loss，也没有出现明显的 modulo-position collapse。
+
+### 5.4 普通任务能力基本保持，但长程能力仍未证明
+
+普通常识问答和多选任务没有出现系统性崩坏，说明该结构不是只在 training loss 上看起来正常。
+
+但更敏感的精确预测任务已经显示出一定退化，并且普通网页/新闻语料并不能充分验证真正的长程信息压缩能力。
+
+因此，当前结论应当是：
+
+> 真实语料上的普通 LM 能力和普通下游能力基本支持该方向；但长程检索、长程组合、精确复制和代码引用能力仍然是下一轮关键问题。
+
+### 5.5 当前阶段结论
+
+第二轮实验已经把问题从“KV sequence 维度能否压缩”推进到了“在更难长程任务上最多能压缩到什么程度”。
+
+已经确认的部分：
+
+- KV sequence 维度可以被压缩；
+- 更激进压缩仍然可训练；
+- 推理阶段可以真实删除非 anchor KV；
+- stride anchor 位置没有明显系统性退化；
+- 普通任务没有出现系统性崩坏。
+
+仍未确认的部分：
+
+- 长程信息是否也能稳定压缩进 anchor KV；
+- exact retrieval / copy / code reference 等任务是否会暴露能力损失；
+- 在长程任务上，压缩比例的上限在哪里。
+
+## 6. 下一步 TODO：长程推理与压缩任务
+
+接下来不再把 synthetic 数据作为主线。真实语料实验已经证明该结构可以训练、可以推理压缩，并且在普通任务上基本保持能力。
+
+第三轮实验应当直接面向真正需要长程信息的任务，验证 anchor KV 是否真的保留了可检索、可组合、可恢复的长程信息。
+
+### 6.1 Long-context retrieval
+
+需要测试模型能否在长上下文中找回远处信息，例如：
+
+- needle-in-a-haystack；
+- key-value retrieval；
+- multi-needle retrieval；
+- 多事实组合查询。
+
+这里关注的问题是：当中间层只能长期保留 anchor KV 时，远处信息是否仍然能被可靠访问。
+
+### 6.2 Exact copy / span retrieval
+
+需要测试模型是否还能恢复精确 token-level 信息，例如：
+
+- long copy；
+- exact span retrieval；
+- rare entity recall；
+- 数字、URL、代码符号等低频 token 复制。
+
+这里关注的问题是：anchor KV 是否会丢失无法从语义摘要中恢复的精确信息。
+
+### 6.3 Code reference tracking
+
+代码任务天然包含长程依赖和精确引用，适合测试该结构的上限，例如：
+
+- variable reference tracking；
+- function/class definition lookup；
+- cross-file or long-file dependency retrieval；
+- identifier copy。
+
+这里关注的问题是：mask-based KV 压缩是否会伤害代码中的精确绑定关系。
+
+### 6.4 压缩比例上限
+
+在上述长程任务上，需要比较不同压缩比例：
+
+- dense baseline；
+- `unet-4`；
+- `unet-4-8-4`；
+- 更激进 stride variants。
+
+目标是建立长程任务上的 trade-off curve：
+
+$$
+\text{KV cache saving} \quad \text{vs.} \quad \text{long-context capability}
+$$
+
+第三轮真正要回答的问题是：
+
+> 在需要长程检索、精确恢复和组合推理的任务上，KV sequence 维度最多能压缩到什么程度？

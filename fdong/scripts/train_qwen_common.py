@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import time
 
@@ -53,17 +54,31 @@ def parse_common_args():
     return parser.parse_args()
 
 
+def resolve_model_patterns(config, args):
+    attention_stride_pattern = args.attention_stride_pattern or [1 for _ in range(config.num_hidden_layers)]
+    residual_source_pattern = args.residual_source_pattern or [-1 for _ in range(config.num_hidden_layers)]
+    return attention_stride_pattern, residual_source_pattern
+
+
+def write_runtime_config(ckpt_dir, attention_stride_pattern, residual_source_pattern):
+    if not ckpt_dir:
+        return
+    runtime_config_path = os.path.join(ckpt_dir, "runtime_config.json")
+    runtime_config = {
+        "attention_stride_pattern": attention_stride_pattern,
+        "residual_source_pattern": residual_source_pattern,
+    }
+    with open(runtime_config_path, "w", encoding="utf-8") as f:
+        json.dump(runtime_config, f, indent=2)
+
+
 @torch.no_grad()
 def prepare_model(local_rank, world_size, device, args):
     config = AutoConfig.from_pretrained(args.config_dir, trust_remote_code=True)
-    config.attention_stride_pattern = [
-        1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1
-    ]
-    config.residual_source_pattern = [
-        -1 for _ in range(config.num_hidden_layers)    
-    ]
+    config.attention_stride_pattern, config.residual_source_pattern = resolve_model_patterns(config, args)
+    if local_rank == 0:
+        print(f"Model attention_stride_pattern: {config.attention_stride_pattern}", flush=True)
+        print(f"Model residual_source_pattern: {config.residual_source_pattern}", flush=True)
     model = MyQwen3ForCausalLM(config).to(device)
 
     if world_size > 1:
@@ -121,13 +136,18 @@ def thread_main(local_rank, world_size, device, args):
 
     dataloader = prepare_data(local_rank, world_size, args)
     model = prepare_model(local_rank, world_size, device, args)
+    real_model = model.module if world_size > 1 else model
+    if local_rank == 0:
+        write_runtime_config(
+            args.ckpt_dir,
+            real_model.model.attention_stride_pattern,
+            real_model.model.residual_source_pattern,
+        )
     token_loss_fn, optimizer, lr_scheduler, scaler = prepare_loss_optimizer(model, args)
 
     gradient_accumulation_steps = args.global_batch_size // args.local_batch_size // world_size
     if gradient_accumulation_steps < 1:
         raise ValueError("global_batch_size must be >= local_batch_size * world_size")
-
-    real_model = model.module if world_size > 1 else model
 
     for local_batch_idx, (source, target, real_lens) in enumerate(dataloader, 1):
         global_batch_idx = local_batch_idx // gradient_accumulation_steps
