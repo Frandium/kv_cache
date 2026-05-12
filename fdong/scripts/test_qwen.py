@@ -46,11 +46,54 @@ def parse_args():
     return parser.parse_args()
 
 
+def runtime_config_path(args):
+    if args.ckpt_dir:
+        return os.path.join(args.ckpt_dir, "runtime_config.json")
+    if args.ckpt_file:
+        return os.path.join(os.path.dirname(args.ckpt_file), "runtime_config.json")
+    return ""
+
+
+def load_runtime_config(args):
+    path = runtime_config_path(args)
+    if not path or not os.path.exists(path):
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        runtime_config = json.load(f)
+    print(f"Loaded runtime config: {path}", flush=True)
+    return runtime_config
+
+
+def resolve_pattern(cli_pattern, runtime_config, key, default_pattern):
+    runtime_pattern = runtime_config.get(key)
+    if cli_pattern is not None and runtime_pattern is not None and cli_pattern != runtime_pattern:
+        raise ValueError(
+            f"`{key}` mismatch between command line and runtime_config.json.\n"
+            f"command line: {cli_pattern}\n"
+            f"runtime_config: {runtime_pattern}"
+        )
+    return cli_pattern or runtime_pattern or default_pattern
+
+
 def prepare_model(args, device):
     config = AutoConfig.from_pretrained(args.config_dir, trust_remote_code=True)
+    runtime_config = load_runtime_config(args)
     config._attn_implementation = args.attn_implementation
-    config.attention_stride_pattern = args.attention_stride_pattern or [1 for _ in range(config.num_hidden_layers)]
-    config.residual_source_pattern = args.residual_source_pattern or [-1 for _ in range(config.num_hidden_layers)]
+    config.attention_stride_pattern = resolve_pattern(
+        args.attention_stride_pattern,
+        runtime_config,
+        "attention_stride_pattern",
+        [1 for _ in range(config.num_hidden_layers)],
+    )
+    config.residual_source_pattern = resolve_pattern(
+        args.residual_source_pattern,
+        runtime_config,
+        "residual_source_pattern",
+        [-1 for _ in range(config.num_hidden_layers)],
+    )
+
+    print(f"Model attention_stride_pattern: {config.attention_stride_pattern}", flush=True)
+    print(f"Model residual_source_pattern: {config.residual_source_pattern}", flush=True)
 
     model = MyQwen3ForCausalLM(config).to(device)
     ckpt_file = resolve_checkpoint(args)
@@ -124,9 +167,65 @@ def total_cache_tokens(lengths):
     return sum(int(length) for length in lengths.values())
 
 
+def analyzed_strides(attention_stride_pattern):
+    return sorted({int(stride) for stride in attention_stride_pattern if int(stride) > 1})
+
+
+def init_modulo_stats(attention_stride_pattern):
+    return {
+        stride: {modulo: {"loss_sum": 0.0, "count": 0} for modulo in range(stride)}
+        for stride in analyzed_strides(attention_stride_pattern)
+    }
+
+
+def update_modulo_stats(stats, logits, labels, positions, ignore_index):
+    if not stats or logits.shape[1] == 0:
+        return
+    token_losses = F.cross_entropy(
+        logits.float().reshape(-1, logits.shape[-1]),
+        labels.reshape(-1),
+        ignore_index=ignore_index,
+        reduction="none",
+    ).reshape(labels.shape)
+    valid_mask = labels.ne(ignore_index)
+    for stride, stride_stats in stats.items():
+        modulo_positions = torch.remainder(positions, stride)
+        for modulo, modulo_stats in stride_stats.items():
+            mask = valid_mask & (modulo_positions.unsqueeze(0) == modulo)
+            count = int(mask.sum().detach().cpu())
+            if count == 0:
+                continue
+            modulo_stats["loss_sum"] += float(token_losses[mask].sum().detach().cpu())
+            modulo_stats["count"] += count
+
+
+def summarize_modulo_stats(stats):
+    summary = {}
+    for stride, stride_stats in stats.items():
+        stride_summary = {}
+        for modulo, values in stride_stats.items():
+            count = values["count"]
+            stride_summary[str(modulo)] = {
+                "loss": None if count == 0 else values["loss_sum"] / count,
+                "count": count,
+                "is_anchor": modulo == stride - 1,
+            }
+        summary[str(stride)] = stride_summary
+    return summary
+
+
 @torch.no_grad()
-def full_sequence_loss(model, source, target, args):
+def full_sequence_loss(model, source, target, args, modulo_stats=None):
     output = model(source, use_cache=False, output_hidden_states=False)
+    if modulo_stats is not None:
+        positions = torch.arange(source.shape[1], device=source.device)
+        update_modulo_stats(
+            modulo_stats,
+            output.logits,
+            target,
+            positions,
+            args.ignore_index,
+        )
     return ce_sum_and_count(output.logits, target, args.ignore_index)
 
 
@@ -255,6 +354,24 @@ def teacher_forced_decode_pair(model, source, target, args):
     abs_diff_count = 0
     top1_match_sum = 0
     top1_match_count = 0
+    full_modulo_stats = init_modulo_stats(model.model.attention_stride_pattern)
+    anchor_modulo_stats = init_modulo_stats(model.model.attention_stride_pattern)
+
+    prefill_positions = torch.arange(prefill_len, device=source.device)
+    update_modulo_stats(
+        full_modulo_stats,
+        full_output.logits,
+        target[:, :prefill_len],
+        prefill_positions,
+        args.ignore_index,
+    )
+    update_modulo_stats(
+        anchor_modulo_stats,
+        anchor_output.logits,
+        target[:, :prefill_len],
+        prefill_positions,
+        args.ignore_index,
+    )
 
     prefill_diff = (full_output.logits[:, -1, :].float() - anchor_output.logits[:, -1, :].float()).abs()
     max_abs_diff = max(max_abs_diff, float(prefill_diff.max().detach().cpu()))
@@ -299,6 +416,21 @@ def teacher_forced_decode_pair(model, source, target, args):
         full_decode_count = full_decode_count + full_step_count
         anchor_decode_loss_sum = anchor_decode_loss_sum + anchor_step_loss_sum
         anchor_decode_count = anchor_decode_count + anchor_step_count
+        step_position = torch.tensor([input_pos], device=source.device)
+        update_modulo_stats(
+            full_modulo_stats,
+            full_logits.unsqueeze(1),
+            target[:, input_pos : input_pos + 1],
+            step_position,
+            args.ignore_index,
+        )
+        update_modulo_stats(
+            anchor_modulo_stats,
+            anchor_logits.unsqueeze(1),
+            target[:, input_pos : input_pos + 1],
+            step_position,
+            args.ignore_index,
+        )
 
         diff = (full_logits.float() - anchor_logits.float()).abs()
         max_abs_diff = max(max_abs_diff, float(diff.max().detach().cpu()))
@@ -317,6 +449,7 @@ def teacher_forced_decode_pair(model, source, target, args):
         "decode_loss_sum": full_decode_loss_sum,
         "decode_count": full_decode_count,
         "cache_lengths": cache_lengths(full_past),
+        "modulo_stats": full_modulo_stats,
     }
     anchor_result = {
         "loss_sum": anchor_prefill_loss_sum + anchor_decode_loss_sum,
@@ -328,6 +461,7 @@ def teacher_forced_decode_pair(model, source, target, args):
         "decode_loss_sum": anchor_decode_loss_sum,
         "decode_count": anchor_decode_count,
         "cache_lengths": cache_lengths(anchor_past),
+        "modulo_stats": anchor_modulo_stats,
     }
     comparison = {
         "max_abs_diff": max_abs_diff,
@@ -360,6 +494,15 @@ def update_cache_stats(acc, prefix, lengths):
         acc[key] = acc.get(key, 0) + int(length)
 
 
+def merge_modulo_stats(acc_stats, batch_stats):
+    for stride, stride_stats in batch_stats.items():
+        if stride not in acc_stats:
+            acc_stats[stride] = {modulo: {"loss_sum": 0.0, "count": 0} for modulo in stride_stats}
+        for modulo, values in stride_stats.items():
+            acc_stats[stride][modulo]["loss_sum"] += values["loss_sum"]
+            acc_stats[stride][modulo]["count"] += values["count"]
+
+
 def summarize_cache(acc, prefix, num_layers):
     observations = acc[f"{prefix}_cache_observations"]
     if observations == 0:
@@ -377,6 +520,9 @@ def summarize_cache(acc, prefix, num_layers):
 @torch.no_grad()
 def evaluate(model, dataloader, args, device):
     num_layers = model.config.num_hidden_layers
+    full_sequence_modulo_stats = init_modulo_stats(model.model.attention_stride_pattern)
+    full_kv_modulo_stats = init_modulo_stats(model.model.attention_stride_pattern)
+    anchor_kv_modulo_stats = init_modulo_stats(model.model.attention_stride_pattern)
     acc = {
         "full_sequence_loss_sum": 0.0,
         "full_sequence_count": 0,
@@ -417,7 +563,7 @@ def evaluate(model, dataloader, args, device):
         acc["num_samples"] += source.shape[0]
 
         with torch.amp.autocast(dtype=torch.bfloat16, device_type="cuda", enabled=args.use_bf16):
-            full_loss_sum, full_count = full_sequence_loss(model, source, target, args)
+            full_loss_sum, full_count = full_sequence_loss(model, source, target, args, full_sequence_modulo_stats)
             full_kv, anchor_kv, comparison = teacher_forced_decode_pair(model, source, target, args)
 
         add_metric(acc, "full_sequence", full_loss_sum, full_count)
@@ -432,6 +578,10 @@ def evaluate(model, dataloader, args, device):
             )
             add_metric(acc, f"{prefix}_decode", result["decode_loss_sum"], result["decode_count"])
             update_cache_stats(acc, prefix, result["cache_lengths"])
+            if prefix == "full_kv":
+                merge_modulo_stats(full_kv_modulo_stats, result["modulo_stats"])
+            else:
+                merge_modulo_stats(anchor_kv_modulo_stats, result["modulo_stats"])
 
         acc["max_decode_logit_abs_diff"] = max(acc["max_decode_logit_abs_diff"], comparison["max_abs_diff"])
         acc["decode_logit_abs_diff_sum"] += comparison["abs_diff_sum"]
@@ -490,6 +640,11 @@ def evaluate(model, dataloader, args, device):
             "anchor_kv": anchor_cache,
             "anchor_vs_full_total_token_ratio": cache_ratio,
             "cache_reduction": None if cache_ratio is None else 1.0 - cache_ratio,
+        },
+        "position_loss_by_modulo": {
+            "full_sequence": summarize_modulo_stats(full_sequence_modulo_stats),
+            "full_kv_teacher_forced": summarize_modulo_stats(full_kv_modulo_stats),
+            "anchor_kv_teacher_forced": summarize_modulo_stats(anchor_kv_modulo_stats),
         },
         "config": {
             "config_dir": args.config_dir,
