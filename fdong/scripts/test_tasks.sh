@@ -1,16 +1,13 @@
 task_name="arc_easy,hellaswag,lambada_openai" # piqa, siqa
 
-RUN_NAME="baseline"
+RUN_NAME="unet-4"
 CKPT_STEP=35000
-CKPT_PATH="/mnt/workspace/df-unet-transformer/fdong/checkpoints/${RUN_NAME}/${CKPT_STEP}.pth"
-# ATTENTION_STRIDE_PATTERN="1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
-# RESIDUAL_SOURCE_PATTERN="-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1"
+CKPT_DIR="/mnt/workspace/df-unet-transformer/fdong/checkpoints/${RUN_NAME}"
 OUTPUT_PATH="/mnt/workspace/df-unet-transformer/fdong/experiments/${RUN_NAME}/task_results_${CKPT_STEP}.json"
 
 ARGS="pretrained=/mnt/workspace/Qwen3-0.6B,"
-ARGS+="checkpoint_path=${CKPT_PATH},"
-# ARGS+="attention_stride_pattern='${ATTENTION_STRIDE_PATTERN}',"
-# ARGS+="residual_source_pattern='${RESIDUAL_SOURCE_PATTERN}',"
+ARGS+="checkpoint_path=${CKPT_DIR},"
+ARGS+="checkpoint_step=${CKPT_STEP},"
 ARGS+="dtype=bfloat16"
 
 DEVICE="cuda:6"
