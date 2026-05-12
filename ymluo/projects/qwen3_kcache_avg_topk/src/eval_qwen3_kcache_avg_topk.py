@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import math
+import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
@@ -54,9 +55,33 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output_dir", default="projects/qwen3_kcache_avg_topk/outputs/eval")
     parser.add_argument("--max_files", type=int, default=128)
     parser.add_argument("--max_sequences", type=int, default=128)
-    parser.add_argument("--seq_length", type=int, default=1024)
-    parser.add_argument("--stride", type=int, default=1024)
-    parser.add_argument("--min_tokens", type=int, default=32)
+    parser.add_argument(
+        "--min_seq_length",
+        type=int,
+        default=None,
+        help="Minimum number of scored tokens per evaluation sequence. Default: min(3000, max_seq_length).",
+    )
+    parser.add_argument(
+        "--max_seq_length",
+        type=int,
+        default=None,
+        help="Maximum number of scored tokens per evaluation sequence. Default: 5000.",
+    )
+    parser.add_argument(
+        "--seq_length",
+        type=int,
+        default=None,
+        help="Deprecated alias for --max_seq_length.",
+    )
+    parser.add_argument("--stride", type=int, default=None)
+    parser.add_argument(
+        "--min_tokens",
+        type=int,
+        default=None,
+        help="Deprecated alias for --min_seq_length.",
+    )
+    parser.add_argument("--progress", type=str2bool, default=True)
+    parser.add_argument("--progress_interval", type=int, default=1000)
     parser.add_argument("--bf16", type=str2bool, default=True)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--eval_baseline", type=str2bool, default=True)
@@ -66,7 +91,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--first_sparse_layer", type=int, default=3)
     parser.add_argument("--last_sparse_layer", type=int, default=27)
     parser.add_argument("--min_blocks_to_keep", type=int, default=1)
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.max_seq_length is None:
+        args.max_seq_length = args.seq_length if args.seq_length is not None else 5000
+    elif args.seq_length is not None:
+        args.max_seq_length = args.seq_length
+
+    if args.min_tokens is not None:
+        args.min_seq_length = args.min_tokens
+    elif args.min_seq_length is None:
+        args.min_seq_length = min(3000, args.max_seq_length)
+
+    if args.stride is None:
+        args.stride = args.max_seq_length
+
+    if args.min_seq_length < 1:
+        raise ValueError("min_seq_length must be >= 1")
+    if args.max_seq_length < args.min_seq_length:
+        raise ValueError("max_seq_length must be >= min_seq_length")
+    if args.stride < 1:
+        raise ValueError("stride must be >= 1")
+    return args
 
 
 def iter_text_files(dataset_path: str, max_files: int) -> Iterable[Path]:
@@ -86,27 +132,28 @@ def iter_token_sequences(
     dataset_path: str,
     max_files: int,
     max_sequences: int,
-    seq_length: int,
+    min_seq_length: int,
+    max_seq_length: int,
     stride: int,
-    min_tokens: int,
 ) -> Iterable[torch.Tensor]:
     produced = 0
-    target_len = seq_length + 1
+    min_len = min_seq_length + 1
+    target_len = max_seq_length + 1
     for path in iter_text_files(dataset_path, max_files):
         text = path.read_text(encoding="utf-8", errors="ignore")
         token_ids = tokenizer(text, add_special_tokens=False)["input_ids"]
-        if len(token_ids) < min_tokens:
-            continue
         if tokenizer.eos_token_id is not None:
             token_ids.append(tokenizer.eos_token_id)
 
+        if len(token_ids) < min_len:
+            continue
         if len(token_ids) <= target_len:
             yield torch.tensor(token_ids, dtype=torch.long)
             produced += 1
         else:
-            for start in range(0, len(token_ids) - min_tokens + 1, stride):
+            for start in range(0, len(token_ids) - min_len + 1, stride):
                 chunk = token_ids[start : start + target_len]
-                if len(chunk) < min_tokens:
+                if len(chunk) < min_len:
                     continue
                 yield torch.tensor(chunk, dtype=torch.long)
                 produced += 1
@@ -124,11 +171,43 @@ def _iter_sparse_modules(model) -> list[torch.nn.Module]:
     ]
 
 
+class ProgressReporter:
+    def __init__(self, name: str, total: int, enabled: bool, interval: int) -> None:
+        self.name = name
+        self.total = max(total, 0)
+        self.enabled = enabled
+        self.current = 0
+        self.started_at = time.monotonic()
+        self.report_every = max(interval, self.total // 100, 1)
+        self.next_report = self.report_every
+        if self.enabled:
+            print(f"{self.name}: progress 0/{self.total} tokens (0.00%)", flush=True)
+
+    def update(self, count: int = 1) -> None:
+        if not self.enabled:
+            return
+        self.current += count
+        if self.current < self.next_report and self.current < self.total:
+            return
+        elapsed = max(time.monotonic() - self.started_at, 1e-6)
+        rate = self.current / elapsed
+        pct = 100.0 if self.total == 0 else min(100.0, self.current / self.total * 100.0)
+        print(
+            f"{self.name}: progress {self.current}/{self.total} tokens "
+            f"({pct:.2f}%, {rate:.2f} tok/s)",
+            flush=True,
+        )
+        while self.next_report <= self.current:
+            self.next_report += self.report_every
+
+
 def score_sequences_decode(
     model,
     sequences: list[torch.Tensor],
     device: torch.device,
     name: str,
+    show_progress: bool,
+    progress_interval: int,
 ) -> tuple[EvalMetrics, list[HeadEnergyMetric]]:
     total_nll = 0.0
     total_prob = 0.0
@@ -141,12 +220,20 @@ def score_sequences_decode(
     total_energy_sum = 0.0
     total_energy_count = 0
     sparse_modules = _iter_sparse_modules(model)
+    planned_tokens = sum(max(int(seq.numel()) - 1, 0) for seq in sequences)
+    progress = ProgressReporter(name, planned_tokens, show_progress, progress_interval)
 
     model.eval()
     with torch.inference_mode():
-        for seq in sequences:
+        for seq_idx, seq in enumerate(sequences, start=1):
             if seq.numel() < 2:
                 continue
+            if show_progress:
+                print(
+                    f"{name}: sequence {seq_idx}/{len(sequences)} "
+                    f"scored_tokens={seq.numel() - 1}",
+                    flush=True,
+                )
             input_ids = seq.to(device).view(1, -1)
             outputs = model(input_ids=input_ids[:, :1], use_cache=True)
             past_key_values = outputs.past_key_values
@@ -159,6 +246,7 @@ def score_sequences_decode(
                 total_nll += float(-token_log_prob)
                 total_prob += float(token_log_prob.exp())
                 total_tokens += 1
+                progress.update()
 
                 if sparse_modules:
                     for module_idx, module in enumerate(sparse_modules):
@@ -206,7 +294,9 @@ def score_sequences_decode(
                     logits = outputs.logits[:, -1, :]
 
     if total_tokens == 0:
-        raise ValueError("No tokens were scored. Check dataset_path/min_tokens/max_sequences.")
+        raise ValueError(
+            "No tokens were scored. Check dataset_path/min_seq_length/max_sequences."
+        )
 
     loss = total_nll / total_tokens
     head_energy_rows: list[HeadEnergyMetric] = []
@@ -310,13 +400,22 @@ def main() -> None:
             dataset_path=args.dataset_path,
             max_files=args.max_files,
             max_sequences=args.max_sequences,
-            seq_length=args.seq_length,
+            min_seq_length=args.min_seq_length,
+            max_seq_length=args.max_seq_length,
             stride=args.stride,
-            min_tokens=args.min_tokens,
         )
     )
     if not sequences:
         raise ValueError(f"No usable .txt sequences found under {args.dataset_path}")
+    scored_lengths = [seq.numel() - 1 for seq in sequences]
+    print(
+        "prepared sequences: "
+        f"count={len(sequences)} "
+        f"min_scored_tokens={min(scored_lengths)} "
+        f"max_scored_tokens={max(scored_lengths)} "
+        f"total_scored_tokens={sum(scored_lengths)}",
+        flush=True,
+    )
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name_or_path,
@@ -329,7 +428,14 @@ def main() -> None:
     rows: list[EvalMetrics] = []
     head_energy_rows: list[HeadEnergyMetric] = []
     if args.eval_baseline:
-        metrics, energy_rows = score_sequences_decode(model, sequences, device, "baseline")
+        metrics, energy_rows = score_sequences_decode(
+            model,
+            sequences,
+            device,
+            "baseline",
+            show_progress=args.progress,
+            progress_interval=args.progress_interval,
+        )
         rows.append(metrics)
         head_energy_rows.extend(energy_rows)
 
@@ -343,7 +449,14 @@ def main() -> None:
         )
         patched_layers = patch_qwen3_kcache_avg_topk(model, cfg)
         print(f"patched sparse layers: {patched_layers}")
-        metrics, energy_rows = score_sequences_decode(model, sequences, device, "kcache_avg_topk")
+        metrics, energy_rows = score_sequences_decode(
+            model,
+            sequences,
+            device,
+            "kcache_avg_topk",
+            show_progress=args.progress,
+            progress_interval=args.progress_interval,
+        )
         rows.append(metrics)
         head_energy_rows.extend(energy_rows)
 

@@ -107,7 +107,9 @@ def _avg_block_topk_attention(
         scores = scores + attention_mask[..., :q_len, :kv_len]
 
     full_attn = F.softmax(scores.float(), dim=-1)
-    selected_energy = full_attn.masked_fill(~token_mask, 0.0).sum(dim=-1)
+    selected_attention_sum = full_attn.masked_fill(~token_mask, 0.0).sum(dim=-1)
+    total_attention_sum = full_attn.sum(dim=-1).clamp_min(torch.finfo(full_attn.dtype).tiny)
+    selected_energy = selected_attention_sum / total_attention_sum
 
     sparse_scores = scores.masked_fill(~token_mask, torch.finfo(scores.dtype).min)
     attn = F.softmax(sparse_scores.float(), dim=-1).to(query.dtype)
