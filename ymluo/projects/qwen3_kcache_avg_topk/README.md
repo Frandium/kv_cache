@@ -41,7 +41,8 @@ bash projects/qwen3_kcache_avg_topk/scripts/run_generate.sh
 The evaluation script compares normal Qwen3 decoding with this sparse decode
 method on `.txt` files. It scores tokens one by one with `use_cache=True`, so the
 patched decode path is actually exercised.
-By default, each evaluation sequence scores 3,000 to 5,000 tokens.
+By default, the whole evaluation scores 5,000 tokens total. Individual
+sequences are clipped to 3,000 to 5,000 scored tokens.
 
 ```bash
 MODEL_PATH=/mnt/workspace/lym_code/models/Qwen3-0.6B \
@@ -67,7 +68,7 @@ Progress is printed during baseline and sparse scoring.
 Useful quick-test overrides:
 
 ```bash
-MAX_FILES=4 MAX_SEQUENCES=8 MIN_SEQ_LENGTH=256 MAX_SEQ_LENGTH=512 \
+MAX_FILES=4 MAX_SEQUENCES=8 MIN_SEQ_LENGTH=256 MAX_SEQ_LENGTH=512 MAX_EVAL_TOKENS=1024 \
 bash projects/qwen3_kcache_avg_topk/scripts/run_eval.sh
 ```
 

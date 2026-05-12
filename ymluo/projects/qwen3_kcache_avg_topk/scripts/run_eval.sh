@@ -27,6 +27,7 @@ python "${PROJECT_DIR}/src/eval_qwen3_kcache_avg_topk.py" \
   --output_dir "${OUT_DIR}" \
   --max_files "${MAX_FILES:-128}" \
   --max_sequences "${MAX_SEQUENCES:-128}" \
+  --max_eval_tokens "${MAX_EVAL_TOKENS:-5000}" \
   --min_seq_length "${MIN_SEQ_LENGTH}" \
   --max_seq_length "${MAX_SEQ_LENGTH}" \
   --stride "${STRIDE}" \

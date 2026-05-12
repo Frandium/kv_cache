@@ -56,6 +56,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max_files", type=int, default=128)
     parser.add_argument("--max_sequences", type=int, default=128)
     parser.add_argument(
+        "--max_eval_tokens",
+        type=int,
+        default=5000,
+        help="Maximum total scored tokens across all evaluation sequences. Use <=0 to disable.",
+    )
+    parser.add_argument(
         "--min_seq_length",
         type=int,
         default=None,
@@ -112,6 +118,8 @@ def parse_args() -> argparse.Namespace:
         raise ValueError("max_seq_length must be >= min_seq_length")
     if args.stride < 1:
         raise ValueError("stride must be >= 1")
+    if 0 < args.max_eval_tokens < args.min_seq_length:
+        raise ValueError("max_eval_tokens must be <=0 or >= min_seq_length")
     return args
 
 
@@ -135,28 +143,56 @@ def iter_token_sequences(
     min_seq_length: int,
     max_seq_length: int,
     stride: int,
+    max_eval_tokens: int,
 ) -> Iterable[torch.Tensor]:
     produced = 0
+    produced_tokens = 0
     min_len = min_seq_length + 1
     target_len = max_seq_length + 1
     for path in iter_text_files(dataset_path, max_files):
         text = path.read_text(encoding="utf-8", errors="ignore")
-        token_ids = tokenizer(text, add_special_tokens=False)["input_ids"]
+        try:
+            token_ids = tokenizer(text, add_special_tokens=False, verbose=False)["input_ids"]
+        except TypeError:
+            token_ids = tokenizer(text, add_special_tokens=False)["input_ids"]
         if tokenizer.eos_token_id is not None:
             token_ids.append(tokenizer.eos_token_id)
 
         if len(token_ids) < min_len:
             continue
+        remaining_tokens = max_eval_tokens - produced_tokens if max_eval_tokens > 0 else None
+        if remaining_tokens is not None and remaining_tokens < min_seq_length:
+            return
+        current_target_len = (
+            target_len
+            if remaining_tokens is None
+            else min(target_len, remaining_tokens + 1)
+        )
         if len(token_ids) <= target_len:
-            yield torch.tensor(token_ids, dtype=torch.long)
+            chunk = token_ids[:current_target_len]
+            if len(chunk) < min_len:
+                continue
+            yield torch.tensor(chunk, dtype=torch.long)
             produced += 1
+            produced_tokens += len(chunk) - 1
         else:
             for start in range(0, len(token_ids) - min_len + 1, stride):
-                chunk = token_ids[start : start + target_len]
+                remaining_tokens = (
+                    max_eval_tokens - produced_tokens if max_eval_tokens > 0 else None
+                )
+                if remaining_tokens is not None and remaining_tokens < min_seq_length:
+                    return
+                current_target_len = (
+                    target_len
+                    if remaining_tokens is None
+                    else min(target_len, remaining_tokens + 1)
+                )
+                chunk = token_ids[start : start + current_target_len]
                 if len(chunk) < min_len:
                     continue
                 yield torch.tensor(chunk, dtype=torch.long)
                 produced += 1
+                produced_tokens += len(chunk) - 1
                 if 0 < max_sequences <= produced:
                     return
         if 0 < max_sequences <= produced:
@@ -403,6 +439,7 @@ def main() -> None:
             min_seq_length=args.min_seq_length,
             max_seq_length=args.max_seq_length,
             stride=args.stride,
+            max_eval_tokens=args.max_eval_tokens,
         )
     )
     if not sequences:
