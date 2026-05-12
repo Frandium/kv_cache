@@ -1,0 +1,54 @@
+{
+  "experiment_name": "unet-4-8-4",
+  "log_path": "../logs/unet-4-8-4.log",
+  "num_records": 60567,
+  "config": {
+    "local_batch_size": "16",
+    "global_batch_size": "512",
+    "save_interval": "1000",
+    "seq_len": "1024",
+    "lr": "0.0001",
+    "optimizer": "AdamW",
+    "warmup_steps": "2000",
+    "total_training_steps": "1000000",
+    "data_shuffle": "True",
+    "use_bf16": "True",
+    "num_workers": "4",
+    "config_dir": "../../../Qwen3-0.6B",
+    "data_dir": "../../../dclm/global-shard_01_of_10",
+    "ckpt_dir": "../checkpoints/unet-4-8-4",
+    "dataset_type": "jsonl",
+    "per": "1.0",
+    "attention_stride_pattern": "[1, 1, 1, 1, 1, 1, 4, 4, 4, 4, 4, 4, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1]",
+    "residual_source_pattern": "[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]"
+  },
+  "first_record": {
+    "line_no": 1135,
+    "global_step": 0,
+    "local_batch": 1,
+    "loss": 12.128,
+    "batch_time": 3.924
+  },
+  "last_record": {
+    "line_no": 61703,
+    "global_step": 15141,
+    "local_batch": 60567,
+    "loss": 3.526,
+    "batch_time": 0.847
+  },
+  "loss_first": 12.128,
+  "loss_last": 3.526,
+  "loss_min": 2.794,
+  "loss_max": 12.164,
+  "loss_mean": 4.130985024848515,
+  "batch_time_mean": 0.8560378093681378,
+  "sample_every": 605,
+  "aggregate_window": 605,
+  "tail_lines": 100,
+  "outputs": {
+    "summary": "summary.json",
+    "sampled_records": "loss_sampled.csv",
+    "aggregated_records": "loss_aggregated.csv",
+    "tail": "train_tail.log"
+  }
+}
