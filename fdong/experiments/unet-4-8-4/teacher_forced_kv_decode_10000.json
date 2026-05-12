@@ -1,0 +1,358 @@
+{
+  "num_batches": 8,
+  "num_samples": 32,
+  "prefill_len": 100,
+  "decode_steps": 128,
+  "loss": {
+    "full_sequence": 3.9841261413081144,
+    "full_kv_teacher_forced": 4.007695676939357,
+    "anchor_kv_teacher_forced": 4.007541971265981,
+    "full_kv_prefill": 4.088209762573242,
+    "anchor_kv_prefill": 4.088209762573242,
+    "full_kv_prefill_next_token": 4.302930414676666,
+    "anchor_kv_prefill_next_token": 4.302930414676666,
+    "full_kv_decode_only": 3.9438431788258983,
+    "anchor_kv_decode_only": 3.943567514714994
+  },
+  "logit_equivalence": {
+    "max_decode_logit_abs_diff": 0.125,
+    "mean_decode_logit_abs_diff": 0.005019284001262318,
+    "decode_top1_match_rate": 0.9924903100775194
+  },
+  "cache": {
+    "full_kv": {
+      "total_tokens": 6384.0,
+      "per_layer_tokens": {
+        "0": 228.0,
+        "1": 228.0,
+        "2": 228.0,
+        "3": 228.0,
+        "4": 228.0,
+        "5": 228.0,
+        "6": 228.0,
+        "7": 228.0,
+        "8": 228.0,
+        "9": 228.0,
+        "10": 228.0,
+        "11": 228.0,
+        "12": 228.0,
+        "13": 228.0,
+        "14": 228.0,
+        "15": 228.0,
+        "16": 228.0,
+        "17": 228.0,
+        "18": 228.0,
+        "19": 228.0,
+        "20": 228.0,
+        "21": 228.0,
+        "22": 228.0,
+        "23": 228.0,
+        "24": 228.0,
+        "25": 228.0,
+        "26": 228.0,
+        "27": 228.0
+      }
+    },
+    "anchor_kv": {
+      "total_tokens": 3532.0,
+      "per_layer_tokens": {
+        "0": 228.0,
+        "1": 228.0,
+        "2": 228.0,
+        "3": 228.0,
+        "4": 228.0,
+        "5": 228.0,
+        "6": 57.0,
+        "7": 57.0,
+        "8": 57.0,
+        "9": 57.0,
+        "10": 57.0,
+        "11": 57.0,
+        "12": 28.0,
+        "13": 28.0,
+        "14": 28.0,
+        "15": 28.0,
+        "16": 57.0,
+        "17": 57.0,
+        "18": 57.0,
+        "19": 57.0,
+        "20": 57.0,
+        "21": 57.0,
+        "22": 228.0,
+        "23": 228.0,
+        "24": 228.0,
+        "25": 228.0,
+        "26": 228.0,
+        "27": 228.0
+      }
+    },
+    "anchor_vs_full_total_token_ratio": 0.5532581453634086,
+    "cache_reduction": 0.44674185463659144
+  },
+  "position_loss_by_modulo": {
+    "full_sequence": {
+      "4": {
+        "0": {
+          "loss": 4.000266742661022,
+          "count": 6319,
+          "is_anchor": false
+        },
+        "1": {
+          "loss": 3.911570688529132,
+          "count": 6316,
+          "is_anchor": false
+        },
+        "2": {
+          "loss": 4.035623173781696,
+          "count": 6310,
+          "is_anchor": false
+        },
+        "3": {
+          "loss": 3.9890931424161646,
+          "count": 6307,
+          "is_anchor": true
+        }
+      },
+      "8": {
+        "0": {
+          "loss": 3.923301983814318,
+          "count": 3163,
+          "is_anchor": false
+        },
+        "1": {
+          "loss": 3.8920072406502095,
+          "count": 3161,
+          "is_anchor": false
+        },
+        "2": {
+          "loss": 4.090478956284139,
+          "count": 3158,
+          "is_anchor": false
+        },
+        "3": {
+          "loss": 3.9835579251850457,
+          "count": 3158,
+          "is_anchor": false
+        },
+        "4": {
+          "loss": 4.077402035093126,
+          "count": 3156,
+          "is_anchor": false
+        },
+        "5": {
+          "loss": 3.931171224990095,
+          "count": 3155,
+          "is_anchor": false
+        },
+        "6": {
+          "loss": 3.9806628154619093,
+          "count": 3152,
+          "is_anchor": false
+        },
+        "7": {
+          "loss": 3.9946442571054304,
+          "count": 3149,
+          "is_anchor": true
+        }
+      }
+    },
+    "full_kv_teacher_forced": {
+      "4": {
+        "0": {
+          "loss": 4.093363829513095,
+          "count": 1809,
+          "is_anchor": false
+        },
+        "1": {
+          "loss": 3.9207150584231956,
+          "count": 1809,
+          "is_anchor": false
+        },
+        "2": {
+          "loss": 4.041098312095359,
+          "count": 1809,
+          "is_anchor": false
+        },
+        "3": {
+          "loss": 3.9755881522675005,
+          "count": 1808,
+          "is_anchor": true
+        }
+      },
+      "8": {
+        "0": {
+          "loss": 4.071338194219963,
+          "count": 920,
+          "is_anchor": false
+        },
+        "1": {
+          "loss": 3.955583210613417,
+          "count": 920,
+          "is_anchor": false
+        },
+        "2": {
+          "loss": 4.163277711557305,
+          "count": 920,
+          "is_anchor": false
+        },
+        "3": {
+          "loss": 4.008765965505787,
+          "count": 920,
+          "is_anchor": false
+        },
+        "4": {
+          "loss": 4.116157650143009,
+          "count": 889,
+          "is_anchor": false
+        },
+        "5": {
+          "loss": 3.8846309284257408,
+          "count": 889,
+          "is_anchor": false
+        },
+        "6": {
+          "loss": 3.9146584043084434,
+          "count": 889,
+          "is_anchor": false
+        },
+        "7": {
+          "loss": 3.9412146562391572,
+          "count": 888,
+          "is_anchor": true
+        }
+      }
+    },
+    "anchor_kv_teacher_forced": {
+      "4": {
+        "0": {
+          "loss": 4.093233686840422,
+          "count": 1809,
+          "is_anchor": false
+        },
+        "1": {
+          "loss": 3.920550384068107,
+          "count": 1809,
+          "is_anchor": false
+        },
+        "2": {
+          "loss": 4.041167355954417,
+          "count": 1809,
+          "is_anchor": false
+        },
+        "3": {
+          "loss": 3.9751987072218835,
+          "count": 1808,
+          "is_anchor": true
+        }
+      },
+      "8": {
+        "0": {
+          "loss": 4.071012248293213,
+          "count": 920,
+          "is_anchor": false
+        },
+        "1": {
+          "loss": 3.9553640422613725,
+          "count": 920,
+          "is_anchor": false
+        },
+        "2": {
+          "loss": 4.164024123160735,
+          "count": 920,
+          "is_anchor": false
+        },
+        "3": {
+          "loss": 4.008667429374612,
+          "count": 920,
+          "is_anchor": false
+        },
+        "4": {
+          "loss": 4.116230138509426,
+          "count": 889,
+          "is_anchor": false
+        },
+        "5": {
+          "loss": 3.884522648308221,
+          "count": 889,
+          "is_anchor": false
+        },
+        "6": {
+          "loss": 3.9140264601755734,
+          "count": 889,
+          "is_anchor": false
+        },
+        "7": {
+          "loss": 3.9405238190749743,
+          "count": 888,
+          "is_anchor": true
+        }
+      }
+    }
+  },
+  "config": {
+    "config_dir": "../../../Qwen3-0.6B",
+    "data_dir": "../../../dclm/global-shard_01_of_10",
+    "ckpt_file": "../checkpoints/unet-4-8-4/10000.pth",
+    "attention_stride_pattern": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      8,
+      8,
+      8,
+      8,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "residual_source_pattern": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "attn_implementation": "eager"
+  }
+}
