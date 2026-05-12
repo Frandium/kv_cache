@@ -315,370 +315,118 @@ $$
 
 这里的关键风险是：长 skip 可能帮助保留 token 细节，也可能让模型不再依赖中间层 anchor hierarchy。因此它应该作为 ablation，而不是第一版架构的必要条件。
 
-## 5. 真实语料初步实验记录
+## 5. 真实语料实验结论
 
-### 5.1 实验设置
+当前真实语料实验已经不再只是 early signal，而是基本回答了第二轮假设中的几个关键不确定性。
 
-当前已有一组基于真实网页/新闻语料的初步训练实验，用来比较普通 dense baseline 与 mask-based U-Net Transformer 结构。
+### 5.1 KV sequence 维度可以被压缩
 
-实验目录：
+`unet-4` 的训练 loss 几乎贴近 dense baseline。这说明在真实网页/新闻语料上，中间层只长期保留 stride anchor KV 并不会导致 optimization collapse，也不会明显破坏普通 LM training loss。
 
-- `fdong/experiments/baseline`：普通 Transformer attention baseline。
-- `fdong/experiments/unet-4`：使用本文讨论的 layer-wise attention mask schedule 的 U-Net-style sparse attention 模型。
+更激进的 `unet-4-8-4` 也可以正常训练。它比 `unet-4` 有更高的推理 KV cache 压缩比例，同时只带来小幅、可控的 loss 代价。
 
-两组实验使用相同的主要训练配置：
+因此，当前实验支持一个更强的判断：
 
-- `seq_len = 1024`
-- `global_batch_size = 512`
-- `local_batch_size = 16`
-- `lr = 1e-4`
-- `optimizer = AdamW`
-- `warmup_steps = 2000`
-- `data_dir = dclm/global-shard_01_of_10`
-- `config_dir = Qwen3-0.6B`
+> KV cache 的 sequence 维度不是只能温和压缩，而是存在一条连续的压缩-能力 trade-off curve。
 
-说明：实验运行时已经人工确认 `unet-4` 启用了目标 attention stride mask；当前日志摘要中的 `attention_stride_pattern: None` 只是记录/提取口径问题，不代表该实验没有使用 stride mask。
+### 5.2 推理形态下的 KV 压缩成立
 
-### 5.2 初步结果
+之前最大的风险是：训练时使用 sparse attention mask，并不等价于推理时真的可以删除非 anchor KV。
 
-从训练 loss 曲线看，baseline 与 `unet-4` 在同一 global step 上非常接近。
+anchor-only KV decode 实验已经基本排除了这个风险。在 teacher-forced decode 中，只保留 stride 决定的 anchor KV 后，decode loss 几乎不变，而实际 KV cache token 数显著减少。
 
-聚合 loss 的粗略对齐结果如下：
+这说明：
 
-| global step | baseline loss | unet-4 loss | diff |
-|---:|---:|---:|---:|
-| 2,500 | 4.508 | 4.503 | -0.005 |
-| 5,000 | 3.921 | 3.921 | 0.000 |
-| 10,000 | 3.580 | 3.585 | +0.005 |
-| 15,000 | 3.438 | 3.447 | +0.009 |
-| 20,000 | 3.349 | 3.361 | +0.012 |
-| 25,000 | 3.291 | 3.305 | +0.014 |
-| 30,000 | 3.249 | 3.264 | +0.015 |
-| 35,000 | 3.221 | 3.240 | +0.018 |
+> mask-based U-Net Transformer 不只是训练时的正则化技巧，它确实可以转化为推理阶段的 KV cache 压缩。
 
-这说明在当前训练范围内，`unet-4` 的训练 loss 没有明显偏离 dense baseline。差距大约在 `0.00x` 到 `0.02` loss 量级，属于非常小的退化。
+### 5.3 Stride anchor 位置没有明显退化
 
-另外，当前记录中的平均 batch time：
+按 position modulo stride 统计 token loss 后，没有看到 anchor positions 出现系统性掉点。相反，anchor class 的 loss 通常不高于 non-anchor 平均。
 
-- baseline: 约 `0.752s`
-- `unet-4`: 约 `0.856s`
+这说明当前结构没有通过牺牲 anchor positions 来维持整体 loss，也没有出现明显的 modulo-position collapse。
 
-这不应直接解释为架构本身更慢，因为当前实现使用 4D additive mask 和调试性实现路径，并没有针对 stride attention 做专门 kernel 或 KV cache 优化。
+### 5.4 普通任务能力基本保持，但长程能力仍未证明
 
-### 5.3 当前可以得出的结论
+普通常识问答和多选任务没有出现系统性崩坏，说明该结构不是只在 training loss 上看起来正常。
 
-第一，mask-based U-Net Transformer 在真实语料训练上没有出现明显 optimization collapse。
+但更敏感的精确预测任务已经显示出一定退化，并且普通网页/新闻语料并不能充分验证真正的长程信息压缩能力。
 
-这是一条重要的 early positive signal。它说明把部分中间层改成 stride-based sparse causal attention，并不会立刻破坏普通语言建模训练；至少在当前模型规模、数据、长度和训练步数下，训练 loss 可以贴近 dense baseline。
+因此，当前结论应当是：
 
-第二，当前结果支持“用很小的 LM loss 代价换取中间层推理 KV cache 压缩”的可能性。
+> 真实语料上的普通 LM 能力和普通下游能力基本支持该方向；但长程检索、长程组合、精确复制和代码引用能力仍然是下一轮关键问题。
 
-如果推理阶段严格沿用同一套 attention mask，那么 stride-4 层只需要长期缓存未来会访问的 anchor KV，非 anchor KV 可以在当前 token 前向结束后丢弃。当前 loss 接近 baseline，说明这种训练约束至少没有显著损害短中程语言建模目标。
+### 5.5 当前阶段结论
 
-第三，当前结果还不能证明 anchor token 已经学到了高质量语义压缩。
+第二轮实验已经把问题从“KV sequence 维度能否压缩”推进到了“在更难长程任务上最多能压缩到什么程度”。
 
-训练 loss 接近只是 end-to-end 指标。它不能直接回答：
+已经确认的部分：
 
-- anchor positions 是否真的承载了局部 summary；
-- 非 anchor 细节是否通过浅层/后续 dense 层被可靠恢复；
-- 长程检索、精确 copy、rare entity、代码符号引用是否受损；
-- 在真实 anchor-only KV decode 路径下 logits 是否与 full KV decode 一致。
+- KV sequence 维度可以被压缩；
+- 更激进压缩仍然可训练；
+- 推理阶段可以真实删除非 anchor KV；
+- stride anchor 位置没有明显系统性退化；
+- 普通任务没有出现系统性崩坏。
 
-因此，当前实验应被理解为“结构可训练性和 LM loss 代价”的初步验证，而不是完整证明。
+仍未确认的部分：
 
-### 5.4 下一步 TODO
+- 长程信息是否也能稳定压缩进 anchor KV；
+- exact retrieval / copy / code reference 等任务是否会暴露能力损失；
+- 在长程任务上，压缩比例的上限在哪里。
 
-#### 5.4.1 推理形态下的 Anchor-only KV decode 验证
+## 6. 下一步 TODO：长程推理与压缩任务
 
-这是下一步最关键的系统正确性实验。当前训练结果说明 `unet-4` 没有明显破坏 LM loss，但还没有证明推理阶段真的实现了 KV cache 节省。
+接下来不再把 synthetic 数据作为主线。真实语料实验已经证明该结构可以训练、可以推理压缩，并且在普通任务上基本保持能力。
 
-需要比较同一个 `unet-4` checkpoint 的三种推理路径：
+第三轮实验应当直接面向真正需要长程信息的任务，验证 anchor KV 是否真的保留了可检索、可组合、可恢复的长程信息。
 
-- `unet-4 full KV decode`：保留所有位置 KV；
-- `unet-4 anchor-only KV decode`：stride 层只保留未来会访问的 anchor KV；
-- `baseline full KV decode`：普通 dense baseline。
+### 6.1 Long-context retrieval
 
-对于 `unet-4`，如果 full KV decode 和 anchor-only KV decode 的 logits 完全一致或数值误差极小，就说明该 mask 规则确实支持推理阶段 KV cache 压缩。这个实验需要同时记录：
+需要测试模型能否在长上下文中找回远处信息，例如：
 
-- 每一层实际缓存的 KV token 数量；
-- 相比 full KV 的 cache size reduction；
-- 每一步 logits 的最大误差和平均误差；
-- top-1 token 是否一致；
-- 生成文本是否一致；
-- decode latency 和显存占用。
-
-这个实验验证的是机制正确性和系统收益，不主要验证模型能力。它回答的问题是：
-
-> 训练时设计的 stride mask，是否真的允许推理时丢弃非 anchor KV？
-
-#### 5.4.2 按 position modulo stride 分析 token loss
-
-这是一个很有信息量的诊断实验。
-
-对于 stride-4 层，可以把 token 按位置分组：
-
-$$
-i \bmod 4 \in \{0,1,2,3\}
-$$
-
-并分别统计每组 token 的 loss。特别关注：
-
-- anchor positions 的 loss 是否不同；
-- 非 anchor positions 是否出现系统性退化；
-- query-like 或 rare token 是否在非 anchor 位置更容易受损；
-- `unet-4` 与 baseline 的 loss 差是否集中在某些 modulo class。
-
-如果模型真的在利用 anchor hierarchy，可能会看到 anchor 周围或特定 modulo 位置出现不同的学习动态。
-
-#### 5.4.3 下游任务与长程能力评估
-
-当前结果主要来自 training loss。下一步需要在下游任务上验证模型能力是否接近 baseline。
-
-第一阶段不一定要求任务严格依赖长距离信息。即使是普通任务，也可以先回答一个重要 sanity check：
-
-> `unet-4` 是否只是在训练 loss 上接近 baseline，还是在常规能力评估上也没有明显退化？
-
-因此可以先比较：
-
-- held-out validation loss；
-- 普通 language modeling perplexity；
-- 常规 short-context QA / completion / reading comprehension；
-- 不同 checkpoint 的评估结果，例如 `5k / 10k / 20k / 35k`。
-
-在普通任务稳定之后，再补充更针对性的长程 evaluation。普通网页/新闻语料未必包含足够密集、可控的长程依赖，因此 training loss 或普通任务接近 baseline，并不必然说明长程语义压缩成功。
-
-长程任务可以包括：
-
-- needle-in-a-haystack retrieval；
-- synthetic key-value retrieval；
-- long copy / exact span retrieval；
-- entity consistency across long documents；
-- code variable/function reference tracking；
+- needle-in-a-haystack；
+- key-value retrieval；
+- multi-needle retrieval；
 - 多事实组合查询。
 
-这些任务的目标是回答：当中间层只能访问 anchor KV 时，模型是否还能恢复远处的精确信息和组合关系。
+这里关注的问题是：当中间层只能长期保留 anchor KV 时，远处信息是否仍然能被可靠访问。
 
-#### 5.4.4 KV cache 压缩比例与结构 ablation
+### 6.2 Exact copy / span retrieval
 
-为了确认这个方法的系统-能力 trade-off，需要调整 KV cache 压缩参数，观察压缩比例更激进时会发生什么。
+需要测试模型是否还能恢复精确 token-level 信息，例如：
 
-首先需要比较不同 stride 强度：
+- long copy；
+- exact span retrieval；
+- rare entity recall；
+- 数字、URL、代码符号等低频 token 复制。
+
+这里关注的问题是：anchor KV 是否会丢失无法从语义摘要中恢复的精确信息。
+
+### 6.3 Code reference tracking
+
+代码任务天然包含长程依赖和精确引用，适合测试该结构的上限，例如：
+
+- variable reference tracking；
+- function/class definition lookup；
+- cross-file or long-file dependency retrieval；
+- identifier copy。
+
+这里关注的问题是：mask-based KV 压缩是否会伤害代码中的精确绑定关系。
+
+### 6.4 压缩比例上限
+
+在上述长程任务上，需要比较不同压缩比例：
 
 - dense baseline；
-- `unet-2`；
 - `unet-4`；
-- `unet-8`；
-- `unet-16`。
+- `unet-4-8-4`；
+- 更激进 stride variants。
 
-目标是画出一条 trade-off curve：
-
-$$
-\text{KV cache saving} \quad \text{vs.} \quad \text{validation/downstream loss}
-$$
-
-如果 `unet-4` 几乎不掉点，`unet-8` 小幅掉点，`unet-16` 明显掉点，就说明该方法存在可调的系统-能力边界，而不是一个偶然有效或无效的二元结果。
-
-其次，为了证明 U-shaped sparse attention schedule 本身有贡献，还需要做结构消融：
-
-- uniform stride-4；
-- only middle stride-4；
-- stride-4/16/4 U-shape；
-- 去掉最后 dense recovery layers；
-- 加入或不加入 long skip connection；
-- 在相同 KV cache budget 下比较 U-shaped sparse、uniform sparse 和随机 sparse。
-
-如果 U-shaped schedule 在相同 KV cache budget 下优于 uniform sparse 或随机 sparse，才能更有力地支持“层次化 coarse-to-fine attention schedule”这个设计假设。
-
-### 5.5 当前阶段的总结
-
-当前真实语料实验最有价值的信息是：
-
-> 在已确认启用 stride attention mask 的情况下，`unet-4` 的训练 loss 几乎贴近 dense baseline，说明该结构具有初步可训练性，并且可能以很小的 LM loss 代价换取中间层推理 KV cache 压缩。
-
-但接下来必须补上三类验证：第一，推理形态下的 anchor-only KV decode，证明该结构真的能节省 KV cache；第二，下游任务和长程任务，证明能力没有明显退化；第三，不同压缩比例和结构消融，明确系统收益与模型能力之间的 trade-off。只有这些实验都站住，才能把这个 idea 从“训练上看起来没有坏掉”推进到“确实实现了高效且能力可保留的推理 KV cache 压缩”。
-
-## 6. Synthetic 数据生成方案
-
-为了快速验证 mask-based U-Net Transformer 的核心假设，可以先不使用真实自然语言语料，而是构造完全 synthetic 的 token-id 序列。
-
-第一阶段实验的目标不是证明模型已经学会自然语言语义，而是验证一个更小、更基础的问题：
-
-当中间层只能访问每 4 个 token 的 anchor 时，模型能否把这 4 个 token 的信息压进 anchor，并在最后 query 时恢复出任意一个 offset 的 token？
-
-这对应一层 hierarchy 的最小闭环：
+目标是建立长程任务上的 trade-off curve：
 
 $$
-\text{non-anchor token information}
-\rightarrow
-\text{anchor representation}
-\rightarrow
-\text{later query retrieval}
-\rightarrow
-\text{exact token recovery}
+\text{KV cache saving} \quad \text{vs.} \quad \text{long-context capability}
 $$
 
-如果一层压缩与恢复都不能成立，多层 hierarchy 没有继续讨论的意义；如果一层稳定成立，那么把同样机制递归到 stride-16、stride-64 等多层结构就是一个自然的 scaling hypothesis。
+第三轮真正要回答的问题是：
 
-### 6.1 基础数据格式
-
-设训练输入长度为：
-
-$$L_{\text{input}} = 1024$$
-
-每条完整 synthetic 序列长度为：
-
-$$L_{\text{total}} = 1025$$
-
-训练时：
-
-$$\text{input} = S[0:1024]$$
-
-$$\text{target} = S[1:1025]$$
-
-也就是说，模型仍然使用标准 next-token prediction 训练。
-
-词表大小可以设为：
-
-$$|\mathcal{V}| = 2045$$
-
-其中：
-
-- token $$0$$ 用作分隔或 padding-like placeholder；
-- token $$1$$ 到 $$1024$$ 用作内容 token；
-- token $$1025$$ 到 $$2044$$ 用作 query token。
-
-### 6.2 固定 pattern 集合
-
-定义 256 个固定 pattern，每个 pattern 长度为 4：
-
-$$P_1 = [1,2,3,4]$$
-
-$$P_2 = [5,6,7,8]$$
-
-$$P_3 = [9,10,11,12]$$
-
-一直到：
-
-$$P_{256} = [1021,1022,1023,1024]$$
-
-一般地：
-
-$$P_j = [4j-3, 4j-2, 4j-1, 4j]$$
-
-每个 pattern 正好对应一个 stride-4 block。该 block 的最后一个 token 是 anchor position。
-
-### 6.3 单条样本生成
-
-一条样本的前 1020 个 token 由若干个长度为 4 的 pattern 拼接而成。
-
-注意：由于每个 pattern 长度为 4，前 1020 个 token 对应：
-
-$$1020 / 4 = 255$$
-
-个 pattern。因此可以从 256 个 pattern 中随机采样 255 个，并按随机顺序拼接：
-
-$$S[0:1020]=\operatorname{concat}(P_{a_1}, P_{a_2}, \ldots, P_{a_{255}})$$
-
-其中：
-
-$$a_i \in \{1,\ldots,256\}$$
-
-接下来设置三个固定 token：
-
-$$S[1020] = 0$$
-
-$$S[1021] = 0$$
-
-$$S[1022] = 0$$
-
-第 1024 个输入 token，也就是 $$S[1023]$$，是 query token：
-
-$$S[1023] = k$$
-
-其中：
-
-$$k \in \{1025,1026,\ldots,2044\}$$
-
-它表示要查询前 1020 个 token 中的某个位置。使用 0-based index 时：
-
-$$\operatorname{pos} = k - 1025$$
-
-因此：
-
-$$\operatorname{pos} \in \{0,1,\ldots,1019\}$$
-
-最后一个 token 是答案：
-
-$$S[1024] = S[\operatorname{pos}]$$
-
-模型需要在看到 $$S[0:1024]$$ 后预测 $$S[1024]$$。
-
-### 6.4 任务含义
-
-这个任务本质是一个 indexed retrieval 任务：
-
-给定最后的 query token $$k$$，返回 prefix 中第 $$k-1025$$ 个位置的 token。
-
-因为前 1020 个 token 由固定 4-token pattern 构成，所以查询位置可以自然分解为：
-
-$$\operatorname{block\_id} = \lfloor \operatorname{pos}/4 \rfloor$$
-
-$$\operatorname{offset} = \operatorname{pos} \bmod 4$$
-
-答案等价于：
-
-$$\text{answer}=\text{block}_{\operatorname{block\_id}}[\operatorname{offset}]$$
-
-这正好对应一层 stride-4 hierarchy：
-
-- 每 4 个 token 构成一个局部 block；
-- block 的最后一个位置是 anchor；
-- 中间 stride-4 层只能长期访问 anchor；
-- 模型必须把 block 内 4 个 token 的可恢复信息压入 anchor；
-- query 在末尾要求模型从 anchor 中恢复指定 offset 的 token。
-
-
-### 6.5 这个 synthetic task 验证什么
-
-这个实验验证的是最小的一层压缩假设：
-
-stride-4 anchor 是否能够代表并恢复它前面 4-token block 内的精确信息。
-
-如果模型能够完成该任务，说明以下机制至少在 synthetic setting 中成立：
-
-$$
-[x_{4j-3}, x_{4j-2}, x_{4j-1}, x_{4j}]
-\rightarrow
-x_{4j}\text{ as anchor}
-\rightarrow
-\text{later retrieval}
-$$
-
-它验证的是：
-
-- local block 信息能否被 forced fuse 到 anchor；
-- 非 anchor token 的信息能否在后续 query 中被恢复；
-- stride mask 是否会破坏 exact retrieval；
-- 一层 hierarchy 的压缩与解压缩是否可训练。
-
-
-### 6.6 它暂时不验证什么
-
-这个任务不是完整的 hierarchical compositional benchmark。
-
-它主要测试一层 local-to-anchor compression，而不是多层语义组合。它还没有要求模型完成：
-
-- 多个 block summary 的组合；
-- segment-level summary；
-- multi-hop reasoning；
-- semantic abstraction；
-- 真实自然语言中的实体、事件、论证或代码结构建模。
-因此它适合作为第一阶段最小实验，而不是最终证明。
-
-如果该任务失败，说明 stride-4 anchor 压缩本身就有问题；如果该任务成功，则可以继续构造两层或多层 synthetic 数据，例如：
-
-$$4 \text{ tokens} \rightarrow 1 \text{ block anchor}$$
-
-$$4 \text{ block anchors} \rightarrow 1 \text{ segment anchor}$$
-
-并进一步验证 stride-16、stride-64 等更深层 hierarchy 是否成立。
+> 在需要长程检索、精确恢复和组合推理的任务上，KV sequence 维度最多能压缩到什么程度？
