@@ -4,20 +4,20 @@
   "prefill_len": 100,
   "decode_steps": 128,
   "loss": {
-    "full_sequence": 3.9841261413081144,
-    "full_kv_teacher_forced": 4.007695676939357,
-    "anchor_kv_teacher_forced": 4.007541971265981,
-    "full_kv_prefill": 4.088209762573242,
-    "anchor_kv_prefill": 4.088209762573242,
-    "full_kv_prefill_next_token": 4.302930414676666,
-    "anchor_kv_prefill_next_token": 4.302930414676666,
-    "full_kv_decode_only": 3.9438431788258983,
-    "anchor_kv_decode_only": 3.943567514714994
+    "full_sequence": 3.5882145473625853,
+    "full_kv_teacher_forced": 3.6381445852410157,
+    "anchor_kv_teacher_forced": 3.638175900030235,
+    "full_kv_prefill": 3.736323928833008,
+    "anchor_kv_prefill": 3.736323928833008,
+    "full_kv_prefill_next_token": 3.827903240919113,
+    "anchor_kv_prefill_next_token": 3.827903240919113,
+    "full_kv_decode_only": 3.560282495207946,
+    "anchor_kv_decode_only": 3.560338463009216
   },
   "logit_equivalence": {
-    "max_decode_logit_abs_diff": 0.125,
-    "mean_decode_logit_abs_diff": 0.005019284001262318,
-    "decode_top1_match_rate": 0.9924903100775194
+    "max_decode_logit_abs_diff": 0.1875,
+    "mean_decode_logit_abs_diff": 0.006794423260985896,
+    "decode_top1_match_rate": 0.9934593023255814
   },
   "cache": {
     "full_kv": {
@@ -93,64 +93,64 @@
     "full_sequence": {
       "4": {
         "0": {
-          "loss": 4.000266742661022,
+          "loss": 3.5823703964482116,
           "count": 6319,
           "is_anchor": false
         },
         "1": {
-          "loss": 3.911570688529132,
+          "loss": 3.539689801477646,
           "count": 6316,
           "is_anchor": false
         },
         "2": {
-          "loss": 4.035623173781696,
+          "loss": 3.6512154411400553,
           "count": 6310,
           "is_anchor": false
         },
         "3": {
-          "loss": 3.9890931424161646,
+          "loss": 3.579632579004479,
           "count": 6307,
           "is_anchor": true
         }
       },
       "8": {
         "0": {
-          "loss": 3.923301983814318,
+          "loss": 3.5293141068667504,
           "count": 3163,
           "is_anchor": false
         },
         "1": {
-          "loss": 3.8920072406502095,
+          "loss": 3.5239772971616974,
           "count": 3161,
           "is_anchor": false
         },
         "2": {
-          "loss": 4.090478956284139,
+          "loss": 3.689847688874238,
           "count": 3158,
           "is_anchor": false
         },
         "3": {
-          "loss": 3.9835579251850457,
+          "loss": 3.576090662293679,
           "count": 3158,
           "is_anchor": false
         },
         "4": {
-          "loss": 4.077402035093126,
+          "loss": 3.6355443454060716,
           "count": 3156,
           "is_anchor": false
         },
         "5": {
-          "loss": 3.931171224990095,
+          "loss": 3.55543185806879,
           "count": 3155,
           "is_anchor": false
         },
         "6": {
-          "loss": 3.9806628154619093,
+          "loss": 3.612509325676158,
           "count": 3152,
           "is_anchor": false
         },
         "7": {
-          "loss": 3.9946442571054304,
+          "loss": 3.5831845411613807,
           "count": 3149,
           "is_anchor": true
         }
@@ -159,64 +159,64 @@
     "full_kv_teacher_forced": {
       "4": {
         "0": {
-          "loss": 4.093363829513095,
+          "loss": 3.7054430671065073,
           "count": 1809,
           "is_anchor": false
         },
         "1": {
-          "loss": 3.9207150584231956,
+          "loss": 3.563282634488386,
           "count": 1809,
           "is_anchor": false
         },
         "2": {
-          "loss": 4.041098312095359,
+          "loss": 3.690996108099925,
           "count": 1809,
           "is_anchor": false
         },
         "3": {
-          "loss": 3.9755881522675005,
+          "loss": 3.5928315634188137,
           "count": 1808,
           "is_anchor": true
         }
       },
       "8": {
         "0": {
-          "loss": 4.071338194219963,
+          "loss": 3.6596303450024648,
           "count": 920,
           "is_anchor": false
         },
         "1": {
-          "loss": 3.955583210613417,
+          "loss": 3.5714123767355215,
           "count": 920,
           "is_anchor": false
         },
         "2": {
-          "loss": 4.163277711557305,
+          "loss": 3.836850010312122,
           "count": 920,
           "is_anchor": false
         },
         "3": {
-          "loss": 4.008765965505787,
+          "loss": 3.6056820152570372,
           "count": 920,
           "is_anchor": false
         },
         "4": {
-          "loss": 4.116157650143009,
+          "loss": 3.752853256712078,
           "count": 889,
           "is_anchor": false
         },
         "5": {
-          "loss": 3.8846309284257408,
+          "loss": 3.554869402916547,
           "count": 889,
           "is_anchor": false
         },
         "6": {
-          "loss": 3.9146584043084434,
+          "loss": 3.5400562211284488,
           "count": 889,
           "is_anchor": false
         },
         "7": {
-          "loss": 3.9412146562391572,
+          "loss": 3.57951806660171,
           "count": 888,
           "is_anchor": true
         }
@@ -225,64 +225,64 @@
     "anchor_kv_teacher_forced": {
       "4": {
         "0": {
-          "loss": 4.093233686840422,
+          "loss": 3.705888356999049,
           "count": 1809,
           "is_anchor": false
         },
         "1": {
-          "loss": 3.920550384068107,
+          "loss": 3.563690719056222,
           "count": 1809,
           "is_anchor": false
         },
         "2": {
-          "loss": 4.041167355954417,
+          "loss": 3.690670137711162,
           "count": 1809,
           "is_anchor": false
         },
         "3": {
-          "loss": 3.9751987072218835,
+          "loss": 3.5924284538600295,
           "count": 1808,
           "is_anchor": true
         }
       },
       "8": {
         "0": {
-          "loss": 4.071012248293213,
+          "loss": 3.6602719383395237,
           "count": 920,
           "is_anchor": false
         },
         "1": {
-          "loss": 3.9553640422613725,
+          "loss": 3.5714781613453574,
           "count": 920,
           "is_anchor": false
         },
         "2": {
-          "loss": 4.164024123160735,
+          "loss": 3.836937312198722,
           "count": 920,
           "is_anchor": false
         },
         "3": {
-          "loss": 4.008667429374612,
+          "loss": 3.604983748301216,
           "count": 920,
           "is_anchor": false
         },
         "4": {
-          "loss": 4.116230138509426,
+          "loss": 3.7530953979331274,
           "count": 889,
           "is_anchor": false
         },
         "5": {
-          "loss": 3.884522648308221,
+          "loss": 3.5556317236613904,
           "count": 889,
           "is_anchor": false
         },
         "6": {
-          "loss": 3.9140264601755734,
+          "loss": 3.5393025673951017,
           "count": 889,
           "is_anchor": false
         },
         "7": {
-          "loss": 3.9405238190749743,
+          "loss": 3.57942075074256,
           "count": 888,
           "is_anchor": true
         }
@@ -292,7 +292,7 @@
   "config": {
     "config_dir": "../../../Qwen3-0.6B",
     "data_dir": "../../../dclm/global-shard_01_of_10",
-    "ckpt_file": "../checkpoints/unet-4-8-4/10000.pth",
+    "ckpt_file": "../checkpoints/unet-4-8-4/35000.pth",
     "attention_stride_pattern": [
       1,
       1,

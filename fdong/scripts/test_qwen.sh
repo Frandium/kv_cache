@@ -14,7 +14,7 @@ DATA_DIR="../../../dclm/global-shard_01_of_10"
 
 RUN_NAME="unet-4-8-4"
 CKPT_DIR="../checkpoints/${RUN_NAME}"
-CKPT_STEP=10000
+CKPT_STEP=35000
 CKPT_FILE=""
 OUTPUT_JSON="../experiments/${RUN_NAME}/teacher_forced_kv_decode_${CKPT_STEP}.json"
 

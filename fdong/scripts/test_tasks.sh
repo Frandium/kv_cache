@@ -1,6 +1,6 @@
 task_name="arc_easy,hellaswag,lambada_openai" # piqa, siqa
 
-RUN_NAME="unet-4"
+RUN_NAME="unet-4-8-4"
 CKPT_STEP=35000
 CKPT_DIR="/mnt/workspace/df-unet-transformer/fdong/checkpoints/${RUN_NAME}"
 OUTPUT_PATH="/mnt/workspace/df-unet-transformer/fdong/experiments/${RUN_NAME}/task_results_${CKPT_STEP}.json"
