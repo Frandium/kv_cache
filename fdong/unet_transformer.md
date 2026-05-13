@@ -430,3 +430,322 @@ $$
 第三轮真正要回答的问题是：
 
 > 在需要长程检索、精确恢复和组合推理的任务上，KV sequence 维度最多能压缩到什么程度？
+
+## 7. Synthetic 数据生成方案：验证层次压缩假设
+
+真实语料实验已经说明：stride attention 结构可以训练，并且可以在推理阶段删除非 anchor KV。这个结论仍然比较接近普通 sparse attention 的系统收益，还没有证明本文最初的算法假设：
+
+> 该方法之所以可能工作，是因为语言或结构化序列本身存在 hierarchical、compressible 的 latent structure；anchor KV 学到的不是任意稀疏访问，而是局部信息向高层表示的可恢复压缩。
+
+因此，下一组 synthetic 实验的目标不是替代真实语料评测，而是构造可控的数据分布，回答一个更精确的问题：
+
+> 当数据确实具有层次可压缩结构时，U-shaped stride attention 是否比普通 sparse attention 更自然、更有效；当数据不具有这种结构时，它是否会失去优势？
+
+这类实验应当同时包含正例数据和反例数据。否则，即使模型完成了 synthetic retrieval，也只能说明它会解某个玩具任务，不能说明它捕捉到了 hierarchy。
+
+### 7.1 最小闭环：local-to-anchor compression
+
+第一阶段先验证一层 hierarchy：
+
+$$
+\text{non-anchor token information}
+\rightarrow
+\text{anchor representation}
+\rightarrow
+\text{later query retrieval}
+\rightarrow
+\text{exact token recovery}
+$$
+
+问题形式是：
+
+> 当中间层只能访问每 4 个 token 的 anchor 时，模型能否把这个 4-token block 的信息压进 anchor，并在最后 query 时恢复指定 offset 的 token？
+
+如果一层压缩与恢复都不能成立，多层 hierarchy 没有继续讨论的意义；如果一层稳定成立，那么递归到 stride-16、stride-64 等多层结构才有实验价值。
+
+### 7.2 基础数据格式
+
+设训练输入长度为：
+
+$$
+L_{\text{input}} = 1024
+$$
+
+每条完整 synthetic 序列长度为：
+
+$$
+L_{\text{total}} = 1025
+$$
+
+训练时：
+
+$$
+\text{input} = S[0:1024]
+$$
+
+$$
+\text{target} = S[1:1025]
+$$
+
+也就是说，模型仍然使用标准 next-token prediction 训练。实际统计指标时，应当单独报告最后 answer token 的 accuracy / loss，避免前 1024 个普通 next-token loss 掩盖 retrieval 难度。
+
+一个简单词表设置是：
+
+- token `0`：separator 或 placeholder；
+- token `1...1024`：内容 token；
+- token `1025...2044`：query token；
+- 可选 token `2045`：共享 anchor marker `A`。
+
+### 7.3 Variant A：固定 pattern 版本
+
+这是最简单的 smoke test。定义 256 个固定 pattern，每个 pattern 长度为 4：
+
+$$
+P_1 = [1,2,3,4]
+$$
+
+$$
+P_2 = [5,6,7,8]
+$$
+
+$$
+P_3 = [9,10,11,12]
+$$
+
+一直到：
+
+$$
+P_{256} = [1021,1022,1023,1024]
+$$
+
+一般地：
+
+$$
+P_j = [4j-3, 4j-2, 4j-1, 4j]
+$$
+
+每个 pattern 对应一个 stride-4 block，block 的最后一个 token 是 anchor position。
+
+单条样本生成：
+
+1. 从 256 个 pattern 中随机采样 255 个；
+2. 随机打乱顺序并拼接成前 1020 个 token：
+
+$$
+S[0:1020]
+=
+\operatorname{concat}(P_{a_1}, P_{a_2}, \ldots, P_{a_{255}})
+$$
+
+其中：
+
+$$
+a_i \in \{1,\ldots,256\}
+$$
+
+3. 设置三个 placeholder：
+
+$$
+S[1020] = 0,\quad S[1021] = 0,\quad S[1022] = 0
+$$
+
+4. 设置 query token：
+
+$$
+S[1023] = k,\quad k \in \{1025,\ldots,2044\}
+$$
+
+5. 使用 0-based index 定义：
+
+$$
+\operatorname{pos} = k - 1025
+$$
+
+6. 最后一个 token 是答案：
+
+$$
+S[1024] = S[\operatorname{pos}]
+$$
+
+这个任务本质是 indexed retrieval：给定 query token `k`，返回 prefix 中第 `k - 1025` 个位置的 token。
+
+由于前 1020 个 token 由 4-token pattern 构成，查询位置可以分解为：
+
+$$
+\operatorname{block\_id} = \lfloor \operatorname{pos}/4 \rfloor
+$$
+
+$$
+\operatorname{offset} = \operatorname{pos} \bmod 4
+$$
+
+答案等价于：
+
+$$
+\text{answer}
+=
+\text{block}_{\operatorname{block\_id}}[\operatorname{offset}]
+$$
+
+这个版本可以快速测试 stride-4 mask 是否破坏 exact retrieval，但它有一个重要 shortcut：固定 pattern 中的第 4 个 token 可以唯一决定前三个 token。因此模型可能只学到：
+
+$$
+\text{anchor token id} \rightarrow \text{fixed pattern lookup}
+$$
+
+而不是：
+
+$$
+\text{non-anchor contents} \rightarrow \text{anchor hidden state} \rightarrow \text{later recovery}
+$$
+
+所以 Variant A 只能作为 smoke test，不能作为“anchor 学会压缩局部信息”的主要证据。
+
+### 7.4 Variant B：anti-shortcut random block 版本
+
+为了真正验证 anchor hidden state 是否吸收了 non-anchor 信息，应当去掉固定 pattern shortcut。
+
+每个 block 长度仍为 4，但最后一个 token 使用共享 anchor marker `A`：
+
+$$
+B_j = [x_{j,0}, x_{j,1}, x_{j,2}, A]
+$$
+
+其中：
+
+$$
+x_{j,t} \sim \operatorname{Uniform}(\mathcal{V}_{\text{content}})
+$$
+
+并且 `A` 在所有 block 中相同，不携带 block identity。
+
+查询方式：
+
+$$
+\operatorname{content\_pos} \in \{0,\ldots,764\}
+$$
+
+$$
+\operatorname{block\_id} = \lfloor \operatorname{content\_pos}/3 \rfloor
+$$
+
+$$
+\operatorname{offset} = \operatorname{content\_pos} \bmod 3
+$$
+
+答案为：
+
+$$
+\text{answer} = x_{\operatorname{block\_id}, \operatorname{offset}}
+$$
+
+这里共有 255 个 block，每个 block 有 3 个可查询 content token，因此共有 765 个可查询位置。query token 可以使用单独的一段词表，例如：
+
+$$
+k \in \{1025,\ldots,1789\}
+$$
+
+并定义：
+
+$$
+\operatorname{content\_pos} = k - 1025
+$$
+
+这个版本中，query 想恢复某个 non-anchor token，不能依赖 anchor token id，因为所有 anchor 的 token id 都一样。模型必须让 anchor position 的 hidden state 从前面的 non-anchor tokens 中写入可恢复信息。
+
+这更直接验证：
+
+- local block 信息能否被 forced fuse 到 anchor；
+- 非 anchor token 的 exact value 能否从 anchor representation 中恢复；
+- stride mask 是否会破坏精确 retrieval；
+- 一层 local-to-anchor compression 是否可训练。
+
+### 7.5 Variant C：两层 hierarchy 版本
+
+如果 Variant B 成功，可以构造两层层次结构，对齐 U-shaped schedule 中的 stride-4 和 stride-16。
+
+一级 block：
+
+$$
+4 \text{ tokens} \rightarrow 1 \text{ block anchor}
+$$
+
+二级 segment：
+
+$$
+4 \text{ block anchors} \rightarrow 1 \text{ segment anchor}
+$$
+
+一种生成方式：
+
+1. 每 4 个 token 构成一个 block；
+2. 每 4 个 block 构成一个 segment；
+3. segment 内存在一个可组合属性，例如 entity 的多个 fields、多个 key-value facts，或多个局部 token 的 checksum；
+4. query 要求模型恢复 segment 内某个 block 的某个 field，或者组合多个 block 的 facts。
+
+这时可以比较：
+
+- dense baseline；
+- `unet-4`；
+- `unet-4-16-4`；
+- uniform stride-4；
+- random anchor sparse attention。
+
+如果 `unet-4-16-4` 在两层 hierarchy 数据上明显优于 uniform/random sparse attention，同时在 flat random 数据上没有优势，就更接近证明：
+
+> U-shaped stride schedule 的收益来自数据分布中的层次可压缩结构，而不仅仅来自任意 sparse attention。
+
+### 7.6 反例数据：flat random retrieval
+
+为了避免只证明模型会解 synthetic trick，需要构造一个不具备局部层次结构的反例。
+
+例如：
+
+$$
+S[0:1020] \sim \operatorname{Uniform}(\mathcal{V}_{\text{content}})
+$$
+
+query 仍然要求返回任意位置的 exact token。此时局部 4-token block 没有稳定语义结构，也没有可压缩的 summary；每个 token 都可能独立重要。
+
+预期结果：
+
+- dense baseline 应该更容易做 exact retrieval；
+- stride attention 可能明显受损；
+- `unet-4` 不应在这种 flat random 数据上表现出不合理优势。
+
+这个反例很重要，因为它帮助区分两个解释：
+
+- 如果 `unet-4` 在 hierarchical synthetic 上好、在 flat random 上差，说明结构确实依赖 hierarchy；
+- 如果它在两者上都一样好，任务可能太简单或存在 shortcut；
+- 如果它在两者上都差，说明 anchor compression 机制仍未学会。
+
+### 7.7 评价指标
+
+除常规 training loss 外，至少需要单独报告：
+
+- answer-only accuracy；
+- answer-only loss；
+- 按 query distance 分桶的 accuracy；
+- 按 offset/modulo class 分桶的 accuracy；
+- full KV decode vs anchor-only KV decode 的 logits 差异；
+- 不同 stride schedule 下的 KV saving vs accuracy trade-off。
+
+对 `unet-4` 来说，尤其需要确认：
+
+> full KV decode 与 anchor-only KV decode 在 synthetic task 上预测一致。
+
+否则任务成功可能只是训练 mask 成功，而不是推理 KV 压缩路径真正可用。
+
+### 7.8 这个 synthetic 方案能验证什么
+
+这个方案可以验证三层递进问题：
+
+1. stride anchor 是否能承担 local exact information compression；
+2. 多层 stride schedule 是否能利用数据中的 hierarchical structure；
+3. U-shaped stride attention 是否比普通 fixed sparse attention 更适合 hierarchy-structured data。
+
+它可以支持本文的新可能：
+
+> 该结构不是单纯“少看一些 KV”的 sparse attention，而是在有层次可压缩结构的数据上，诱导模型把低层信息写入高层 anchor representation。
+
+但它仍然不是对自然语言假设的最终证明。它只能证明：在受控分布中，当 hierarchy 明确存在时，该结构能否利用 hierarchy。要把结论迁移到自然语言，还需要真实长程 retrieval、代码引用、entity consistency 和 held-out validation 上的证据。
