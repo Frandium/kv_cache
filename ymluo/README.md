@@ -31,6 +31,7 @@ path component.
 | `projects/qwen3_kcache_avg_topk` | Inference-time sparse decode experiment using averaged K-cache block summaries for top-k block selection. |
 | `projects/qwen3_kcache_norm_analysis` | Qwen3-0.6B K-cache norm, attention-energy, and pruning loss/PPL analysis on DCLM text. |
 | `projects/qwen3_kcache_value_delta_analysis` | Qwen3-8B K-cache component, norm, and adjacent-token delta distribution analysis. |
+| `projects/qwen3_kcache_cosine_heatmap` | Qwen3-0.6B pairwise K-cache cosine similarity heatmaps by layer and KV head. |
 | `logs/` | Historical logs or pushed workspace snapshots. Not required for normal experiment entry points. |
 | `utils/` | Reserved for shared utilities. |
 
@@ -171,6 +172,21 @@ Useful smoke test:
 MAX_TOKENS=128 CHUNK_SIZE=32 SAVE_HEAD_HISTOGRAMS=false \
 bash ymluo/projects/qwen3_kcache_value_delta_analysis/scripts/run_analysis.sh
 ```
+
+### `qwen3_kcache_cosine_heatmap`
+
+This project profiles Qwen3-0.6B on 5000 DCLM tokens, extracts each layer/head
+K-cache matrix, computes the pairwise token-token cosine matrix, and writes
+per-head heatmap PNGs plus layer/head overview heatmaps.
+
+Run one full 5k-token heatmap:
+
+```bash
+LAYERS=0 HEADS=0 \
+bash ymluo/projects/qwen3_kcache_cosine_heatmap/scripts/run_analysis.sh
+```
+
+Run all layers and KV heads by leaving `LAYERS=all HEADS=all`, the default.
 
 ## Common Defaults
 

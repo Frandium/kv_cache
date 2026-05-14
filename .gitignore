@@ -20,6 +20,9 @@ env/
 .DS_Store
 logs/
 
+# Analysis outputs
+ymluo/projects/*/outputs/
+
 # Training artifacts
 fdong/checkpoints/
 fdong/figures/
