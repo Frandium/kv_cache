@@ -7,7 +7,7 @@ from statistics import mean
 
 # Edit this block before each experiment, then run:
 #   python fdong/scripts/extract_train_log.py
-EXPERIMENT_NAME = "baseline"
+EXPERIMENT_NAME = "unet-4-8-16-8-4"
 LOG_FILE = f"../logs/{EXPERIMENT_NAME}.log"
 OUTPUT_DIR = f"../experiments/{EXPERIMENT_NAME}"
 RETRIEVED_LINES = 100

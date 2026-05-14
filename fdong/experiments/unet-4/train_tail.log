@@ -1,100 +1,100 @@
-batch: 103268-413072, loss: 3.035, batch_time: 0.882
-batch: 103268-413073, loss: 3.235, batch_time: 0.843
-batch: 103268-413074, loss: 2.967, batch_time: 0.846
-batch: 103268-413075, loss: 3.093, batch_time: 0.846
-batch: 103269-413076, loss: 2.988, batch_time: 0.884
-batch: 103269-413077, loss: 3.139, batch_time: 0.842
-batch: 103269-413078, loss: 3.307, batch_time: 0.846
-batch: 103269-413079, loss: 3.089, batch_time: 0.846
-batch: 103270-413080, loss: 3.060, batch_time: 0.883
-batch: 103270-413081, loss: 2.998, batch_time: 0.843
-batch: 103270-413082, loss: 2.992, batch_time: 0.847
-batch: 103270-413083, loss: 3.222, batch_time: 0.846
-batch: 103271-413084, loss: 2.838, batch_time: 0.884
-batch: 103271-413085, loss: 3.008, batch_time: 0.843
-batch: 103271-413086, loss: 3.215, batch_time: 0.846
-batch: 103271-413087, loss: 3.281, batch_time: 0.846
-batch: 103272-413088, loss: 3.142, batch_time: 0.883
-batch: 103272-413089, loss: 3.109, batch_time: 0.843
-batch: 103272-413090, loss: 3.229, batch_time: 0.846
-batch: 103272-413091, loss: 3.204, batch_time: 0.847
-batch: 103273-413092, loss: 2.953, batch_time: 0.883
-batch: 103273-413093, loss: 2.859, batch_time: 0.842
-batch: 103273-413094, loss: 3.001, batch_time: 0.846
-batch: 103273-413095, loss: 3.297, batch_time: 0.846
-batch: 103274-413096, loss: 3.200, batch_time: 0.883
-batch: 103274-413097, loss: 2.849, batch_time: 0.848
-batch: 103274-413098, loss: 3.178, batch_time: 0.845
-batch: 103274-413099, loss: 2.967, batch_time: 0.846
-batch: 103275-413100, loss: 2.919, batch_time: 0.884
-batch: 103275-413101, loss: 3.108, batch_time: 0.843
-batch: 103275-413102, loss: 3.117, batch_time: 0.846
-batch: 103275-413103, loss: 2.961, batch_time: 0.846
-batch: 103276-413104, loss: 3.212, batch_time: 0.882
-batch: 103276-413105, loss: 2.912, batch_time: 0.843
-batch: 103276-413106, loss: 3.070, batch_time: 0.846
-batch: 103276-413107, loss: 3.203, batch_time: 0.846
-batch: 103277-413108, loss: 3.141, batch_time: 0.883
-batch: 103277-413109, loss: 3.010, batch_time: 0.843
-batch: 103277-413110, loss: 3.122, batch_time: 0.846
-batch: 103277-413111, loss: 3.000, batch_time: 0.846
-batch: 103278-413112, loss: 2.968, batch_time: 0.882
-batch: 103278-413113, loss: 3.215, batch_time: 0.847
-batch: 103278-413114, loss: 3.098, batch_time: 0.845
-batch: 103278-413115, loss: 3.073, batch_time: 0.845
-batch: 103279-413116, loss: 3.117, batch_time: 0.883
-batch: 103279-413117, loss: 3.152, batch_time: 0.842
-batch: 103279-413118, loss: 3.176, batch_time: 0.845
-batch: 103279-413119, loss: 3.028, batch_time: 0.847
-batch: 103280-413120, loss: 3.276, batch_time: 0.885
-batch: 103280-413121, loss: 3.149, batch_time: 0.843
-batch: 103280-413122, loss: 3.011, batch_time: 0.846
-batch: 103280-413123, loss: 2.961, batch_time: 0.847
-batch: 103281-413124, loss: 3.285, batch_time: 0.884
-batch: 103281-413125, loss: 3.133, batch_time: 0.842
-batch: 103281-413126, loss: 3.005, batch_time: 0.846
-batch: 103281-413127, loss: 2.989, batch_time: 0.848
-batch: 103282-413128, loss: 3.122, batch_time: 0.882
-batch: 103282-413129, loss: 2.916, batch_time: 0.842
-batch: 103282-413130, loss: 2.886, batch_time: 0.845
-batch: 103282-413131, loss: 3.285, batch_time: 0.846
-batch: 103283-413132, loss: 3.358, batch_time: 0.884
-batch: 103283-413133, loss: 3.087, batch_time: 0.843
-batch: 103283-413134, loss: 3.273, batch_time: 0.847
-batch: 103283-413135, loss: 3.020, batch_time: 0.846
-batch: 103284-413136, loss: 3.016, batch_time: 0.886
-batch: 103284-413137, loss: 3.083, batch_time: 0.843
-batch: 103284-413138, loss: 3.247, batch_time: 0.846
-batch: 103284-413139, loss: 3.252, batch_time: 0.846
-batch: 103285-413140, loss: 3.277, batch_time: 0.882
-batch: 103285-413141, loss: 3.219, batch_time: 0.842
-batch: 103285-413142, loss: 3.090, batch_time: 0.847
-batch: 103285-413143, loss: 3.172, batch_time: 0.846
-batch: 103286-413144, loss: 3.011, batch_time: 0.883
-batch: 103286-413145, loss: 2.982, batch_time: 0.842
-batch: 103286-413146, loss: 3.376, batch_time: 0.845
-batch: 103286-413147, loss: 2.970, batch_time: 0.845
-batch: 103287-413148, loss: 3.028, batch_time: 0.884
-batch: 103287-413149, loss: 3.128, batch_time: 0.842
-batch: 103287-413150, loss: 2.851, batch_time: 0.845
-batch: 103287-413151, loss: 3.082, batch_time: 0.846
-batch: 103288-413152, loss: 3.039, batch_time: 0.884
-batch: 103288-413153, loss: 2.910, batch_time: 0.844
-batch: 103288-413154, loss: 2.907, batch_time: 0.846
-batch: 103288-413155, loss: 2.936, batch_time: 0.846
-batch: 103289-413156, loss: 2.828, batch_time: 0.883
-batch: 103289-413157, loss: 2.977, batch_time: 0.842
-batch: 103289-413158, loss: 3.110, batch_time: 0.845
-batch: 103289-413159, loss: 2.767, batch_time: 0.846
-batch: 103290-413160, loss: 3.176, batch_time: 0.883
-batch: 103290-413161, loss: 2.980, batch_time: 0.842
-batch: 103290-413162, loss: 3.098, batch_time: 0.845
-batch: 103290-413163, loss: 3.242, batch_time: 0.845
-batch: 103291-413164, loss: 2.916, batch_time: 0.883
-batch: 103291-413165, loss: 3.014, batch_time: 0.842
-batch: 103291-413166, loss: 3.025, batch_time: 0.846
-batch: 103291-413167, loss: 3.302, batch_time: 0.847
-batch: 103292-413168, loss: 2.881, batch_time: 0.882
-batch: 103292-413169, loss: 2.956, batch_time: 0.843
-batch: 103292-413170, loss: 3.236, batch_time: 0.846
-batch: 103292-413171, loss: 3.058, batch_time: 0.846
+batch: 103352-413411, loss: 2.985, batch_time: 0.846
+batch: 103353-413412, loss: 3.204, batch_time: 0.883
+batch: 103353-413413, loss: 3.335, batch_time: 0.844
+batch: 103353-413414, loss: 3.078, batch_time: 0.847
+batch: 103353-413415, loss: 2.899, batch_time: 0.846
+batch: 103354-413416, loss: 2.865, batch_time: 0.883
+batch: 103354-413417, loss: 2.744, batch_time: 0.842
+batch: 103354-413418, loss: 3.180, batch_time: 0.846
+batch: 103354-413419, loss: 3.142, batch_time: 0.847
+batch: 103355-413420, loss: 3.274, batch_time: 0.885
+batch: 103355-413421, loss: 2.976, batch_time: 0.843
+batch: 103355-413422, loss: 3.193, batch_time: 0.846
+batch: 103355-413423, loss: 3.117, batch_time: 0.846
+batch: 103356-413424, loss: 3.057, batch_time: 0.884
+batch: 103356-413425, loss: 3.151, batch_time: 0.842
+batch: 103356-413426, loss: 3.112, batch_time: 0.846
+batch: 103356-413427, loss: 3.339, batch_time: 0.846
+batch: 103357-413428, loss: 2.875, batch_time: 0.883
+batch: 103357-413429, loss: 2.969, batch_time: 0.843
+batch: 103357-413430, loss: 2.947, batch_time: 0.846
+batch: 103357-413431, loss: 3.231, batch_time: 0.845
+batch: 103358-413432, loss: 2.779, batch_time: 0.883
+batch: 103358-413433, loss: 3.189, batch_time: 0.843
+batch: 103358-413434, loss: 2.993, batch_time: 0.846
+batch: 103358-413435, loss: 3.145, batch_time: 0.846
+batch: 103359-413436, loss: 3.018, batch_time: 0.883
+batch: 103359-413437, loss: 3.090, batch_time: 0.842
+batch: 103359-413438, loss: 2.985, batch_time: 0.846
+batch: 103359-413439, loss: 2.964, batch_time: 0.846
+batch: 103360-413440, loss: 3.216, batch_time: 0.883
+batch: 103360-413441, loss: 3.093, batch_time: 0.843
+batch: 103360-413442, loss: 3.062, batch_time: 0.846
+batch: 103360-413443, loss: 3.258, batch_time: 0.846
+batch: 103361-413444, loss: 2.957, batch_time: 0.883
+batch: 103361-413445, loss: 2.901, batch_time: 0.843
+batch: 103361-413446, loss: 3.018, batch_time: 0.845
+batch: 103361-413447, loss: 3.042, batch_time: 0.845
+batch: 103362-413448, loss: 3.087, batch_time: 0.883
+batch: 103362-413449, loss: 3.107, batch_time: 0.843
+batch: 103362-413450, loss: 3.112, batch_time: 0.847
+batch: 103362-413451, loss: 2.873, batch_time: 0.846
+batch: 103363-413452, loss: 2.985, batch_time: 0.883
+batch: 103363-413453, loss: 3.005, batch_time: 0.842
+batch: 103363-413454, loss: 2.967, batch_time: 0.845
+batch: 103363-413455, loss: 3.101, batch_time: 0.846
+batch: 103364-413456, loss: 3.046, batch_time: 0.884
+batch: 103364-413457, loss: 3.088, batch_time: 0.843
+batch: 103364-413458, loss: 3.111, batch_time: 0.846
+batch: 103364-413459, loss: 3.242, batch_time: 0.847
+batch: 103365-413460, loss: 2.844, batch_time: 0.885
+batch: 103365-413461, loss: 3.166, batch_time: 0.844
+batch: 103365-413462, loss: 3.081, batch_time: 0.846
+batch: 103365-413463, loss: 2.933, batch_time: 0.846
+batch: 103366-413464, loss: 2.793, batch_time: 0.888
+batch: 103366-413465, loss: 3.243, batch_time: 0.843
+batch: 103366-413466, loss: 2.979, batch_time: 0.847
+batch: 103366-413467, loss: 3.072, batch_time: 0.847
+batch: 103367-413468, loss: 3.044, batch_time: 0.885
+batch: 103367-413469, loss: 3.097, batch_time: 0.843
+batch: 103367-413470, loss: 3.026, batch_time: 0.847
+batch: 103367-413471, loss: 2.867, batch_time: 0.847
+batch: 103368-413472, loss: 2.987, batch_time: 0.884
+batch: 103368-413473, loss: 2.965, batch_time: 0.843
+W0513 17:47:01.254000 140192115330560 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 2031266 closing signal SIGTERM
+W0513 17:47:01.256000 140192115330560 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 2031268 closing signal SIGTERM
+W0513 17:47:01.258000 140192115330560 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 2031269 closing signal SIGTERM
+W0513 17:47:01.263000 140192115330560 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 2031270 closing signal SIGTERM
+W0513 17:47:01.271000 140192115330560 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 2031271 closing signal SIGTERM
+W0513 17:47:01.273000 140192115330560 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 2031272 closing signal SIGTERM
+W0513 17:47:01.278000 140192115330560 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 2031273 closing signal SIGTERM
+E0513 17:47:01.548000 140192115330560 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: -15) local_rank: 1 (pid: 2031267) of binary: /usr/local/bin/python3
+Traceback (most recent call last):
+  File "/usr/local/bin/torchrun", line 8, in <module>
+    sys.exit(main())
+  File "/usr/local/lib/python3.10/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 348, in wrapper
+    return f(*args, **kwargs)
+  File "/usr/local/lib/python3.10/site-packages/torch/distributed/run.py", line 901, in main
+    run(args)
+  File "/usr/local/lib/python3.10/site-packages/torch/distributed/run.py", line 892, in run
+    elastic_launch(
+  File "/usr/local/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 133, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/usr/local/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 264, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+=========================================================
+multi_thread_train.py FAILED
+---------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+---------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-05-13_17:47:01
+  host      : dsw-37832-864d665cc7-86qpr
+  rank      : 1 (local_rank: 1)
+  exitcode  : -15 (pid: 2031267)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 2031267
+=========================================================

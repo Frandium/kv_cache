@@ -1,7 +1,7 @@
 {
-  "experiment_name": "unet-4-8-4",
-  "log_path": "../logs/unet-4-8-4.log",
-  "num_records": 254486,
+  "experiment_name": "unet-4-8-16-8-4",
+  "log_path": "../logs/unet-4-8-16-8-4.log",
+  "num_records": 71986,
   "config": {
     "local_batch_size": "16",
     "global_batch_size": "512",
@@ -16,34 +16,34 @@
     "num_workers": "4",
     "config_dir": "../../../Qwen3-0.6B",
     "data_dir": "../../../dclm/global-shard_01_of_10",
-    "ckpt_dir": "../checkpoints/unet-4-8-4",
+    "ckpt_dir": "../checkpoints/unet-4-8-16-8-4",
     "dataset_type": "jsonl",
     "per": "1.0",
-    "attention_stride_pattern": "[1, 1, 1, 1, 1, 1, 4, 4, 4, 4, 4, 4, 8, 8, 8, 8, 4, 4, 4, 4, 4, 4, 1, 1, 1, 1, 1, 1]",
+    "attention_stride_pattern": "[1, 1, 1, 1, 4, 4, 4, 4, 8, 8, 8, 8, 16, 16, 16, 16, 8, 8, 8, 8, 4, 4, 4, 4, 1, 1, 1, 1]",
     "residual_source_pattern": "[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]"
   },
   "first_record": {
-    "line_no": 1135,
+    "line_no": 1137,
     "global_step": 0,
     "local_batch": 1,
-    "loss": 12.128,
-    "batch_time": 3.924
+    "loss": 12.102,
+    "batch_time": 4.547
   },
   "last_record": {
-    "line_no": 255626,
-    "global_step": 63621,
-    "local_batch": 254486,
-    "loss": 3.049,
-    "batch_time": 0.847
+    "line_no": 73125,
+    "global_step": 17996,
+    "local_batch": 71986,
+    "loss": 3.021,
+    "batch_time": 0.853
   },
-  "loss_first": 12.128,
-  "loss_last": 3.049,
-  "loss_min": 2.469,
-  "loss_max": 12.164,
-  "loss_mean": 3.467216471633017,
-  "batch_time_mean": 0.8559879403975071,
-  "sample_every": 2544,
-  "aggregate_window": 2544,
+  "loss_first": 12.102,
+  "loss_last": 3.021,
+  "loss_min": 2.83,
+  "loss_max": 12.184,
+  "loss_mean": 4.046896354846775,
+  "batch_time_mean": 0.8634675075709165,
+  "sample_every": 719,
+  "aggregate_window": 719,
   "tail_lines": 100,
   "outputs": {
     "summary": "summary.json",

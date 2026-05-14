@@ -1,7 +1,7 @@
 {
   "experiment_name": "unet-4",
   "log_path": "../logs/unet-4.log",
-  "num_records": 413171,
+  "num_records": 413473,
   "config": {
     "local_batch_size": "16",
     "global_batch_size": "512",
@@ -30,20 +30,20 @@
     "batch_time": 4.551
   },
   "last_record": {
-    "line_no": 414313,
-    "global_step": 103292,
-    "local_batch": 413171,
-    "loss": 3.058,
-    "batch_time": 0.846
+    "line_no": 414615,
+    "global_step": 103368,
+    "local_batch": 413473,
+    "loss": 2.965,
+    "batch_time": 0.843
   },
   "loss_first": 12.178,
-  "loss_last": 3.058,
+  "loss_last": 2.965,
   "loss_min": 2.284,
   "loss_max": 12.183,
-  "loss_mean": 3.3035890055207164,
-  "batch_time_mean": 0.8556061921093203,
-  "sample_every": 4131,
-  "aggregate_window": 4131,
+  "loss_mean": 3.303409081125007,
+  "batch_time_mean": 0.8556056139094934,
+  "sample_every": 4134,
+  "aggregate_window": 4134,
   "tail_lines": 100,
   "outputs": {
     "summary": "summary.json",
