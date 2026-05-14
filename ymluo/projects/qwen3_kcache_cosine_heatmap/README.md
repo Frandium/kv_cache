@@ -60,6 +60,36 @@ bash ymluo/projects/qwen3_kcache_cosine_heatmap/scripts/run_analysis.sh
 To generate every layer/head heatmap, leave `LAYERS=all HEADS=all` as the
 default. This can produce many large PNGs.
 
+## Compression Diagnostics
+
+Run the extended diagnostics requested for KV-cache compression:
+
+```bash
+bash ymluo/projects/qwen3_kcache_cosine_heatmap/scripts/run_compression_diagnostics.sh
+```
+
+Useful one-head smoke test:
+
+```bash
+MAX_TOKENS=128 CHUNK_SIZE=32 LAYERS=0 HEADS=0 \
+bash ymluo/projects/qwen3_kcache_cosine_heatmap/scripts/run_compression_diagnostics.sh
+```
+
+This extended script does the following for every selected `(layer, KV head)`:
+
+- recomputes raw K-cache cosine and mean-centered K-cache cosine;
+- analyzes V-cache in the same raw/centered way;
+- writes raw and centered SVD singular values for K and V;
+- plots singular values and cumulative PCA energy;
+- samples query positions and validates low-rank K/V reconstructions with
+  `|q dot (k_hat - k)|`, attention KL, top-1 match, and output-vector error
+  when RoPE-aligned query capture is available.
+
+Exact loss/PPL change is not reported by this script. Measuring that correctly
+requires injecting the compressed K/V representation inside each attention layer
+during the model forward; the diagnostics here are intended as a safer
+pre-screening step before that model-patching experiment.
+
 ## Outputs
 
 By default, files are written to:
@@ -82,6 +112,26 @@ Main files:
   K cache.
 - `tokens.csv`: token index, token id, tokenizer piece, and decoded text.
 - `summary.json`: run metadata and output paths.
+
+Extended diagnostic outputs are written by default to:
+
+```text
+ymluo/projects/qwen3_kcache_cosine_heatmap/outputs/kv_compression_diagnostics/
+```
+
+Main extended files:
+
+- `compression_summary_by_head.csv`: raw and mean-centered K/V cosine summaries.
+- `singular_values.csv`: one row per K/V singular value for raw and centered
+  matrices.
+- `svd_summary_by_head.csv`: PCA cumulative energy and ranks needed to reach
+  configured energy thresholds.
+- `attention_validation_by_head_rank.csv`: sampled low-rank validation metrics
+  for `k_only` and `kv` compression variants when query capture succeeds.
+- `plots/k_centered_cosine/*.png`: centered K-cache cosine heatmaps.
+- `plots/v_raw_cosine/*.png` and `plots/v_centered_cosine/*.png`: V-cache
+  heatmaps.
+- `plots/svd/*.png`: singular value and cumulative-energy curves.
 
 Optional tensor dump:
 

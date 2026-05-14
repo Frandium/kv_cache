@@ -1,56 +1,61 @@
-# Qwen3 KV Cache Research Workspace
+# Qwen3 KV Cache 研究工作区
 
-This workspace collects Qwen3 KV-cache experiments around one research theme:
-treating long-context KV memory as an indexed retrieval system instead of a
-flat token sequence that every decode step scans densely.
+> 文档中文化与本轮新增日期：2026-05-14
 
-The main design directions are:
+## 研究主题
 
-- block- or chunk-level candidate recall before exact attention;
-- learned compression of older KV memory while preserving recent and anchor
-  tokens;
-- attention-energy analysis to estimate how much context can be dropped with
-  limited loss impact;
-- K-cache value and adjacent-token delta profiling to understand what the cache
-  actually stores across layers and heads.
+新增日期：2026-05-14
 
-For the broader motivation and search-system analogy, start with
-`KVCache_Indexing_Knowledge_Retrieval_2026-05-09.md`.
+这个工作区围绕一个核心问题展开：**能否把长上下文 KV cache 看成一个可索引、可压缩、可检索的记忆系统，而不是每次 decode 都密集扫描的扁平 token 序列。**
 
-Commands below assume they are launched from the parent repository root
-(`kv_cache`). If you run them after `cd ymluo`, remove the leading `ymluo/`
-path component.
+当前主要方向包括：
 
-## Repository Layout
+- 在精确 attention 前先做 block/chunk 级候选召回。
+- 对旧 KV memory 做学习式压缩，同时保留 recent tokens 和 anchor tokens。
+- 用 attention energy 估计在有限 loss 影响下可以丢弃多少上下文。
+- profile K-cache 的数值、相邻 token delta、范数、pairwise cosine，理解不同 layer/head 到底存了什么。
 
-| Path | Purpose |
+更完整的搜索系统类比和动机见：
+
+```text
+KVCache_Indexing_Knowledge_Retrieval_2026-05-09.md
+```
+
+下面的命令默认从仓库根目录 `kv_cache` 运行。如果已经 `cd ymluo`，去掉命令里的 `ymluo/` 前缀。
+
+## 目录结构
+
+新增日期：2026-05-14
+
+| 路径 | 作用 |
 | --- | --- |
-| `KVCache_Indexing_Knowledge_Retrieval_2026-05-09.md` | Research notes mapping search, vector indexing, hierarchy, and knowledge-graph ideas onto KV-cache lookup. |
-| `projects/qwen3_chunk_routing` | Training harness for Qwen3-0.6B chunk attention with `baseline`, `oracle`, and learned `router` modes. |
-| `projects/pyramid_kv_compression` | Continued-pretraining experiment that replaces older middle-layer KV blocks with learned summaries. |
-| `projects/qwen3_kcache_avg_topk` | Inference-time sparse decode experiment using averaged K-cache block summaries for top-k block selection. |
-| `projects/qwen3_kcache_norm_analysis` | Qwen3-0.6B K-cache norm, attention-energy, and pruning loss/PPL analysis on DCLM text. |
-| `projects/qwen3_kcache_value_delta_analysis` | Qwen3-8B K-cache component, norm, and adjacent-token delta distribution analysis. |
-| `projects/qwen3_kcache_cosine_heatmap` | Qwen3-0.6B pairwise K-cache cosine similarity heatmaps by layer and KV head. |
-| `logs/` | Historical logs or pushed workspace snapshots. Not required for normal experiment entry points. |
-| `utils/` | Reserved for shared utilities. |
+| `KVCache_Indexing_Knowledge_Retrieval_2026-05-09.md` | 把搜索、向量索引、层级结构、知识图谱等思想映射到 KV-cache lookup 的研究笔记。 |
+| `projects/qwen3_chunk_routing` | Qwen3-0.6B chunk attention 训练框架，包含 `baseline`、`oracle`、`router` 模式。 |
+| `projects/pyramid_kv_compression` | 继续预训练实验：用学习到的 summary 替换旧的中间层 KV blocks。 |
+| `projects/qwen3_kcache_avg_topk` | 推理期 sparse decode 实验：用 K-cache block 平均向量做 top-k block 选择。 |
+| `projects/qwen3_kcache_norm_analysis` | Qwen3-0.6B 的 K-cache norm、attention energy、pruning loss/PPL 分析。 |
+| `projects/qwen3_kcache_value_delta_analysis` | Qwen3-8B 的 K-cache 取值、范数、相邻 token delta 分布分析。 |
+| `projects/qwen3_kcache_cosine_heatmap` | Qwen3-0.6B 的 K-cache token-token cosine 热力图分析，按 layer 和 KV head 输出。 |
+| `logs/` | 历史日志或 workspace snapshot，普通实验入口不依赖它。 |
+| `utils/` | 预留共享工具目录。 |
 
-Each project has its own README and scripts; this file is the high-level index.
+每个项目都有自己的 README 和 scripts；本文件只做总览和关键结论记录。
 
-## Projects
+## 项目说明
+
+新增日期：2026-05-14
 
 ### `qwen3_chunk_routing`
 
-This project compares three Qwen3-0.6B attention modes:
+新增日期：2026-05-14
 
-- `baseline`: original full attention.
-- `oracle`: full scores are computed, then valid past tokens are split into 20
-  chunks; chunk 1, the recent chunk, and the top 3 middle chunks by attention
-  mass are kept.
-- `router`: a lightweight learned router predicts the top 3 middle chunks from
-  chunk summaries before exact attention.
+这个项目比较 Qwen3-0.6B 的三种 attention 模式：
 
-Run examples:
+- `baseline`：原始 full attention。
+- `oracle`：先计算完整 attention score，再把有效历史 token 分成 20 个 chunks；保留 chunk 1、recent chunk，以及 attention mass 最高的 3 个中间 chunks。
+- `router`：用轻量 learned router 从 chunk summaries 预测 top 3 中间 chunks，再做精确 attention。
+
+运行示例：
 
 ```bash
 bash ymluo/projects/qwen3_chunk_routing/scripts/run_8gpu.sh baseline
@@ -58,14 +63,13 @@ bash ymluo/projects/qwen3_chunk_routing/scripts/run_8gpu.sh oracle
 bash ymluo/projects/qwen3_chunk_routing/scripts/run_8gpu.sh router
 ```
 
-The script uses `torchrun --nproc_per_node=8` by default. It reads tokenizer and
-config from `MODEL_PATH`, but initializes model weights from scratch unless the
-project code is changed.
+脚本默认使用 `torchrun --nproc_per_node=8`。它从 `MODEL_PATH` 读取 tokenizer 和 config；除非修改项目代码，否则模型权重从头初始化。
 
 ### `pyramid_kv_compression`
 
-This project patches Qwen3 attention for continued pretraining with a
-pyramid-shaped KV memory:
+新增日期：2026-05-14
+
+这个项目 patch Qwen3 attention，用 pyramid-shaped KV memory 做继续预训练：
 
 ```text
 early layers:   full KV
@@ -73,11 +77,9 @@ middle layers:  compressed older KV
 final layers:   full KV
 ```
 
-The hidden-state sequence length stays unchanged. Only selected layers shorten
-the attention memory by replacing older middle blocks with learned weighted
-K/V summaries. Anchor tokens and recent tokens remain raw.
+hidden-state 序列长度保持不变。只有被选中的层会缩短 attention memory：旧的中间 blocks 会被学习到的 weighted K/V summaries 替换，anchor tokens 和 recent tokens 保持原始 KV。
 
-Recommended stage order:
+推荐实验顺序：
 
 ```bash
 bash ymluo/projects/pyramid_kv_compression/scripts/run_8gpu.sh sanity
@@ -86,27 +88,22 @@ bash ymluo/projects/pyramid_kv_compression/scripts/run_8gpu.sh attention
 bash ymluo/projects/pyramid_kv_compression/scripts/run_8gpu.sh full
 ```
 
-`METHOD_NOTES.md` records the current caution: the aggressive default schedule
-has produced high losses, so the next serious runs should start with weak center
-layer compression, larger anchor/recent windows, and the `attention` stage
-before considering full-model training.
+`METHOD_NOTES.md` 记录了当前风险：激进默认 schedule 已经产生过高 loss。下一轮严肃实验应从弱压缩中间层、更大的 anchor/recent window、以及 `attention` 阶段开始，再考虑 full-model training。
 
 ### `qwen3_kcache_avg_topk`
 
-This is an inference-only sparse decode experiment. Layers 0-2 use the original
-attention path. Layers 3-27 split the current K cache into blocks, average keys
-inside each block, score blocks with the current query, keep the top block
-fraction, and then run exact attention over the original K/V tokens inside the
-selected blocks.
+新增日期：2026-05-14
 
-Generate text:
+这是一个推理期 sparse decode 实验。Layer 0-2 走原始 attention；Layer 3-27 把当前 K cache 切成 blocks，对每个 block 内部的 keys 求平均，用当前 query 打分，保留 top block fraction，然后只在被选中的原始 K/V token 上做精确 attention。
+
+生成文本：
 
 ```bash
 MODEL_PATH=/mnt/workspace/lym_code/models/Qwen3-0.6B \
 bash ymluo/projects/qwen3_kcache_avg_topk/scripts/run_generate.sh
 ```
 
-Evaluate baseline vs sparse decode:
+评估 baseline vs sparse decode：
 
 ```bash
 MODEL_PATH=/mnt/workspace/lym_code/models/Qwen3-0.6B \
@@ -114,59 +111,66 @@ DATA_PATH=/mnt/workspace/dclm/global-shard_01_of_10/local-shard_0_of_10 \
 bash ymluo/projects/qwen3_kcache_avg_topk/scripts/run_eval.sh
 ```
 
-Default sparse settings are `BLOCK_SIZE=10`, `TOPK_RATIO=0.30`,
-`FIRST_SPARSE_LAYER=3`, and `LAST_SPARSE_LAYER=27`.
+默认 sparse 设置：
+
+```text
+BLOCK_SIZE=10
+TOPK_RATIO=0.30
+FIRST_SPARSE_LAYER=3
+LAST_SPARSE_LAYER=27
+```
 
 ### `qwen3_kcache_norm_analysis`
 
-This project runs Qwen3-0.6B on a DCLM text prefix and writes:
+新增日期：2026-05-14
 
-- token-level next-token loss and PPL;
-- original K-cache norm summaries by layer and KV head;
-- attention-energy summaries by layer and query head;
-- top-k counts needed to reach several attention-energy thresholds;
-- loss/PPL after pruning attention positions below those thresholds.
+这个项目在 DCLM 文本前缀上运行 Qwen3-0.6B，并输出：
 
-Run:
+- token-level next-token loss 和 PPL。
+- 原始 K-cache norm 的 layer/head summary。
+- attention energy 的 layer/query-head summary。
+- 达到不同 attention-energy threshold 所需的 top-k token 数。
+- pruning 掉低 attention-energy 位置后的 loss/PPL。
+
+运行：
 
 ```bash
 bash ymluo/projects/qwen3_kcache_norm_analysis/scripts/run_analysis.sh
 ```
 
-The current summary experiment on 3000 tokens shows:
+当前 3000 tokens summary 实验结论：
 
-- 90% attention energy is close to full attention: loss increases by `0.014206`,
-  about `1.0143x` PPL.
-- 95% attention energy is nearly lossless in this sample: loss increases by
-  `0.002030`, about `1.0020x` PPL.
-- 50% and 75% energy pruning are too aggressive for quality.
-- the number of tokens needed to reach the same energy threshold varies strongly
-  by layer and head, so a fixed token top-k is less appropriate than adaptive
-  energy-based selection.
+- 90% attention energy 已接近 full attention：loss 增加 `0.014206`，PPL 约 `1.0143x`。
+- 95% attention energy 在该样本上几乎无损：loss 增加 `0.002030`，PPL 约 `1.0020x`。
+- 50% 和 75% energy pruning 对质量过于激进。
+- 达到同一 energy threshold 所需 token 数在 layer/head 间差异很大，因此固定 token top-k 不如 adaptive energy-based selection 合理。
 
-See `projects/qwen3_kcache_norm_analysis/attention_energy_loss_summary.md` for
-the detailed result table and interpretation.
+详细表格和解释见：
+
+```text
+projects/qwen3_kcache_norm_analysis/attention_energy_loss_summary.md
+```
 
 ### `qwen3_kcache_value_delta_analysis`
 
-This project profiles a Qwen3-8B forward pass, builds the final K cache with
-`past_key_values`, and analyzes both K vectors and adjacent-token changes:
+新增日期：2026-05-14
+
+这个项目 profile 一次 Qwen3-8B forward pass，用 `past_key_values` 构建最终 K cache，并分析：
 
 ```text
 k_i
 delta(k_i) = k_i - k_{i-1}
 ```
 
-It writes per-head, per-layer, and global statistics, exact histograms, timing
-rows, and optional plots. The default run uses 5000 DCLM tokens.
+它会输出 per-head、per-layer、global statistics，精确 histograms，timing rows，以及可选 plots。默认运行 5000 个 DCLM tokens。
 
-Run:
+运行：
 
 ```bash
 bash ymluo/projects/qwen3_kcache_value_delta_analysis/scripts/run_analysis.sh
 ```
 
-Useful smoke test:
+快速 smoke test：
 
 ```bash
 MAX_TOKENS=128 CHUNK_SIZE=32 SAVE_HEAD_HISTOGRAMS=false \
@@ -175,22 +179,292 @@ bash ymluo/projects/qwen3_kcache_value_delta_analysis/scripts/run_analysis.sh
 
 ### `qwen3_kcache_cosine_heatmap`
 
-This project profiles Qwen3-0.6B on 5000 DCLM tokens, extracts each layer/head
-K-cache matrix, computes the pairwise token-token cosine matrix, and writes
-per-head heatmap PNGs plus layer/head overview heatmaps.
+新增日期：2026-05-14
 
-Run one full 5k-token heatmap:
+这个项目在 5000 个 DCLM tokens 上 profile Qwen3-0.6B，抽取每个 layer/head 的 K-cache 矩阵，计算 token-token pairwise cosine matrix，并输出每个 head 的热力图 PNG 和 layer/head 总览热力图。
+
+运行单个 5k-token heatmap：
 
 ```bash
 LAYERS=0 HEADS=0 \
 bash ymluo/projects/qwen3_kcache_cosine_heatmap/scripts/run_analysis.sh
 ```
 
-Run all layers and KV heads by leaving `LAYERS=all HEADS=all`, the default.
+默认 `LAYERS=all HEADS=all` 会生成全部 layer 和 KV heads 的热力图。
 
-## Common Defaults
+KV-cache 压缩诊断入口：
 
-Most scripts can be configured with environment variables. Common ones are:
+```bash
+bash ymluo/projects/qwen3_kcache_cosine_heatmap/scripts/run_compression_diagnostics.sh
+```
+
+这个扩展脚本会额外输出：
+
+- raw K-cache cosine 和 mean-centered K-cache cosine。
+- raw V-cache cosine 和 mean-centered V-cache cosine。
+- K/V raw 与 centered 矩阵的奇异值数据和奇异值图。
+- PCA cumulative energy，以及达到 50%、75%、90%、95%、99% 能量所需 rank。
+- 采样 query 上的低秩近似验证：`|q · (k_hat - k)|`、attention KL、top-1 match、attention output vector error。
+
+注意：这个脚本不会伪造 loss/PPL change。精确 loss/PPL 需要在模型 forward 内部把每层 attention 的 K/V 替换成压缩版本后重跑；当前脚本先给出更低成本的 attention-weighted error，用来筛选值得进一步做模型内注入实验的 layer/head/rank。
+
+## K-cache Cosine 结果解读
+
+新增日期：2026-05-14
+
+分析文件：
+
+```text
+C:/Users/夕/Documents/summary_by_head.csv
+```
+
+这份结果覆盖：
+
+- `224` 行，正好对应 `28 layers x 8 KV heads`。
+- 每个 head 都是 `5000 x 5000` pairwise cosine matrix。
+- 每个 K vector 的 `head_dim=128`。
+- 计算设备是 CUDA，similarity dtype 是 `torch.float32`。
+
+关键统计：
+
+```text
+offdiag_mean 范围：0.1267 到 0.9914
+offdiag_std  范围：0.0033 到 0.2784
+40 / 224 个 head 的 offdiag_mean >= 0.9
+67 / 224 个 head 的 offdiag_mean >= 0.8
+36 / 224 个 head 的 offdiag_mean <= 0.3
+```
+
+这里的 `offdiag_*` 都排除了对角线，也就是排除了 token 和自身的 cosine。它更能反映不同 token 之间 K 向量方向是否相似。
+
+### 层趋势
+
+新增日期：2026-05-14
+
+按 layer band 聚合后的趋势很明显：
+
+| 层范围 | 平均 `offdiag_mean` | 解释 |
+| --- | ---: | --- |
+| `L0-L5` | `0.883` | 早期层 K 向量高度相似，存在明显方向冗余。 |
+| `L6-L17` | `0.602` | 中间层相似度下降，head 间分化开始变强。 |
+| `L18-L26` | `0.403` | 后期层 K 向量更分散，压缩需要谨慎。 |
+| `L27` | `0.716` | 最后一层相似度重新上升，可能有特殊输出前表示结构。 |
+
+这个结果说明：**KV cache 压缩不应该全层统一设置压缩率。** 早期层可以更激进；`L18-L26`，尤其 `L23-L26`，应更保守。
+
+### 极端 head
+
+新增日期：2026-05-14
+
+平均 cosine 最高的一些 head：
+
+```text
+L00 H2 mean=0.9914 std=0.0054
+L00 H6 mean=0.9901 std=0.0059
+L01 H2 mean=0.9885 std=0.0033
+L00 H7 mean=0.9859 std=0.0093
+L00 H5 mean=0.9856 std=0.0088
+```
+
+这些 head 的 K 向量几乎同方向，表面上看非常适合压缩。
+
+平均 cosine 最低的一些 head：
+
+```text
+L14 H7 mean=0.1267 std=0.1765
+L06 H3 mean=0.1577 std=0.2777
+L06 H6 mean=0.1622 std=0.1401
+L14 H3 mean=0.1703 std=0.2052
+L24 H3 mean=0.1792 std=0.2361
+```
+
+这些 head 的 K 向量方向差异大，直接合并 token 或强压缩风险更高。
+
+`offdiag_std` 最高的一些 head 也值得关注：
+
+```text
+L01 H6 mean=0.4664 std=0.2784
+L06 H3 mean=0.1577 std=0.2777
+L24 H7 mean=0.1926 std=0.2442
+L25 H5 mean=0.1928 std=0.2383
+L24 H3 mean=0.1792 std=0.2361
+```
+
+这类 head 的分布更复杂，通常表示有些 token pair 很相似，有些完全不相似。它们更适合做 cluster/block-aware 压缩，而不是统一平均。
+
+## 对 KV Cache 压缩的含义
+
+新增日期：2026-05-14
+
+这份 cosine 结果说明 K-cache 中确实存在大量结构性冗余，但不能直接推出“cosine 高的 token 就可以合并或删除”。
+
+最需要警惕的是：**高 raw cosine 很可能来自一个很强的公共方向，而不是 token 内容真的都一样。**
+
+可以把某个 head 的 K 向量近似写成：
+
+```text
+k_t = μ + r_t
+```
+
+其中：
+
+- `μ` 是该 layer/head 内共享的公共方向或公共偏置。
+- `r_t` 是 token-specific residual。
+
+如果 `μ` 很大，那么任意两个 token 的 raw cosine 都可能很高。但 attention logit 是：
+
+```text
+q · k_t = q · μ + q · r_t
+```
+
+对于同一个 query，`q · μ` 对所有 key 都是同一个常数，softmax 会把这个公共常数抵消掉。因此这个公共方向虽然会抬高 raw cosine，却不一定携带有用的 token 选择信息。
+
+所以，raw cosine 高更像是在提醒我们：**先做公共分量 / residual 分解，再决定怎么压缩。**
+
+## 下一步建议
+
+新增日期：2026-05-14
+
+### 1. 做 mean-centering 后重新计算 cosine
+
+新增日期：2026-05-14；实现日期：2026-05-14
+
+对每个 `(layer, head)` 计算：
+
+```text
+centered_k_t = k_t - mean(k)
+```
+
+然后重新画 centered cosine heatmap。如果 centered 后 cosine 大幅下降，说明之前的高相似主要来自公共方向；这时压缩重点应放在 residual 表示，而不是直接合并 token。
+
+已实现入口：
+
+```bash
+bash ymluo/projects/qwen3_kcache_cosine_heatmap/scripts/run_compression_diagnostics.sh
+```
+
+主要输出：
+
+```text
+compression_summary_by_head.csv
+plots/k_centered_cosine/
+```
+
+### 2. 做 SVD / PCA energy 分析
+
+新增日期：2026-05-14；实现日期：2026-05-14
+
+对每个 `(layer, head)` 的 K 矩阵做 SVD，观察多少主成分能解释主要能量：
+
+```text
+K ≈ U_r S_r V_r^T
+```
+
+如果少数主成分解释大部分能量，可以考虑：
+
+- 低秩 residual 压缩。
+- 分 layer/head 设置 rank。
+- 对公共方向和 residual 分开量化。
+
+已实现输出：
+
+```text
+singular_values.csv
+svd_summary_by_head.csv
+plots/svd/
+```
+
+其中 `singular_values.csv` 同时包含 K/V 的 raw 和 centered 奇异值；`svd_summary_by_head.csv` 会记录达到指定累计能量阈值所需的 rank。
+
+### 3. 同时分析 V-cache
+
+新增日期：2026-05-14；实现日期：2026-05-14
+
+K 相似不代表 V 可以安全合并。token merge 或 block summary 最终改变的是 attention output：
+
+```text
+attention_output = softmax(QK^T) V
+```
+
+所以压缩策略必须同时检查：
+
+- K 的检索误差。
+- V 的值误差。
+- attention output error。
+- 最终 loss/PPL。
+
+已实现内容：
+
+```text
+compression_summary_by_head.csv
+singular_values.csv
+svd_summary_by_head.csv
+plots/v_raw_cosine/
+plots/v_centered_cosine/
+```
+
+### 4. 用 attention-weighted error 验证
+
+新增日期：2026-05-14；部分实现日期：2026-05-14
+
+不要只看 pairwise cosine。更关键的指标是：
+
+```text
+| q · (k_hat - k) |
+attention KL
+output vector error
+PPL / loss change
+```
+
+已实现输出：
+
+```text
+attention_validation_by_head_rank.csv
+```
+
+已实现指标：
+
+- `q_dot_abs_error_mean`
+- `attention_weighted_q_dot_abs_error_mean`
+- `attention_kl_mean`
+- `top1_match_fraction`
+- `output_l2_error_mean`
+- `output_relative_l2_error_mean`
+
+这个指标依赖 RoPE-aligned query capture。如果当前 Hugging Face Qwen3 实现没有把 `(cos, sin)` position embeddings 暴露给 attention hook，脚本会跳过 attention validation，并在 `summary.json` 里写明原因。
+
+尚未直接实现 `PPL / loss change`。原因是这个指标必须把压缩后的 K/V 注入模型每一层 attention forward 后重跑，不能只靠最终 cache 离线计算，否则会得到误导性结果。
+
+如果一个 token 的 K cosine 看起来可压，但它在真实 query 上经常获得高 attention mass，那么压缩它仍然可能伤害质量。
+
+### 5. 分层分 head 设置压缩率
+
+新增日期：2026-05-14
+
+根据这份结果，建议压缩强度不要统一：
+
+- `L0-L5`：可以尝试更激进压缩，尤其是 `offdiag_mean >= 0.9` 的 heads。
+- `L6-L17`：适合自适应策略，按 head 的 cosine/std/attention energy 决定。
+- `L18-L26`：需要更保守，尤其是低 mean、高 std 的 heads。
+- `L27`：虽然相似度回升，但最好单独验证，因为最后一层直接靠近 logits。
+
+一个实用策略是先给每个 head 打分：
+
+```text
+compressibility_score =
+  high offdiag_mean
+  + low offdiag_std
+  + low attention sensitivity
+  + low output error after compression
+```
+
+再用这个 score 决定每个 layer/head 的压缩率。
+
+## 常用默认参数
+
+新增日期：2026-05-14
+
+大多数脚本都可以用环境变量配置：
 
 ```bash
 MODEL_PATH=/path/to/Qwen3
@@ -203,32 +477,26 @@ DEVICE=cuda
 DTYPE=bfloat16
 ```
 
-The training scripts default to Hugging Face streaming for large DCLM-style
-directories. Keep `STREAMING=true` unless you intentionally want to build an
-Arrow cache and have enough disk space.
+训练脚本默认使用 Hugging Face streaming 读取大型 DCLM 风格数据。除非确定磁盘足够并且想构建 Arrow cache，否则保持 `STREAMING=true`。
 
-## Suggested Reading Order
+## 推荐阅读顺序
 
-1. `KVCache_Indexing_Knowledge_Retrieval_2026-05-09.md` for the retrieval-system
-   framing.
-2. `projects/qwen3_kcache_norm_analysis/attention_energy_loss_summary.md` for
-   the current attention-pruning evidence.
-3. `projects/qwen3_kcache_avg_topk/README.md` for the deployable block-selection
-   inference baseline.
-4. `projects/qwen3_chunk_routing/README.md` for oracle/router sparse chunk
-   training.
-5. `projects/pyramid_kv_compression/METHOD_NOTES.md` before running continued
-   pretraining with compressed KV.
-6. `projects/qwen3_kcache_value_delta_analysis/README.md` for K-cache value and
-   delta distribution profiling.
+新增日期：2026-05-14
 
-## Practical Notes
+1. `KVCache_Indexing_Knowledge_Retrieval_2026-05-09.md`：理解 retrieval-system framing。
+2. `projects/qwen3_kcache_cosine_heatmap/README.md`：理解 K-cache pairwise cosine 热力图生成方法。
+3. `projects/qwen3_kcache_norm_analysis/attention_energy_loss_summary.md`：查看 attention pruning 的当前证据。
+4. `projects/qwen3_kcache_avg_topk/README.md`：查看可运行的 block-selection sparse decode baseline。
+5. `projects/qwen3_chunk_routing/README.md`：查看 oracle/router sparse chunk training。
+6. `projects/pyramid_kv_compression/METHOD_NOTES.md`：在跑 compressed KV 继续预训练前先看风险记录。
+7. `projects/qwen3_kcache_value_delta_analysis/README.md`：查看 K-cache 数值和 delta 分布 profiling。
 
-- Use project-local README files for exact command options and output paths.
-- Analysis scripts write outputs under each project's `outputs/` directory by
-  default.
-- Long-context analysis can be memory-heavy; reduce `MAX_TOKENS` and
-  `CHUNK_SIZE` for smoke tests.
-- The sparse decode and routing experiments still need kernel-aware
-  implementation work before their theoretical KV-read reduction becomes a
-  real serving speedup.
+## 实践注意事项
+
+新增日期：2026-05-14
+
+- 精确命令参数和输出路径以每个项目自己的 README 为准。
+- 分析脚本默认把输出写到各项目的 `outputs/` 目录下。
+- 长上下文分析会占较多显存和内存；smoke test 时先减小 `MAX_TOKENS` 和 `CHUNK_SIZE`。
+- sparse decode 和 routing 实验还需要 kernel-aware 实现，理论 KV-read reduction 才能转化为真实 serving 加速。
+- 对 KV cache 压缩来说，raw cosine 是很好的诊断信号，但最终判断必须回到 attention logits、attention output、loss/PPL。
