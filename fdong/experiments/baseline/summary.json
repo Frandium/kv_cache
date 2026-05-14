@@ -1,7 +1,7 @@
 {
   "experiment_name": "baseline",
   "log_path": "../logs/baseline.log",
-  "num_records": 468535,
+  "num_records": 551193,
   "config": {
     "local_batch_size": "16",
     "global_batch_size": "512",
@@ -30,20 +30,20 @@
     "batch_time": 3.76
   },
   "last_record": {
-    "line_no": 469677,
-    "global_step": 117133,
-    "local_batch": 468535,
-    "loss": 3.03,
-    "batch_time": 0.741
+    "line_no": 552336,
+    "global_step": 137798,
+    "local_batch": 551193,
+    "loss": 3.263,
+    "batch_time": 0.738
   },
   "loss_first": 12.159,
-  "loss_last": 3.03,
+  "loss_last": 3.263,
   "loss_min": 2.243,
   "loss_max": 12.17,
-  "loss_mean": 3.2593740019422244,
-  "batch_time_mean": 0.7516270033188556,
-  "sample_every": 4685,
-  "aggregate_window": 4685,
+  "loss_mean": 3.222755134771305,
+  "batch_time_mean": 0.7516034202176007,
+  "sample_every": 5511,
+  "aggregate_window": 5511,
   "tail_lines": 100,
   "outputs": {
     "summary": "summary.json",
