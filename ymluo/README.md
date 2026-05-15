@@ -1,6 +1,6 @@
 # Qwen3 KV Cache 研究工作区
 
-> 文档中文化与本轮新增日期：2026-05-14
+> 文档中文化与最近同步日期：2026-05-15
 
 ## 研究主题
 
@@ -14,6 +14,7 @@
 - 对旧 KV memory 做学习式压缩，同时保留 recent tokens 和 anchor tokens。
 - 用 attention energy 估计在有限 loss 影响下可以丢弃多少上下文。
 - profile K-cache 的数值、相邻 token delta、范数、pairwise cosine，理解不同 layer/head 到底存了什么。
+- 用可控 synthetic retrieval 任务验证 anchor-only KV、U-Net mask schedule 与 answer-only training 是否能学到可检索记忆。
 
 更完整的搜索系统类比和动机见：
 
@@ -31,6 +32,7 @@ KVCache_Indexing_Knowledge_Retrieval_2026-05-09.md
 | --- | --- |
 | `KVCache_Indexing_Knowledge_Retrieval_2026-05-09.md` | 把搜索、向量索引、层级结构、知识图谱等思想映射到 KV-cache lookup 的研究笔记。 |
 | `projects/qwen3_chunk_routing` | Qwen3-0.6B chunk attention 训练框架，包含 `baseline`、`oracle`、`router` 模式。 |
+| `projects/qwen3_unet_synthetic_retrieval` | 基于 `fdong` mask-based U-Net Transformer 的可控 synthetic retrieval 评估与 answer-only 训练。 |
 | `projects/pyramid_kv_compression` | 继续预训练实验：用学习到的 summary 替换旧的中间层 KV blocks。 |
 | `projects/qwen3_kcache_avg_topk` | 推理期 sparse decode 实验：用 K-cache block 平均向量做 top-k block 选择。 |
 | `projects/qwen3_kcache_norm_analysis` | Qwen3-0.6B 的 K-cache norm、attention energy、pruning loss/PPL 分析。 |
@@ -64,6 +66,72 @@ bash ymluo/projects/qwen3_chunk_routing/scripts/run_8gpu.sh router
 ```
 
 脚本默认使用 `torchrun --nproc_per_node=8`。它从 `MODEL_PATH` 读取 tokenizer 和 config；除非修改项目代码，否则模型权重从头初始化。
+
+### `qwen3_unet_synthetic_retrieval`
+
+新增日期：2026-05-14；最近同步日期：2026-05-15
+
+这个项目把 `fdong/unet_transformer.md` 第 7 节的可控 synthetic retrieval 任务落到可运行评估和训练脚本上，用来检查 mask-based U-Net Transformer checkpoints 在只保留 anchor KV 的情况下是否还能找回答案。
+
+当前任务直接生成 token-id 序列，避免 tokenizer segmentation 影响可控实验：
+
+- Variant A：固定 4-token patterns。
+- Variant B：随机 3-token content blocks，后接共享 anchor marker。
+
+评估会对每个 checkpoint 和任务变体报告 answer-only loss/accuracy，并比较三条路径：
+
+- full-sequence forward。
+- teacher-forced decode with full KV cache。
+- teacher-forced decode with anchor-only KV cache。
+
+默认 checkpoint 覆盖 `baseline`、`unet-4`、`unet-4-8-4`、`unet-4-8-16-8-4`。如果 checkpoint 目录里有 `runtime_config.json`，评估脚本会直接读取；否则回退到这些 run name 的已知 stride schedule。
+
+运行评估：
+
+```bash
+bash ymluo/projects/qwen3_unet_synthetic_retrieval/scripts/run_synthetic_eval.sh
+```
+
+快速 smoke test：
+
+```bash
+NUM_SAMPLES=8 BATCH_SIZE=1 \
+bash ymluo/projects/qwen3_unet_synthetic_retrieval/scripts/run_synthetic_eval.sh
+```
+
+最近新增的训练入口支持 answer-only loss，默认训练 `unet-4` schedule 的 Variant B，并使用 `TRAIN_MODE=anchor_kv_decode`，也就是训练路径和评估里的 anchor-only KV pruning 路径一致：
+
+```bash
+bash ymluo/projects/qwen3_unet_synthetic_retrieval/scripts/run_train_synthetic.sh
+```
+
+后台训练：
+
+```bash
+bash ymluo/projects/qwen3_unet_synthetic_retrieval/scripts/nohup_train_synthetic.sh
+```
+
+这个训练只对最终 answer prediction 施加 cross-entropy，不对前 1023 个 next-token 位置施加 loss。常用覆盖参数：
+
+```bash
+MODEL_NAME=unet-4-8-4 \
+VARIANT=A \
+RUN_NAME=unet-4-8-4-variant-a-answer-only \
+TOTAL_STEPS=20000 \
+BATCH_SIZE=8 \
+TRAIN_MODE=anchor_kv_decode \
+bash ymluo/projects/qwen3_unet_synthetic_retrieval/scripts/run_train_synthetic.sh
+```
+
+主要输出：
+
+```text
+ymluo/projects/qwen3_unet_synthetic_retrieval/outputs/synthetic_eval/metrics.json
+ymluo/projects/qwen3_unet_synthetic_retrieval/outputs/synthetic_eval/metrics.csv
+ymluo/projects/qwen3_unet_synthetic_retrieval/outputs/train/<run_name>/metrics.jsonl
+ymluo/projects/qwen3_unet_synthetic_retrieval/outputs/train/<run_name>/checkpoints/<step>.pth
+ymluo/projects/qwen3_unet_synthetic_retrieval/outputs/train/<run_name>/checkpoints/runtime_config.json
+```
 
 ### `pyramid_kv_compression`
 
@@ -479,17 +547,28 @@ DTYPE=bfloat16
 
 训练脚本默认使用 Hugging Face streaming 读取大型 DCLM 风格数据。除非确定磁盘足够并且想构建 Arrow cache，否则保持 `STREAMING=true`。
 
+synthetic retrieval 项目的评估和训练还常用：
+
+```bash
+NUM_SAMPLES=256
+BATCH_SIZE=4
+VARIANTS=A,B
+TRAIN_MODE=anchor_kv_decode
+TOTAL_STEPS=20000
+```
+
 ## 推荐阅读顺序
 
-新增日期：2026-05-14
+新增日期：2026-05-14；最近同步日期：2026-05-15
 
 1. `KVCache_Indexing_Knowledge_Retrieval_2026-05-09.md`：理解 retrieval-system framing。
 2. `projects/qwen3_kcache_cosine_heatmap/README.md`：理解 K-cache pairwise cosine 热力图生成方法。
 3. `projects/qwen3_kcache_norm_analysis/attention_energy_loss_summary.md`：查看 attention pruning 的当前证据。
 4. `projects/qwen3_kcache_avg_topk/README.md`：查看可运行的 block-selection sparse decode baseline。
 5. `projects/qwen3_chunk_routing/README.md`：查看 oracle/router sparse chunk training。
-6. `projects/pyramid_kv_compression/METHOD_NOTES.md`：在跑 compressed KV 继续预训练前先看风险记录。
-7. `projects/qwen3_kcache_value_delta_analysis/README.md`：查看 K-cache 数值和 delta 分布 profiling。
+6. `projects/qwen3_unet_synthetic_retrieval/README.md`：查看可控 synthetic retrieval 评估和 answer-only 训练入口。
+7. `projects/pyramid_kv_compression/METHOD_NOTES.md`：在跑 compressed KV 继续预训练前先看风险记录。
+8. `projects/qwen3_kcache_value_delta_analysis/README.md`：查看 K-cache 数值和 delta 分布 profiling。
 
 ## 实践注意事项
 
@@ -497,6 +576,7 @@ DTYPE=bfloat16
 
 - 精确命令参数和输出路径以每个项目自己的 README 为准。
 - 分析脚本默认把输出写到各项目的 `outputs/` 目录下。
+- synthetic retrieval 项目默认直接生成 token-id 序列，避免 tokenizer segmentation 对可控任务的干扰；训练默认只对最终 answer 位置施加 loss。
 - 长上下文分析会占较多显存和内存；smoke test 时先减小 `MAX_TOKENS` 和 `CHUNK_SIZE`。
 - sparse decode 和 routing 实验还需要 kernel-aware 实现，理论 KV-read reduction 才能转化为真实 serving 加速。
 - 对 KV cache 压缩来说，raw cosine 是很好的诊断信号，但最终判断必须回到 attention logits、attention output、loss/PPL。
