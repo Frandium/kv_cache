@@ -83,7 +83,13 @@ bash ymluo/projects/qwen3_interval_subseq_retrieval/scripts/nohup_train.sh
 Multi-GPU:
 
 ```bash
-NPROC_PER_NODE=8 bash ymluo/projects/qwen3_interval_subseq_retrieval/scripts/run_ddp_train.sh
+CUDA_DEVICES=0,1,2,3 bash ymluo/projects/qwen3_interval_subseq_retrieval/scripts/run_ddp_train.sh
+```
+
+Multi-GPU with `nohup`:
+
+```bash
+CUDA_DEVICES=0,1,2,3 bash ymluo/projects/qwen3_interval_subseq_retrieval/scripts/nohup_ddp_train.sh
 ```
 
 Useful overrides:

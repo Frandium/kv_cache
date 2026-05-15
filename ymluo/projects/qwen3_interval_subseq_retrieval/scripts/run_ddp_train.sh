@@ -5,9 +5,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 export TOKENIZERS_PARALLELISM=false
+CUDA_DEVICES_VALUE="${CUDA_DEVICES:-${CUDA_VISIBLE_DEVICES:-0,1,2,3,4,5,6,7}}"
+export CUDA_VISIBLE_DEVICES="${CUDA_DEVICES_VALUE}"
+
+if [[ -z "${NPROC_PER_NODE:-}" ]]; then
+  IFS=',' read -r -a CUDA_DEVICE_ARRAY <<< "${CUDA_VISIBLE_DEVICES}"
+  NPROC_PER_NODE="${#CUDA_DEVICE_ARRAY[@]}"
+fi
+
+echo "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}"
+echo "NPROC_PER_NODE=${NPROC_PER_NODE}"
 
 torchrun \
-  --nproc_per_node="${NPROC_PER_NODE:-8}" \
+  --nproc_per_node="${NPROC_PER_NODE}" \
   --master_addr="${MASTER_ADDR:-localhost}" \
   --master_port="${MASTER_PORT:-12345}" \
   "${PROJECT_DIR}/src/train_interval_subseq_retrieval.py" \
