@@ -31,6 +31,7 @@ torchrun \
   --interval_group_mode "${INTERVAL_GROUP_MODE:-scaled}" \
   --num_hidden_layers "${NUM_HIDDEN_LAYERS:-8}" \
   --attention_stride_pattern "${ATTENTION_STRIDE_PATTERN:-1,1,4,4,4,4,1,1}" \
+  --auto_resize_vocab "${AUTO_RESIZE_VOCAB:-true}" \
   --total_steps "${TOTAL_STEPS:-10000}" \
   --batch_size "${BATCH_SIZE:-4}" \
   --gradient_accumulation_steps "${GRADIENT_ACCUMULATION_STEPS:-1}" \

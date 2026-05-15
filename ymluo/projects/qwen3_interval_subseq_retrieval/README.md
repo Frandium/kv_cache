@@ -103,6 +103,12 @@ TRAIN_MODE=full_sequence_lm \
 bash ymluo/projects/qwen3_interval_subseq_retrieval/scripts/nohup_train.sh
 ```
 
+When `INTERVAL_GROUP_MODE=scaled`, the largest generated token id is
+`TOTAL_TOKEN * max(INTERVALS)`. If that exceeds the base Qwen vocab, the trainer
+automatically increases `config.vocab_size` unless `AUTO_RESIZE_VOCAB=false`.
+For example, `TOTAL_TOKEN=100000` and `INTERVALS=1,2,3` needs vocab size
+`300001`.
+
 Use a different 8-layer U-Net schedule:
 
 ```bash

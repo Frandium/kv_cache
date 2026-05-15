@@ -71,6 +71,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--residual_source_pattern", type=parse_int_list, default=None)
     parser.add_argument("--init_checkpoint", default="")
     parser.add_argument(
+        "--auto_resize_vocab",
+        type=str2bool,
+        default=True,
+        help="Increase config.vocab_size when synthetic token ids exceed the base Qwen vocabulary.",
+    )
+    parser.add_argument(
         "--train_mode",
         choices=["full_sequence_lm"],
         default="full_sequence_lm",
@@ -179,6 +185,10 @@ def validate_vocab(args: argparse.Namespace, vocab_size: int) -> None:
         )
 
 
+def required_vocab_size(args: argparse.Namespace) -> int:
+    return content_max_token_id(args) + 1
+
+
 def pattern_from_group_ids(group_ids: torch.Tensor, interval: int, subseq_len: int) -> torch.Tensor:
     offsets = torch.arange(1, subseq_len + 1, dtype=torch.long)
     return interval * (group_ids.unsqueeze(1) * subseq_len + offsets.unsqueeze(0))
@@ -240,6 +250,27 @@ def prepare_model(args: argparse.Namespace, device: torch.device):
     config.num_hidden_layers = args.num_hidden_layers
     config.attention_stride_pattern = args.attention_stride_pattern or [1] * args.num_hidden_layers
     config.residual_source_pattern = args.residual_source_pattern or [-1] * args.num_hidden_layers
+    needed_vocab_size = required_vocab_size(args)
+    if needed_vocab_size > config.vocab_size:
+        if not args.auto_resize_vocab:
+            raise ValueError(
+                f"Synthetic data needs vocab_size >= {needed_vocab_size}, "
+                f"but config.vocab_size={config.vocab_size}. "
+                "Set --auto_resize_vocab true or reduce total_token/intervals."
+            )
+        if args.init_checkpoint:
+            raise ValueError(
+                "Synthetic token ids exceed the base vocab and --init_checkpoint is set. "
+                "Automatic vocab resizing changes embedding/lm_head shapes, so it cannot "
+                "load that checkpoint strictly. Use a checkpoint trained with the resized "
+                "vocab, reduce total_token/intervals, or run without --init_checkpoint."
+            )
+        print(
+            f"Resizing config.vocab_size from {config.vocab_size} to {needed_vocab_size} "
+            "for synthetic token ids.",
+            flush=True,
+        )
+        config.vocab_size = needed_vocab_size
 
     model = MyQwen3ForCausalLM(config).to(device)
     if args.init_checkpoint:
