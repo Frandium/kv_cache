@@ -166,11 +166,11 @@ class Qwen3RMSNorm(nn.Module):
 
 
 class MyQwen3MLP(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config, intermediate_size: Optional[int] = None):
         super().__init__()
         self.config = config
         self.hidden_size = config.hidden_size
-        self.intermediate_size = config.intermediate_size
+        self.intermediate_size = intermediate_size or config.intermediate_size
         self.gate_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
         self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
         self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
@@ -179,6 +179,72 @@ class MyQwen3MLP(nn.Module):
     def forward(self, x):
         down_proj = self.down_proj(self.act_fn(self.gate_proj(x)) * self.up_proj(x))
         return down_proj
+
+
+class MyQwen3MoE(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        self.hidden_size = config.hidden_size
+        self.num_unique_experts = int(getattr(config, "moe_num_unique_experts", 0))
+        self.num_experts_per_tok = int(getattr(config, "moe_num_experts_per_tok", 1))
+        self.use_common_expert = bool(getattr(config, "moe_use_common_expert", False))
+        self.normalize_topk_prob = bool(getattr(config, "moe_normalize_topk_prob", True))
+        self.router_bias = bool(getattr(config, "moe_router_bias", False))
+        self.moe_intermediate_size = int(getattr(config, "moe_intermediate_size", config.intermediate_size))
+        self.common_intermediate_size = int(
+            getattr(config, "moe_common_intermediate_size", self.moe_intermediate_size)
+        )
+
+        if self.num_unique_experts < 1:
+            raise ValueError("`moe_num_unique_experts` must be >= 1 when `use_moe=True`.")
+        if self.num_experts_per_tok < 1 or self.num_experts_per_tok > self.num_unique_experts:
+            raise ValueError(
+                "`moe_num_experts_per_tok` must be in [1, moe_num_unique_experts], "
+                f"got {self.num_experts_per_tok} and {self.num_unique_experts}."
+            )
+
+        self.router = nn.Linear(self.hidden_size, self.num_unique_experts, bias=self.router_bias)
+        self.experts = nn.ModuleList(
+            [MyQwen3MLP(config, intermediate_size=self.moe_intermediate_size) for _ in range(self.num_unique_experts)]
+        )
+        self.common_expert = (
+            MyQwen3MLP(config, intermediate_size=self.common_intermediate_size)
+            if self.use_common_expert
+            else None
+        )
+
+    def forward(self, hidden_states, output_expert_labels: bool = False):
+        original_shape = hidden_states.shape
+        flat_states = hidden_states.reshape(-1, self.hidden_size)
+
+        router_logits = self.router(flat_states)
+        routing_weights = F.softmax(router_logits, dim=-1, dtype=torch.float32)
+        topk_weights, topk_indices = torch.topk(
+            routing_weights,
+            k=self.num_experts_per_tok,
+            dim=-1,
+        )
+        if self.normalize_topk_prob:
+            topk_weights = topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp_min(1e-9)
+        topk_weights = topk_weights.to(flat_states.dtype)
+
+        final_states = torch.zeros_like(flat_states)
+        for expert_idx, expert in enumerate(self.experts):
+            token_idx, slot_idx = torch.where(topk_indices == expert_idx)
+            if token_idx.numel() == 0:
+                continue
+            expert_output = expert(flat_states[token_idx])
+            final_states[token_idx] += expert_output * topk_weights[token_idx, slot_idx].unsqueeze(-1)
+
+        if self.common_expert is not None:
+            final_states = final_states + self.common_expert(flat_states)
+
+        final_states = final_states.reshape(original_shape)
+        if output_expert_labels:
+            expert_labels = topk_indices.reshape(*original_shape[:-1], self.num_experts_per_tok)
+            return final_states, expert_labels
+        return final_states
 
 
 def rotate_half(x):
@@ -307,9 +373,8 @@ class MyQwen3Attention(nn.Module):
         )
 
         attn_output = attn_output.reshape(*input_shape, -1).contiguous()
-        oracle_output = attn_output
         attn_output = self.o_proj(attn_output)
-        return attn_output, oracle_output
+        return attn_output, attn_weights
 
 
 class MyQwen3DecoderLayer(nn.Module):
@@ -319,7 +384,7 @@ class MyQwen3DecoderLayer(nn.Module):
         self.layer_idx = layer_idx
         self.hidden_size = config.hidden_size
         self.self_attn = MyQwen3Attention(config=config, layer_idx=layer_idx)
-        self.mlp = MyQwen3MLP(config)
+        self.mlp = MyQwen3MoE(config) if bool(getattr(config, "use_moe", False)) else MyQwen3MLP(config)
 
         self.input_layernorm = Qwen3RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = Qwen3RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -360,7 +425,11 @@ class MyQwen3DecoderLayer(nn.Module):
         # Fully Connected
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
-        hidden_states = self.mlp(hidden_states)
+        expert_labels = None
+        if isinstance(self.mlp, MyQwen3MoE):
+            hidden_states = self.mlp(hidden_states, output_expert_labels=output_expert_labels)
+        else:
+            hidden_states = self.mlp(hidden_states)
 
         if isinstance(hidden_states, tuple):
             hidden_states, expert_labels = hidden_states
