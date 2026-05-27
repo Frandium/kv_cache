@@ -4,6 +4,19 @@ parent_node: problem.moe_expert_specialization
 
 # Slot-Context Signal And Route-Utility Binding
 
+## Reporting Summary
+
+```text
+slot 变长增强了 B hidden state 中的 slot feature，所以 router 更容易按 slot 分；
+但 multi-B 里 B identity 仍然干扰，所以只得到部分 specialization。
+```
+
+The safest current claim is:
+
+```text
+context strength helps routing alignment, but visible slot information plus slot-centroid initialization is not sufficient for robust multi-B functional specialization.
+```
+
 ## Question
 
 Broader question:

@@ -34,6 +34,7 @@ Read these reports in order:
 
 ```text
 from-attention-to-search/main/experiments/slot_context_dominance_router_specialization/summary.md
+from-attention-to-search/main/experiments/slot_context_dominance_router_specialization/presentation_brief.md
 from-attention-to-search/main/experiments/slot_context_dominance_router_specialization/detailed.md
 from-attention-to-search/main/experiments/slot_context_bridge_abcd_context_length/summary.md
 from-attention-to-search/main/experiments/slot_context_bridge_abcd_context_length/detailed.md

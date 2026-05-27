@@ -12,6 +12,51 @@ Story:
 This experiment tests whether stronger slot context can make top-1 MoE routing follow slot-specific expert utility rather than B-token identity variation.
 ```
 
+## Meeting Brief
+
+30 秒版本：
+
+```text
+slot 变长增强了 B hidden state 中的 slot feature，所以 router 更容易按 slot 分；
+但 multi-B 里 B identity 仍然干扰，所以只得到部分 specialization。
+```
+
+这次汇报只讲一个问题：
+
+```text
+weak slot signal 是否解释了之前 top-1 MoE routing 不按 feature/slot 稳定分化？
+```
+
+结论分三层：
+
+| 层级 | 结果 | 可 claim | 不可 claim |
+|---|---|---|---|
+| fixed-B | long slot/context 可让 routing 对角化 | context signal 能控制 B-position routing | 不能推出 multi-B 稳健 specialization |
+| multi-B | long context 改善 NMI/utility，但不稳定 | B identity 干扰仍存在 | 不能说普通 top-1 NTP 自然学出 slot experts |
+| bridge | r-B/AB/CB/DB 下 long context 也提高 route-role NMI | 0524 prior decay 和当前正例不矛盾 | 不能说 semantic init alone 足够 |
+
+三张主图：
+
+1. short vs long routing 对比：
+
+![random vs slot-centroid init, init vs final](figures/discussion_random_vs_slot_init_init_final_route_heatmaps.png)
+
+2. fixed-B / multi-B seed-level bridge NMI：
+
+![bridge final NMI by seed](../slot_context_bridge_abcd_context_length/figures/bridge_abcd_final_nmi_by_seed_heatmap.png)
+
+3. bridge short vs long init-final route heatmap：
+
+![bridge short vs long init-final route heatmaps](../slot_context_bridge_abcd_context_length/figures/bridge_abcd_short_long_init_final_route_heatmaps.png)
+
+预期问题：
+
+| 问题 | 回答 |
+|---|---|
+| 训练是不是正常 NTP？ | 是。训练是 full-sequence causal NTP；B-position metric 只是主评估位置，不是 supervised routing loss。 |
+| NMI 上升是否证明 expert specialization？ | 不能。NMI 只证明 routing alignment；specialization 还要看 forced utility heatmap 和 Assign-Utility。 |
+| 当前结果是否支持原假设？ | 支持弱版本：context strength helps routing。削弱强版本：multi-B 下 visibility + slot init 仍不足以稳定绑定 expert utility。 |
+
 ## 0. Closure Summary
 
 目的：判断之前的 routing failure 是否主要来自 B-position slot signal 太弱。
