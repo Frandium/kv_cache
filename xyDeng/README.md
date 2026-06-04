@@ -5,22 +5,24 @@ This branch uses date-based research sync packages.
 ## Current Read Path
 
 ```text
-sync/2026-06-01/2x2_ntp_top1_lockin/
+sync/2026-06-05/feature_assumption_relaxation_05_02/
 ```
 
 Read first:
 
 ```text
-sync/2026-06-01/2x2_ntp_top1_lockin/report_card.md
+sync/2026-06-05/feature_assumption_relaxation_05_02/report_card.md
 ```
 
 Then audit details if needed:
 
 ```text
-sync/2026-06-01/2x2_ntp_top1_lockin/summary.md
-sync/2026-06-01/2x2_ntp_top1_lockin/detailed.md
-sync/2026-06-01/2x2_ntp_top1_lockin/protocol_for_approval.md
-sync/2026-06-01/2x2_ntp_top1_lockin/ntp_style_top1_router_lockin_anchor.md
+sync/2026-06-05/feature_assumption_relaxation_05_02/meeting_brief.md
+sync/2026-06-05/feature_assumption_relaxation_05_02/05_02_feature_assumption_relaxation_anchor.md
+sync/2026-06-05/feature_assumption_relaxation_05_02/P1_compositional_token_feature_routing/summary.md
+sync/2026-06-05/feature_assumption_relaxation_05_02/P1_compositional_token_feature_routing/detailed.md
+sync/2026-06-05/feature_assumption_relaxation_05_02/P3_same_expert_feature_relation/summary.md
+sync/2026-06-05/feature_assumption_relaxation_05_02/P3_same_expert_feature_relation/detailed.md
 ```
 
 ## Mainline
