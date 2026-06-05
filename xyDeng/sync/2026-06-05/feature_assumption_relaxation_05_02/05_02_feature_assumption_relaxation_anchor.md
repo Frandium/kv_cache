@@ -1,6 +1,6 @@
 ---
 parent_node: 05_01_geometric_inhibition_anchor
-status: active-after-H0605b-H0605c
+status: active-after-A05_02_P1-A05_02_P3
 source_of_truth_status: project-local-anchor
 ---
 
@@ -12,7 +12,7 @@ source_of_truth_status: project-local-anchor
 
 05_02 的主线不是直接证明 specialization，也不是把 true inhibition 作为中心故事。它的目标是从 advisor's minimal baseline setting 出发，一次放松一个数据假设，观察 route consistency 是否仍然 non-collapsed 且有意义。
 
-H0605b / P1 和 H0605c / P3 的当前结论是 negative / bounded：
+A05_02_P1_compositional_token_feature_routing 和 A05_02_P3_same_expert_feature_relation 的当前结论是 negative / bounded：
 
 - P1：target 全部学会，但 C1/C2 多数 seed route collapse；只有 C3-B0 在 non-collapsed-ish 条件下显示 route 更偏向组合轴 $(S1,S2)$。因此 P1 不能整体 claim target-rule-dependent routing。
 - P3：P3a 和 P3b target 全部学会，但 family purity over load-matched random baseline 小且 seed 不稳定。P3b 没有比 P3a 更强，因此 shared family target utility 没有稳定诱导 ordinary top-1 family grouping。
@@ -224,17 +224,17 @@ routing collapses, target learning fails, or too few features remain per active 
 
 ## 7. Current Evidence
 
-H0604a shows same-feature consistency can be high, but this is weak evidence because collapse can also produce high consistency.
+A05_01_feature_key_routing_stability_center_only shows same-feature consistency can be high, but this is weak evidence because collapse can also produce high consistency.
 
-H0604b shows that after collapse filtering, the best existing non-collapsed route structure is closer to slot than to $B_i$.
+A05_01_feature_axis_audit_existing_logs shows that after collapse filtering, the best existing non-collapsed route structure is closer to slot than to $B_i$.
 
-H0605a shows token-conditioned inhibition can sharpen consistency but may amplify collapse. This is why inhibition remains a candidate condition, not the main storyline.
+A05_01_true_token_conditioned_inhibition_replay shows token-conditioned inhibition can sharpen consistency but may amplify collapse. This is why inhibition remains a candidate condition, not the main storyline.
 
-H0605b / P1:
+A05_02_P1_compositional_token_feature_routing:
 
 - Evidence files:
-  - `Projects/from-attention-to-search/main/experiments/H0605b_compositional_token_feature_routing/summary.md`
-  - `Projects/from-attention-to-search/main/experiments/H0605b_compositional_token_feature_routing/detailed.md`
+  - `Projects/from-attention-to-search/main/experiments/A05_02_P1_compositional_token_feature_routing/summary.md`
+  - `Projects/from-attention-to-search/main/experiments/A05_02_P1_compositional_token_feature_routing/detailed.md`
 - Observation:
   - all six condition groups reach target accuracy 1.0;
   - C1/C2 mostly collapse or use only two experts;
@@ -243,11 +243,11 @@ H0605b / P1:
   - C3 supports a narrow clue that compositional target structure can affect route axis;
   - C1/C2 prevent a broad P1 positive claim.
 
-H0605c / P3:
+A05_02_P3_same_expert_feature_relation:
 
 - Evidence files:
-  - `Projects/from-attention-to-search/main/experiments/H0605c_same_expert_feature_relation/summary.md`
-  - `Projects/from-attention-to-search/main/experiments/H0605c_same_expert_feature_relation/detailed.md`
+  - `Projects/from-attention-to-search/main/experiments/A05_02_P3_same_expert_feature_relation/summary.md`
+  - `Projects/from-attention-to-search/main/experiments/A05_02_P3_same_expert_feature_relation/detailed.md`
 - Observation:
   - all four condition groups reach target accuracy 1.0;
   - family purity deltas over load-matched random are small: P3a-B0 0.055, P3a-I1 0.047, P3b-B0 0.087, P3b-I1 0.090;

@@ -1,4 +1,4 @@
-# Result Summary: H0605c / P3 Same-Expert Feature Relation
+# Result Summary: A05_02_P3_same_expert_feature_relation Same-Expert Feature Relation
 
 Anchor: `Projects/from-attention-to-search/main/problem_anchors/05_02_feature_assumption_relaxation_anchor.md`
 

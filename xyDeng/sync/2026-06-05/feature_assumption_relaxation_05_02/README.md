@@ -5,10 +5,10 @@
 1. `05_report_card.md`
 2. `meeting_brief.md`
 3. `05_02_feature_assumption_relaxation_anchor.md`
-4. `P1_compositional_token_feature_routing/summary.md`
-5. `P3_same_expert_feature_relation/summary.md`
-6. `P1_compositional_token_feature_routing/detailed.md`
-7. `P3_same_expert_feature_relation/detailed.md`
+4. `A05_02_P1_compositional_token_feature_routing/summary.md`
+5. `A05_02_P3_same_expert_feature_relation/summary.md`
+6. `A05_02_P1_compositional_token_feature_routing/detailed.md`
+7. `A05_02_P3_same_expert_feature_relation/detailed.md`
 
 ## Scope
 
@@ -23,14 +23,14 @@ The result is negative / bounded for ordinary top-1 routing. It does not claim e
 - `05_02_feature_assumption_relaxation_anchor.md`
 - `meeting_brief.md`
 - `05_report_card.md`
-- `P1_compositional_token_feature_routing/summary.md`
-- `P1_compositional_token_feature_routing/detailed.md`
-- `P1_compositional_token_feature_routing/figures/`
-- `P1_compositional_token_feature_routing/tables/`
-- `P3_same_expert_feature_relation/summary.md`
-- `P3_same_expert_feature_relation/detailed.md`
-- `P3_same_expert_feature_relation/figures/`
-- `P3_same_expert_feature_relation/tables/`
+- `A05_02_P1_compositional_token_feature_routing/summary.md`
+- `A05_02_P1_compositional_token_feature_routing/detailed.md`
+- `A05_02_P1_compositional_token_feature_routing/figures/`
+- `A05_02_P1_compositional_token_feature_routing/tables/`
+- `A05_02_P3_same_expert_feature_relation/summary.md`
+- `A05_02_P3_same_expert_feature_relation/detailed.md`
+- `A05_02_P3_same_expert_feature_relation/figures/`
+- `A05_02_P3_same_expert_feature_relation/tables/`
 
 ## Excluded
 

@@ -1,4 +1,4 @@
-# Result Summary: H0605b / P1 Compositional Token Feature Routing
+# Result Summary: A05_02_P1_compositional_token_feature_routing Compositional Token Feature Routing
 
 Anchor: `Projects/from-attention-to-search/main/problem_anchors/05_02_feature_assumption_relaxation_anchor.md`
 

@@ -6,18 +6,18 @@ Anchor:
 `05_02_feature_assumption_relaxation_anchor.md`
 
 Summary:
-`P1_compositional_token_feature_routing/summary.md`
-`P3_same_expert_feature_relation/summary.md`
+`A05_02_P1_compositional_token_feature_routing/summary.md`
+`A05_02_P3_same_expert_feature_relation/summary.md`
 
 Detailed:
-`P1_compositional_token_feature_routing/detailed.md`
-`P3_same_expert_feature_relation/detailed.md`
+`A05_02_P1_compositional_token_feature_routing/detailed.md`
+`A05_02_P3_same_expert_feature_relation/detailed.md`
 
 Figures / Tables:
-`P1_compositional_token_feature_routing/figures/`
-`P1_compositional_token_feature_routing/tables/`
-`P3_same_expert_feature_relation/figures/`
-`P3_same_expert_feature_relation/tables/`
+`A05_02_P1_compositional_token_feature_routing/figures/`
+`A05_02_P1_compositional_token_feature_routing/tables/`
+`A05_02_P3_same_expert_feature_relation/figures/`
+`A05_02_P3_same_expert_feature_relation/tables/`
 
 ## 0. Executive Summary
 
@@ -71,7 +71,7 @@ ordinary top-1 routing 在这些 relaxed assumptions 下更接近 collapse / arb
 
 ### Figure 1: P1 B0 target-rule x route-axis NMI
 
-![P1 B0 target-rule x route-axis NMI](P1_compositional_token_feature_routing/figures/B0_target_rule_route_axis_nmi.png)
+![P1 B0 target-rule x route-axis NMI](A05_02_P1_compositional_token_feature_routing/figures/B0_target_rule_route_axis_nmi.png)
 
 What to see:
 
@@ -87,7 +87,7 @@ Cannot prove:
 
 ### Figure 2: P1 expert load histogram
 
-![P1 expert load histogram](P1_compositional_token_feature_routing/figures/expert_load_histogram.png)
+![P1 expert load histogram](A05_02_P1_compositional_token_feature_routing/figures/expert_load_histogram.png)
 
 What to see:
 
@@ -103,7 +103,7 @@ Cannot prove:
 
 ### Figure 3: P3 family purity vs load-matched random
 
-![P3 family purity vs load-matched random](P3_same_expert_feature_relation/figures/family_purity_vs_load_matched_random.png)
+![P3 family purity vs load-matched random](A05_02_P3_same_expert_feature_relation/figures/family_purity_vs_load_matched_random.png)
 
 What to see:
 
@@ -119,7 +119,7 @@ Cannot prove:
 
 ### Figure 4: P3 expert load histogram
 
-![P3 expert load histogram](P3_same_expert_feature_relation/figures/expert_load_histogram.png)
+![P3 expert load histogram](A05_02_P3_same_expert_feature_relation/figures/expert_load_histogram.png)
 
 What to see:
 
