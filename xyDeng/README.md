@@ -5,23 +5,23 @@ This branch uses date-based research sync packages.
 ## Current Read Path
 
 ```text
-sync/2026-06-09/round2_dotproduct_common_logit/
+sync/2026-06-25/a06_18_revision_audit/
 ```
 
 Read first:
 
 ```text
-sync/2026-06-09/round2_dotproduct_common_logit/05_report_card.md
+sync/2026-06-25/a06_18_revision_audit/report_card.md
 ```
 
 Then audit details if needed:
 
 ```text
-sync/2026-06-09/round2_dotproduct_common_logit/summary.md
-sync/2026-06-09/round2_dotproduct_common_logit/detailed.md
-sync/2026-06-09/round2_dotproduct_common_logit/05_04_02_dotproduct_common_logit_causality_anchor.md
-sync/2026-06-09/round2_dotproduct_common_logit/round2_summary.md
-sync/2026-06-09/round2_dotproduct_common_logit/round2_detailed.md
+sync/2026-06-25/a06_18_revision_audit/summary.md
+sync/2026-06-25/a06_18_revision_audit/detailed.md
+sync/2026-06-25/a06_18_revision_audit/protocol.md
+sync/2026-06-25/a06_18_revision_audit/06_18_label_free_route_relevant_state_selection_anchor.md
+sync/2026-06-25/a06_18_revision_audit/06_proxy_preservation_line_cn.md
 ```
 
 ## Mainline
