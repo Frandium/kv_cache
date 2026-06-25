@@ -1,7 +1,7 @@
-{
+﻿{
   "experiment": "A05_04_02_round2_dotproduct_common_logit",
   "primary_anchor": "Projects/from-attention-to-search/main/problem_anchors/05_04_02_dotproduct_common_logit_causality_anchor.md",
-  "round1_dotproduct_result_dir": "main/experiments/A05_04_01_round1_slot_specialization_protocol_dot_product/results/round1_slot_specialization_dot_product_4gpu_20260609",
+  "round1_dotproduct_result_dir": "main/experiments/A05/A05_04_01_round1_slot_specialization_protocol_dot_product/results/round1_slot_specialization_dot_product_4gpu_20260609",
   "router_metric": "dot_product",
   "run_name": "round2_dotproduct_common_logit_4gpu_20260609",
   "run_stage": "full",

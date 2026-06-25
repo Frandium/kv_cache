@@ -1,4 +1,4 @@
-# 05_04_03 Real-Text Common-Logit Initialization Anchor
+﻿# 05_04_03 Real-Text Common-Logit Initialization Anchor
 
 ## 0. Tiny Summary
 
@@ -173,7 +173,7 @@ Phase 4 observation:
 By step 300, actual larger $E$ shows more underuse risk: raw active-expert ratio is `0.9792` at $E=16$ and `0.9149` at $E=32$.
 
 Evidence location:
-Real-text evidence is recorded in `Projects/from-attention-to-search/main/experiments/A05_04_02_real_text_common_logit_audit/summary.md` and `detailed.md`.
+Real-text evidence is recorded in `Projects/from-attention-to-search/main/experiments/A05/A05_04_03_real_text_common_logit_audit/summary.md` and `detailed.md`.
 
 Daily report card:
 `daily_research_reports/0611/real_text_common_logit_audit/05_report_card.md`

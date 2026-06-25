@@ -1,4 +1,4 @@
-# A05_04_02 Real-Text Common-Logit Audit Detailed Record
+﻿# A05_04_02 Real-Text Common-Logit Audit Detailed Record
 
 ## 1. Research Question
 
@@ -43,7 +43,7 @@ Research workspace:
 `Research_System workspace`
 
 Experiment folder:
-`Projects/from-attention-to-search/main/experiments/A05_04_02_real_text_common_logit_audit`
+`Projects/from-attention-to-search/main/experiments/A05/A05_04_03_real_text_common_logit_audit`
 
 Runner:
 `scripts/run_real_text_common_logit_audit.py`
@@ -325,16 +325,16 @@ Code workspace:
 `MoE_Router workspace`
 
 Research experiment folder:
-`Projects/from-attention-to-search/main/experiments/A05_04_02_real_text_common_logit_audit`
+`Projects/from-attention-to-search/main/experiments/A05/A05_04_03_real_text_common_logit_audit`
 
 Anchor:
 `Projects/from-attention-to-search/main/problem_anchors/05_04_03_real_text_common_logit_initialization_anchor.md`
 
 Runner:
-`Projects/from-attention-to-search/main/experiments/A05_04_02_real_text_common_logit_audit/scripts/run_real_text_common_logit_audit.py`
+`Projects/from-attention-to-search/main/experiments/A05/A05_04_03_real_text_common_logit_audit/scripts/run_real_text_common_logit_audit.py`
 
 Submit script:
-`Projects/from-attention-to-search/main/experiments/A05_04_02_real_text_common_logit_audit/scripts/submit_real_text_common_logit_4gpu_acp.sh`
+`Projects/from-attention-to-search/main/experiments/A05/A05_04_03_real_text_common_logit_audit/scripts/submit_real_text_common_logit_4gpu_acp.sh`
 
 Run config:
 `runs/real_text_common_logit_audit_v5/real_text_common_logit_audit_v5_4gpu_20260611_r3/config/run_config.json`
@@ -357,7 +357,7 @@ Job id:
 Repro command:
 
 ```bash
-cd Projects/from-attention-to-search/main/experiments/A05_04_02_real_text_common_logit_audit
+cd Projects/from-attention-to-search/main/experiments/A05/A05_04_03_real_text_common_logit_audit
 REAL_TEXT_COMMON_LOGIT_ALLOW_REAL_SUBMIT=1 scripts/submit_real_text_common_logit_4gpu_acp.sh real_text_common_logit_audit_v5_4gpu_20260611_r3
 ```
 

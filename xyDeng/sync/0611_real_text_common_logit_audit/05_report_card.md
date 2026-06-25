@@ -1,11 +1,11 @@
-# 05 Report Card: Real-Text Common-Logit Audit
+﻿# 05 Report Card: Real-Text Common-Logit Audit
 
 ## Source Files
 
 - Anchor: `Projects/from-attention-to-search/main/problem_anchors/05_04_03_real_text_common_logit_initialization_anchor.md`
-- Summary: `Projects/from-attention-to-search/main/experiments/A05_04_02_real_text_common_logit_audit/summary.md`
-- Detailed: `Projects/from-attention-to-search/main/experiments/A05_04_02_real_text_common_logit_audit/detailed.md`
-- Final run: `Projects/from-attention-to-search/main/experiments/A05_04_02_real_text_common_logit_audit/runs/real_text_common_logit_audit_v5/real_text_common_logit_audit_v5_4gpu_20260611_r3`
+- Summary: `Projects/from-attention-to-search/main/experiments/A05/A05_04_03_real_text_common_logit_audit/summary.md`
+- Detailed: `Projects/from-attention-to-search/main/experiments/A05/A05_04_03_real_text_common_logit_audit/detailed.md`
+- Final run: `Projects/from-attention-to-search/main/experiments/A05/A05_04_03_real_text_common_logit_audit/runs/real_text_common_logit_audit_v5/real_text_common_logit_audit_v5_4gpu_20260611_r3`
 - ACP job: `pt-mrx0wq1v`
 
 ## Executive Summary

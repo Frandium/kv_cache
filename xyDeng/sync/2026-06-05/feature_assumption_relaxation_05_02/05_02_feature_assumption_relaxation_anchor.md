@@ -1,4 +1,4 @@
----
+﻿---
 parent_node: 05_01_geometric_inhibition_anchor
 status: active-after-A05_02_P1-A05_02_P3
 source_of_truth_status: project-local-anchor
@@ -233,8 +233,8 @@ A05_01_true_token_conditioned_inhibition_replay shows token-conditioned inhibiti
 A05_02_P1_compositional_token_feature_routing:
 
 - Evidence files:
-  - `Projects/from-attention-to-search/main/experiments/A05_02_P1_compositional_token_feature_routing/summary.md`
-  - `Projects/from-attention-to-search/main/experiments/A05_02_P1_compositional_token_feature_routing/detailed.md`
+  - `Projects/from-attention-to-search/main/experiments/A05/A05_02_P1_compositional_token_feature_routing/summary.md`
+  - `Projects/from-attention-to-search/main/experiments/A05/A05_02_P1_compositional_token_feature_routing/detailed.md`
 - Observation:
   - all six condition groups reach target accuracy 1.0;
   - C1/C2 mostly collapse or use only two experts;
@@ -246,8 +246,8 @@ A05_02_P1_compositional_token_feature_routing:
 A05_02_P3_same_expert_feature_relation:
 
 - Evidence files:
-  - `Projects/from-attention-to-search/main/experiments/A05_02_P3_same_expert_feature_relation/summary.md`
-  - `Projects/from-attention-to-search/main/experiments/A05_02_P3_same_expert_feature_relation/detailed.md`
+  - `Projects/from-attention-to-search/main/experiments/A05/A05_02_P3_same_expert_feature_relation/summary.md`
+  - `Projects/from-attention-to-search/main/experiments/A05/A05_02_P3_same_expert_feature_relation/detailed.md`
 - Observation:
   - all four condition groups reach target accuracy 1.0;
   - family purity deltas over load-matched random are small: P3a-B0 0.055, P3a-I1 0.047, P3b-B0 0.087, P3b-I1 0.090;

@@ -1,6 +1,6 @@
-{
+﻿{
   "acp_job_id": "pt-fplz4uf0",
-  "acp_runtime_log": "main/experiments/A05_04_02_round2_dotproduct_common_logit/logs/acp/round2_dotproduct_common_logit_4gpu_20260609_runtime_20260609_155611.log",
+  "acp_runtime_log": "main/experiments/A05/A05_04_02_round2_dotproduct_common_logit/logs/acp/round2_dotproduct_common_logit_4gpu_20260609_runtime_20260609_155611.log",
   "acp_state": "SUCCEEDED",
   "figure_dir": "figures/round2_dotproduct_common_logit_4gpu_20260609",
   "result_dir": "tables/",

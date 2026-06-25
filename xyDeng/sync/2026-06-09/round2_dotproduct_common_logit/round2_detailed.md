@@ -1,11 +1,11 @@
-# Round-2 Detailed Record
+﻿# Round-2 Detailed Record
 
 ## Source Files
 
 - Protocol: `daily_research_reports/0609/round2_dotproduct_common_logit_protocol.md`
 - Anchor: `Projects/from-attention-to-search/main/problem_anchors/05_04_02_dotproduct_common_logit_causality_anchor.md`
-- Runner: `Projects/from-attention-to-search/main/experiments/A05_04_02_round2_dotproduct_common_logit/scripts/run_round2_dotproduct_common_logit.py`
-- Round-1 dot-product baseline: `Projects/from-attention-to-search/main/experiments/A05_04_01_round1_slot_specialization_protocol_dot_product/results/round1_slot_specialization_dot_product_4gpu_20260609`
+- Runner: `Projects/from-attention-to-search/main/experiments/A05/A05_04_02_round2_dotproduct_common_logit/scripts/run_round2_dotproduct_common_logit.py`
+- Round-1 dot-product baseline: `Projects/from-attention-to-search/main/experiments/A05/A05_04_01_round1_slot_specialization_protocol_dot_product/results/round1_slot_specialization_dot_product_4gpu_20260609`
 
 ## Setup
 
@@ -17,10 +17,10 @@ Implementation adaptation: common cancellation estimates the current common vect
 
 ## Artifact Map
 
-- Result directory in source repo: `main/experiments/A05_04_02_round2_dotproduct_common_logit/results/round2_dotproduct_common_logit_4gpu_20260609`
+- Result directory in source repo: `main/experiments/A05/A05_04_02_round2_dotproduct_common_logit/results/round2_dotproduct_common_logit_4gpu_20260609`
 - Synced figure directory: `figures/round2_dotproduct_common_logit_4gpu_20260609`
 - ACP job id: `pt-fplz4uf0`
-- ACP runtime log: `Projects/from-attention-to-search/main/experiments/A05_04_02_round2_dotproduct_common_logit/logs/acp/round2_dotproduct_common_logit_4gpu_20260609_runtime_20260609_155611.log`
+- ACP runtime log: `Projects/from-attention-to-search/main/experiments/A05/A05_04_02_round2_dotproduct_common_logit/logs/acp/round2_dotproduct_common_logit_4gpu_20260609_runtime_20260609_155611.log`
 - ACP state: `SUCCEEDED`
 - Raw metrics: `r2_all_trained_metrics_by_step.csv`, `r2_all_trained_route_confusion.csv`, `r2_all_trained_margin_decomposition.csv`
 - P0: `r2_p0_decomposition_sanity.csv`, `r2_p0_summary.md`, figure `r2_p0_reconstruction_error.png`

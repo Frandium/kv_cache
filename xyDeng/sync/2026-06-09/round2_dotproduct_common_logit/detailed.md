@@ -1,4 +1,4 @@
-# A05_04_02 Round-2 Dot-Product Common-Logit Detailed Record
+﻿# A05_04_02 Round-2 Dot-Product Common-Logit Detailed Record
 
 ## Completion Status
 
@@ -22,9 +22,9 @@ This file is the project-standard `detailed.md` entry so readers do not have to 
 
 - Protocol: `daily_research_reports/0609/round2_dotproduct_common_logit_protocol.md`
 - Anchor: `main/problem_anchors/05_04_02_dotproduct_common_logit_causality_anchor.md`
-- Runner: `main/experiments/A05_04_02_round2_dotproduct_common_logit/scripts/run_round2_dotproduct_common_logit.py`
-- Submit script: `main/experiments/A05_04_02_round2_dotproduct_common_logit/scripts/submit_round2_dotproduct_common_logit_4gpu_acp.sh`
-- Round-1 dot-product baseline: `main/experiments/A05_04_01_round1_slot_specialization_protocol_dot_product/results/round1_slot_specialization_dot_product_4gpu_20260609`
+- Runner: `main/experiments/A05/A05_04_02_round2_dotproduct_common_logit/scripts/run_round2_dotproduct_common_logit.py`
+- Submit script: `main/experiments/A05/A05_04_02_round2_dotproduct_common_logit/scripts/submit_round2_dotproduct_common_logit_4gpu_acp.sh`
+- Round-1 dot-product baseline: `main/experiments/A05/A05_04_01_round1_slot_specialization_protocol_dot_product/results/round1_slot_specialization_dot_product_4gpu_20260609`
 
 ## Setup
 
