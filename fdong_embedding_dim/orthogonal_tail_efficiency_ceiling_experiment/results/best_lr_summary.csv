@@ -1,0 +1,5 @@
+dim,variant,lr,successes,num_seeds,median_first_stable_tail_step,mean_final_tail_loss,mean_final_the_retention_gap
+8,common_oracle,0.3,10,10,62.5,0.5493322670459747,2.289414405822754e-05
+8,residual_oracle,0.3,10,10,60.0,0.5498226225376129,2.289414405822754e-05
+16,common_oracle,1.0,10,10,80.0,0.5493432462215424,5.942583084106445e-05
+16,residual_oracle,0.3,10,10,65.0,0.5501096725463868,5.942583084106445e-05

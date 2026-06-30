@@ -1,0 +1,28 @@
+{
+  "dims": [
+    2,
+    3
+  ],
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "base_lr": 0.03,
+  "bridge_lr": 0.05,
+  "max_pretrain_steps": 300,
+  "post_steps": 1500,
+  "min_pretrain_steps": 15,
+  "check_interval": 3,
+  "stable_checks": 3,
+  "stability_rule": "angle_or_sigma",
+  "angle_tol_deg": 0.5,
+  "sigma_rel_tol": 0.002,
+  "stable_window": 10,
+  "residual_alpha": 1.0,
+  "init_scale": 0.35,
+  "matrix_init_scale": 0.08,
+  "weight_decay": 0.0,
+  "device": "cpu",
+  "output_dir": "results"
+}

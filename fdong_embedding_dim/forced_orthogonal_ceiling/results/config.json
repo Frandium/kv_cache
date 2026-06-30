@@ -1,0 +1,26 @@
+{
+  "dims": [
+    8,
+    16
+  ],
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "steps": 500,
+  "eval_interval": 10,
+  "stable_evals": 5,
+  "bayes_gap_threshold": 0.03,
+  "cake_loss_threshold": 0.03,
+  "lr": 0.03,
+  "init_scale": 0.35,
+  "matrix_init_scale": 0.08,
+  "residual_alpha": 1.0,
+  "device": "cpu",
+  "output_dir": "results",
+  "pretrain_max_steps": 500,
+  "phase2_steps": 500
+}

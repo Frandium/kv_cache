@@ -1,0 +1,17 @@
+{
+  "identical_initial_logits_max_abs_diff": 0.0,
+  "common_trainable_parameters": 14,
+  "residual_trainable_parameters": 14,
+  "common_residual_basis_max_abs_overlap": 1.0057395627427468e-07,
+  "common_input_orthogonality_max_error": 1.7881393432617188e-07,
+  "bvo_singular_values": [
+    19.53074836730957,
+    1.4834057092666626,
+    1.3683239221572876,
+    1.0892220735549927,
+    0.989399790763855,
+    0.8657235503196716,
+    0.5946201086044312,
+    0.01624136231839657
+  ]
+}
