@@ -2,25 +2,24 @@
 
 ## Primary held-out result
 
-| hidden dim | held-out seeds | common LR | spectral-tail LR | common median | tail median | mean tail-common | tail wins / ties / losses | one-sided Wilcoxon |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 8 | 15 | 0.3 | 0.3 | 65 | 65 | +2.67 | 7 / 0 / 8 | 0.533 |
-| 16 | 45 | 0.3 | 1.0 | 80 | 65 | -12.0 | 28 / 2 / 15 | 0.008 |
+| hidden dim | top-2 common | bottom-2 spectral tail | unrestricted full output |
+|---:|---:|---:|---:|
+| 8 | 70 | 65 | **50** |
+| 16 | 80 | **65** | **65** |
 
-Negative `tail-common` means the spectral-tail branch converged sooner. At dimension 16 the paired bootstrap 95% interval for the mean difference is `[-22.56, -1.78]` steps; the one-sided sign-test p-value is 0.033. At dimension 8 the interval crosses zero widely and the directions split evenly.
+All entries are median Stage-2 stable tail steps over 45 held-out seeds. At dimension 8 unrestricted output beats top-2 by 21.8 mean steps and bottom-2 by 13.4; both paired bootstrap intervals exclude zero. At dimension 16 unrestricted output beats top-2 by 16 mean steps, but differs from bottom-2 by only 4 mean steps with a bootstrap interval `[-13.0, 4.11]` and one-sided Wilcoxon `p=0.454`.
 
-The dimension-16 median reduction is 15 steps, or 18.75% relative to the common branch. This is the constructive existence result.
+Thus unrestricted output is the clear speed ceiling at dimension 8 and statistically tied with spectral tail at dimension 16.
 
 ## How to read the paired plot
 
-`heldout_paired_comparison.png` plots one seed per point. The x-axis is the common branch's stable step and the y-axis is the spectral-tail branch's stable step.
+`three_way_heldout_paired.png` plots one seed per point. The x-axis is a constrained branch's stable step and the y-axis is the unrestricted branch's stable step.
 
-- points below the diagonal favor the spectral tail;
-- points above the diagonal favor common reuse;
-- dimension 8 is balanced around the diagonal;
-- dimension 16 has a visible majority below it, but retains real seed-to-seed failures and outliers.
+- points below the diagonal favor unrestricted output;
+- dimension 8 strongly favors unrestricted output over both restricted branches;
+- dimension 16 favors unrestricted output over top-2 but not over bottom-2.
 
-![Held-out paired comparison](/Users/bytedance/kv_cache/fdong_embedding_dim/orthogonal_tail_efficiency_ceiling_experiment/results/heldout_paired_comparison.png)
+![Three-way held-out paired comparison](/Users/bytedance/kv_cache/fdong_embedding_dim/orthogonal_tail_efficiency_ceiling_experiment/results/three_way_heldout_paired.png)
 
 ## LR sweep
 
@@ -41,7 +40,6 @@ Thus the measured difference is not caused by unequal parameter counts, differen
 
 ## What the result does and does not establish
 
-It establishes that a more efficient spectral-tail setting can exist. This closes the specific logical gap left by the frequency-reweighting experiment: common-space reuse is not the only potentially efficient solution.
+It establishes that perfect routing and an isolated unrestricted branch explain the fastest branch learning. It does not support the claim that a spectral-tail restriction is necessary for speed. At dimension 16, bottom-2 remains interesting as a parameter-efficient solution: it matches unrestricted median speed with 14 rather than 112 parameters.
 
-It does not establish that the tail basis is universally superior. Dimension 8 is a direct counterexample. It also does not identify why dimension 16 helps. The likely candidates are cleaner parameter isolation and better conditioning at a larger learning rate, but the current tied embedding means the chosen basis also changes how tail-context embedding deltas interact with frozen Q/K/V maps. A follow-up untied-readout or fixed-input ablation is needed to isolate that mechanism.
-
+None of the oracle branches beats the earlier full-model uniform/reweight median of roughly 40 steps. The practical question is therefore still whether learned routing or online subspace allocation can provide isolation without oracle information and without losing the efficiency of full-model frequency balancing.

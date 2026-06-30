@@ -2,11 +2,11 @@
 
 ## Answer first
 
-Yes, such a setting exists in this controlled oracle class, but the advantage is conditional rather than universal.
+The unrestricted gated branch is the correct ceiling, and it changes the interpretation.
 
-With hidden size 16, a rank-2 branch forced into the bottom two left-singular directions of the pretrained value map reaches stable tail convergence in a median of 65 steps, versus 80 steps for an exactly parameter-matched branch writing into the top two directions. The paired held-out mean improvement is 12 steps over 45 seeds. With hidden size 8, both medians are 65 steps and there is no detectable benefit.
+With hidden size 8, allowing the isolated tail branch to write into all eight directions converges in a median of 50 steps, versus 65 for bottom-2 spectral tail and 70 for top-2 common. With hidden size 16, unrestricted full output and bottom-2 spectral tail both converge in a median of 65 steps, versus 80 for top-2 common.
 
-This result rejects the strongest negative claim—“using spectral-tail directions can never be more efficient.” It does **not** show that ordinary SGD can discover the branch, that every residual direction helps, or that spectral flattening by itself solves Zipf learning.
+Therefore perfect routing and parameter isolation are sufficient to obtain the fastest observed branch learning. A spectral-tail restriction is not necessary. Its remaining value is parameter efficiency at dimension 16: 14 trainable parameters match the 65-step median of the 112-parameter unrestricted branch.
 
 ## Question being isolated
 
@@ -32,7 +32,7 @@ For rank \(r=2\), define
 U_C=U_{[:,1:r]},\qquad V_C=V_{[:,1:r]},\qquad U_T=U_{[:,-r:]}.
 \]
 
-Both stage-2 branches receive the same common input coordinates \(zV_C\), use the same trainable matrix \(A\in\mathbb{R}^{r\times r}\), and have the same contextual tied-embedding coefficients \(Z\). They differ only in the output basis:
+All stage-2 branches receive the same common input coordinates \(zV_C\) and the same perfect tail gate. The two restricted branches use \(A\in\mathbb{R}^{r\times r}\):
 
 \[
 \Delta h_C=(zV_C)A^\top U_C^\top,
@@ -43,6 +43,14 @@ Both stage-2 branches receive the same common input coordinates \(zV_C\), use th
 \]
 
 The common branch therefore reuses the largest parameter directions. The spectral-tail branch must write into the smallest parameter directions.
+
+The unrestricted ceiling instead learns
+
+\[
+\Delta h_F=(zV_C)M,\qquad M\in\mathbb{R}^{r\times d},
+\]
+
+and full-dimensional contextual tied-embedding deltas. It can write into any direction. This increases trainable parameters from 14 to 56 at dimension 8 and to 112 at dimension 16, while hidden width remains unchanged.
 
 ## Why this is an oracle ceiling
 
@@ -56,13 +64,13 @@ These choices deliberately remove routing, interference, and subspace-discovery 
 
 ## Current interpretation
 
-The hidden-size dependence matters. At dimension 8, the bottom-r parameterization is not faster. At dimension 16, it is faster under a separately tuned larger learning rate. This is consistent with—though it does not yet prove—the mechanism that extra weak directions provide an isolated, better-conditioned workspace once width leaves enough unused capacity.
+The dominant causal factor is a clean tail-specific parameter path protected from common-data updates. At dimension 8, forcing that path into only two directions costs 15 steps relative to unrestricted output. At dimension 16, bottom-2 is as fast in median as unrestricted output despite using one eighth as many trainable parameters, so a weak spectral subspace can be a compact workspace but is not a faster workspace.
 
-The result does not overturn the frequency mechanism. The oracle branch is tested after removing frequency imbalance. A practical method must still supply enough optimizer-visible tail gradient and discover or maintain the appropriate subspace.
+The result does not overturn the frequency mechanism. The oracle branch is tested after removing frequency imbalance. It also remains slower than the earlier full-model uniform/reweight result of roughly 40 stable steps.
 
 ## Strongest defensible claim
 
-There exists a width-16, rank-2, attention-only tied-embedding setting in which forcing tail learning into the pretrained parameter spectrum's bottom directions is more sample-step efficient than a parameter-matched common-direction branch. The effect is absent at width 8, and the experiment does not establish a general theorem or a practical optimizer.
+Perfect routing plus parameter isolation makes tail learning faster than an isolated top-2 common branch. Unrestricted output is fastest at width 8 and tied with bottom-2 at width 16. The experiment does not show that spectral-tail restriction is required, does not beat full-model uniform/reweight, and does not provide a practical router.
 
 ## Next decisive experiment
 
@@ -73,4 +81,3 @@ Remove oracle components one at a time:
 3. reintroduce the 6:6:1:1:1 Zipf objective;
 4. compare common and spectral-tail branches under equal token exposure and equal wall-clock/FLOP budgets;
 5. test whether Muon or projected Adam discovers the same width-dependent advantage.
-

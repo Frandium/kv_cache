@@ -43,12 +43,16 @@ There is no MLP or layer normalization. Input and output embeddings are tied. Hi
 
 Stage 1 trains the entire base model for 400 full-batch Adam steps at learning rate 0.03. Stage 2 freezes all base parameters.
 
-Each stage-2 branch contains:
+Each restricted stage-2 branch contains:
 
 - \(A\in\mathbb{R}^{2\times2}\): four parameters;
 - five rank-2 contextual tied-embedding coefficient rows for `a`, `moon`, `banana`, `fruit`, and `cake`: ten parameters.
 
 Each branch therefore has exactly 14 trainable scalars. All are zero initialized, so common and spectral-tail variants begin with exactly identical logits.
+
+The unrestricted branch uses \(M\in\mathbb{R}^{2\times d}\) and five full-dimensional tied-embedding delta rows. It has 56 trainable parameters at dimension 8 and 112 at dimension 16. It is intentionally a higher-capacity isolation ceiling. It does not increase hidden dimension.
+
+All three branches are zero initialized and therefore begin with exactly identical logits.
 
 The LR sweep is `0.003, 0.01, 0.03, 0.1, 0.3, 1.0`. Every run uses 1,000 full-batch stage-2 updates. Evaluation occurs every 5 updates.
 
@@ -70,17 +74,17 @@ L(\{moon,banana,fruit\}\rightarrow cake)\leq0.03.
 
 Seeds 0–4 select one LR independently for each dimension and branch. Those LRs are then frozen.
 
-- dimension 8: common 0.3, spectral tail 0.3;
-- dimension 16: common 0.3, spectral tail 1.0.
+- dimension 8: common 0.3, spectral tail 0.3, unrestricted 0.3;
+- dimension 16: common 0.3, spectral tail 1.0, unrestricted 0.1.
 
-Held-out evaluation uses seeds 5–19 for dimension 8 and seeds 5–49 for dimension 16. Dimension 16 was expanded after an initial trend was observed, so its p-values are strong exploratory evidence rather than a preregistered confirmatory test.
+Held-out evaluation uses seeds 5–49 for both dimensions. These are exploratory p-values rather than a preregistered confirmatory test.
 
 ## Contract checks
 
 The saved smoke contract verifies:
 
 - maximum initial-logit difference: exactly 0;
-- trainable parameters: 14 versus 14;
+- trainable parameters: 14 for top/bottom and 56 or 112 for unrestricted output;
 - top/bottom output-basis overlap: approximately \(10^{-7}\);
 - frozen base maximum drift: exactly 0 in every run;
 - learned map and embedding deltas remain numerically confined to their assigned subspace.

@@ -1,0 +1,7 @@
+dim,variant,label,lr_selected_on_seeds_0_4,heldout_seeds,median_stable_step,mean_stable_step,std_stable_step
+8,common_oracle,top-2 common,0.3,45,70.0,75.22222222222223,21.688799883904146
+8,residual_oracle,bottom-2 spectral tail,0.3,45,65.0,66.88888888888889,21.7498403570131
+8,full_output_oracle,unrestricted full output,0.3,45,50.0,53.44444444444444,10.214863403072718
+16,common_oracle,top-2 common,0.3,45,80.0,82.66666666666667,24.392621835300933
+16,residual_oracle,bottom-2 spectral tail,1.0,45,65.0,70.66666666666667,25.081684733903124
+16,full_output_oracle,unrestricted full output,0.1,45,65.0,66.66666666666667,15.18821313327602

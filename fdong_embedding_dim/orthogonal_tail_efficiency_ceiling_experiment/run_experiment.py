@@ -37,7 +37,7 @@ PATTERNS = (
     ("a", "fruit", "cake"),
 )
 PATTERN_NAMES = ("the_sun", "the_moon", "a_moon_cake", "a_banana_cake", "a_fruit_cake")
-VARIANTS = ("common_oracle", "residual_oracle")
+VARIANTS = ("common_oracle", "residual_oracle", "full_output_oracle")
 
 
 @dataclass(frozen=True)
@@ -52,6 +52,7 @@ class Config:
     gap_threshold: float = 0.03
     pretrain_lr: float = 0.03
     lrs: Tuple[float, ...] = (0.003, 0.01, 0.03, 0.1, 0.3, 1.0)
+    variants: Tuple[str, ...] = VARIANTS
     init_scale: float = 0.35
     matrix_init_scale: float = 0.08
     device: str = "cpu"
@@ -69,6 +70,16 @@ def parse_float_tuple(text: str) -> Tuple[float, ...]:
     values = tuple(float(x.strip()) for x in text.split(",") if x.strip())
     if not values:
         raise argparse.ArgumentTypeError("expected comma-separated floats")
+    return values
+
+
+def parse_str_tuple(text: str) -> Tuple[str, ...]:
+    values = tuple(x.strip() for x in text.split(",") if x.strip())
+    if not values:
+        raise argparse.ArgumentTypeError("expected comma-separated names")
+    unknown = set(values) - set(VARIANTS)
+    if unknown:
+        raise argparse.ArgumentTypeError(f"unknown variants: {sorted(unknown)}")
     return values
 
 
@@ -169,9 +180,14 @@ class OracleSubspaceModel(torch.nn.Module):
         self.register_buffer("output_basis", output_basis.clone())
         self.register_buffer("common_output", common_output.clone())
         self.register_buffer("residual_output", residual_output.clone())
-        rank = output_basis.shape[1]
-        self.A = torch.nn.Parameter(torch.zeros(rank, rank, device=output_basis.device))
-        self.Z = torch.nn.Parameter(torch.zeros(tail_token_ids.numel(), rank, device=output_basis.device))
+        output_rank = output_basis.shape[1]
+        input_rank = common_input.shape[1]
+        self.A = torch.nn.Parameter(
+            torch.zeros(output_rank, input_rank, device=output_basis.device)
+        )
+        self.Z = torch.nn.Parameter(
+            torch.zeros(tail_token_ids.numel(), output_rank, device=output_basis.device)
+        )
         self.variant = variant
 
     def effective_embedding(self) -> torch.Tensor:
@@ -289,7 +305,14 @@ def train_stage2(
     common_input: torch.Tensor,
     residual_output: torch.Tensor,
 ) -> Tuple[List[Dict[str, object]], Dict[str, object], Dict[str, float]]:
-    output_basis = common_output if variant == "common_oracle" else residual_output
+    if variant == "common_oracle":
+        output_basis = common_output
+    elif variant == "residual_oracle":
+        output_basis = residual_output
+    elif variant == "full_output_oracle":
+        output_basis = torch.eye(base.dim, device=common_output.device)
+    else:
+        raise ValueError(variant)
     model = OracleSubspaceModel(
         base,
         data["tail_token_ids"],
@@ -391,13 +414,15 @@ def select_best(rows: Sequence[Dict[str, object]]) -> List[Dict[str, object]]:
 
 def make_plots(aggregate_rows: Sequence[Dict[str, object]], best_rows: Sequence[Dict[str, object]], output: Path) -> None:
     dims = sorted({int(x["dim"]) for x in aggregate_rows})
+    present_variants = [variant for variant in VARIANTS if any(x["variant"] == variant for x in aggregate_rows)]
+    markers = {"common_oracle": "o", "residual_oracle": "s", "full_output_oracle": "^"}
     fig, axes = plt.subplots(1, len(dims), figsize=(6 * len(dims), 4), squeeze=False)
     for ax, dim in zip(axes[0], dims):
-        for variant, marker in (("common_oracle", "o"), ("residual_oracle", "s")):
+        for variant in present_variants:
             rows = [x for x in aggregate_rows if int(x["dim"]) == dim and x["variant"] == variant]
             xs = [float(x["lr"]) for x in rows]
             ys = [float(x["median_first_stable_tail_step"]) if x["median_first_stable_tail_step"] not in (None, "") else np.nan for x in rows]
-            ax.plot(xs, ys, marker=marker, label=variant)
+            ax.plot(xs, ys, marker=markers[variant], label=variant)
         ax.set_xscale("log")
         ax.set_xlabel("stage-2 Adam learning rate")
         ax.set_ylabel("median first stable tail step")
@@ -409,16 +434,17 @@ def make_plots(aggregate_rows: Sequence[Dict[str, object]], best_rows: Sequence[
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7, 4))
-    width = 0.35
+    width = 0.75 / len(present_variants)
     x = np.arange(len(dims))
-    for offset, variant in ((-width / 2, "common_oracle"), (width / 2, "residual_oracle")):
+    offsets = (np.arange(len(present_variants)) - (len(present_variants) - 1) / 2) * width
+    for offset, variant in zip(offsets, present_variants):
         rows = [next(r for r in best_rows if int(r["dim"]) == dim and r["variant"] == variant) for dim in dims]
         heights = [float(r["median_first_stable_tail_step"]) if r["median_first_stable_tail_step"] not in (None, "") else np.nan for r in rows]
         ax.bar(x + offset, heights, width, label=variant)
     ax.set_xticks(x, [str(dim) for dim in dims])
     ax.set_xlabel("hidden dimension")
     ax.set_ylabel("best-LR median first stable tail step")
-    ax.set_title("Matched oracle ceiling: output subspace is the only treatment")
+    ax.set_title("Gated isolated branches: constrained versus unrestricted output")
     ax.legend()
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
@@ -433,13 +459,25 @@ def smoke_contract(cfg: Config, device: torch.device) -> Dict[str, object]:
     uc, vc, ur, singular_values = spectral_bases(base, cfg.rank)
     common = OracleSubspaceModel(base, data["tail_token_ids"], vc, uc, uc, ur, "common_oracle")
     residual = OracleSubspaceModel(base, data["tail_token_ids"], vc, ur, uc, ur, "residual_oracle")
+    full = OracleSubspaceModel(
+        base,
+        data["tail_token_ids"],
+        vc,
+        torch.eye(dim, device=device),
+        uc,
+        ur,
+        "full_output_oracle",
+    )
     with torch.no_grad():
         lc, _ = common(data["inputs"], int(data["pad_id"]), tail_gate=True)
         lr, _ = residual(data["inputs"], int(data["pad_id"]), tail_gate=True)
+        lf, _ = full(data["inputs"], int(data["pad_id"]), tail_gate=True)
     return {
-        "identical_initial_logits_max_abs_diff": float((lc - lr).abs().max()),
+        "common_tail_initial_logits_max_abs_diff": float((lc - lr).abs().max()),
+        "common_full_initial_logits_max_abs_diff": float((lc - lf).abs().max()),
         "common_trainable_parameters": sum(p.numel() for p in common.parameters() if p.requires_grad),
         "residual_trainable_parameters": sum(p.numel() for p in residual.parameters() if p.requires_grad),
+        "full_output_trainable_parameters": sum(p.numel() for p in full.parameters() if p.requires_grad),
         "common_residual_basis_max_abs_overlap": float((uc.T @ ur).abs().max()),
         "common_input_orthogonality_max_error": float((vc.T @ vc - torch.eye(cfg.rank, device=device)).abs().max()),
         "bvo_singular_values": [float(x) for x in singular_values],
@@ -458,6 +496,7 @@ def parse_args() -> Config:
     parser.add_argument("--gap-threshold", type=float, default=Config.gap_threshold)
     parser.add_argument("--pretrain-lr", type=float, default=Config.pretrain_lr)
     parser.add_argument("--lrs", type=parse_float_tuple, default=Config.lrs)
+    parser.add_argument("--variants", type=parse_str_tuple, default=Config.variants)
     parser.add_argument("--device", default=Config.device)
     parser.add_argument("--output-dir", default=Config.output_dir)
     args = parser.parse_args()
@@ -473,8 +512,10 @@ def main() -> None:
     (output / "config.json").write_text(json.dumps(asdict(cfg), indent=2) + "\n")
     contract = smoke_contract(cfg, device)
     (output / "contract.json").write_text(json.dumps(contract, indent=2) + "\n")
-    if contract["identical_initial_logits_max_abs_diff"] != 0.0:
-        raise RuntimeError("common and residual variants do not start from identical logits")
+    if contract["common_tail_initial_logits_max_abs_diff"] != 0.0:
+        raise RuntimeError("common and spectral-tail variants do not start from identical logits")
+    if contract["common_full_initial_logits_max_abs_diff"] != 0.0:
+        raise RuntimeError("common and full-output variants do not start from identical logits")
     if contract["common_trainable_parameters"] != contract["residual_trainable_parameters"]:
         raise RuntimeError("trainable parameter counts are not matched")
 
@@ -485,7 +526,7 @@ def main() -> None:
             data = build_data(dim, cfg, seed, device)
             base = pretrain_base(data, cfg, dim, seed)
             uc, vc, ur, _ = spectral_bases(base, cfg.rank)
-            for variant in VARIANTS:
+            for variant in cfg.variants:
                 for lr in cfg.lrs:
                     run_history, summary, _ = train_stage2(
                         base, data, cfg, dim, seed, lr, variant, uc, vc, ur

@@ -1,0 +1,7 @@
+dim,left_variant,right_variant,comparison,paired_seeds,mean_step_difference,bootstrap_mean_diff_ci_low,bootstrap_mean_diff_ci_high,left_wins,ties,left_losses,wilcoxon_one_sided_p_left_faster,sign_test_one_sided_p_left_faster
+8,full_output_oracle,common_oracle,unrestricted full output minus top-2 common,45,-21.77777777777778,-28.77777777777778,-15.11111111111111,39,3,3,1.94658533542598e-07,2.815795596688986e-09
+8,full_output_oracle,residual_oracle,unrestricted full output minus bottom-2 spectral tail,45,-13.444444444444445,-20.22222222222222,-8.11111111111111,33,5,7,2.973610023100079e-06,2.1138511328899767e-05
+8,residual_oracle,common_oracle,bottom-2 spectral tail minus top-2 common,45,-8.333333333333334,-17.88888888888889,1.6666666666666667,26,2,17,0.020910418119691385,0.1110264100780114
+16,full_output_oracle,common_oracle,unrestricted full output minus top-2 common,45,-16.0,-25.11111111111111,-7.444444444444445,33,4,8,0.0005750281657357814,5.611071310340776e-05
+16,full_output_oracle,residual_oracle,unrestricted full output minus bottom-2 spectral tail,45,-4.0,-13.0,4.111111111111111,20,2,23,0.454177174063599,0.728807994071758
+16,residual_oracle,common_oracle,bottom-2 spectral tail minus top-2 common,45,-12.0,-22.555555555555557,-1.7777777777777777,28,2,15,0.008030482957744594,0.03299701722789905

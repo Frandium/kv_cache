@@ -1,7 +1,9 @@
 {
-  "identical_initial_logits_max_abs_diff": 0.0,
+  "common_tail_initial_logits_max_abs_diff": 0.0,
+  "common_full_initial_logits_max_abs_diff": 0.0,
   "common_trainable_parameters": 14,
   "residual_trainable_parameters": 14,
+  "full_output_trainable_parameters": 56,
   "common_residual_basis_max_abs_overlap": 1.0057395627427468e-07,
   "common_input_orthogonality_max_error": 1.7881393432617188e-07,
   "bvo_singular_values": [
