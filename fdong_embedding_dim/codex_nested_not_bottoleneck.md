@@ -2,29 +2,31 @@
 
 ## 0. 一句话结论
 
-当前 toy experiment 支持以下机制故事：
+当前 toy experiment 支持以下结论：
 
-> 语言中的 nested / shared structure 会让多个 token 和 pattern 复用同一个 common representation direction；这种 common reuse 本身不是学习低效的根因。真正拖慢 long-tail pattern 的，是它们在 Zipf 分布下获得的有效梯度权重太小，因而无法快速在已有 common 方向中收敛到适合自己的位置。
+1. 语言中的 nested structure 导致的 common direction reuse 不是 longtail pattern 学习低效的根因。
+2. 真正拖慢 long-tail pattern 的，是它们在 Zipf 分布下获得的有效梯度权重太小，因而无法快速在 longtail 方向上收敛到适合自己的位置。
 
-在频率均匀或对 Zipf loss 做精确 reweight 后，模型学习 `a moon cake` 明显更快，而且收敛后的 cake prediction 仍然几乎完全依赖 high-frequency pattern 形成的 common direction，并没有主动迁移到新的 residual direction。
+实验证据：
+
+1. 在数据中 sequence 频率分布均匀，或对按频率对 loss 做精确 reweight 后，模型学习 longtail pattern 明显更快，而且收敛后的 longtail token prediction 仍然几乎完全依赖 common direction，并没有主动迁移到新的 residual direction。
+2. 在手动控制 longtail pattern 完美、准确地仅输出到 longtail 方向时，其学习效率并未比允许输出到全部方向更快，且对学习效率的提升小于按频率 reweight loss。
 
 因此，当前证据不支持：
 
-\[
-\text{common-direction reuse 本身导致 long-tail 学习低效。}
-\]
+$$\text{common-direction reuse 本身导致 long-tail 学习低效。}$$
 
 当前证据更支持：
 
-\[
+$$
 \text{Zipf frequency}
 \Rightarrow
-\text{tail gradient share 不足}
+\text{tail pattern 的 gradient share 不足}
 \Rightarrow
-\text{tail 无法快速调整 common channel}
+\text{tail 无法快速调整其在 common channel 上的投影}
 \Rightarrow
 \text{学习延迟。}
-\]
+$$
 
 ---
 

@@ -12,9 +12,9 @@
 ## 1. 直接结论
 
 1. **Nested structure 确实导致大量 token 共享同一个 common 方向，但这不是学习低效的原因。**
-2. **真正导致低效的是 longtail pattern 频率低，导致它们在 common 方向上得不到足够的梯度来收敛到正确位置。**
+2. **真正导致低效的是 longtail pattern 频率低，导致它们在 longtail 方向上得不到足够的梯度来收敛到正确位置。**
 
-换句话说：longtail token 学得慢，不是因为它们**没用上** longtail 方向，而是因为它们在 **common 方向上的梯度太小**，没在 common 方向上找到正确的位置。
+换句话说：longtail token 学得慢，不是因为它们**没用上 longtail 方向**，反而是因为它们**没用好 common 方向**，没在 common 方向上找到正确的位置。
 
 ---
 
