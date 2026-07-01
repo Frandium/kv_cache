@@ -1,0 +1,338 @@
+{
+  "config": {
+    "model_dir": "fdong/Qwen3-0.6B",
+    "data_dir": "/Users/bytedance/Desktop/dclm",
+    "output_dir": "fdong_embedding_dim/attention_residual_spectrum_experiment/results_seq512",
+    "seq_len": 512,
+    "num_sequences": 8,
+    "spectral_tokens_per_sequence": 64,
+    "pair_samples_per_sequence": 512,
+    "layers": "all",
+    "device": "mps",
+    "dtype": "float16",
+    "pca_niter": 2,
+    "seed": 42,
+    "no_plots": false
+  },
+  "device": "mps",
+  "effective_dtype": "torch.float16",
+  "documents": [
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 2503,
+      "tokens": 526
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 3639,
+      "tokens": 882
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 2570,
+      "tokens": 584
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 1461,
+      "tokens": 547
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8696,
+      "tokens": 2242
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8716,
+      "tokens": 2523
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8732,
+      "tokens": 2297
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 3272,
+      "tokens": 945
+    }
+  ],
+  "aggregate": {
+    "x_raw_adjacent_cosine": {
+      "mean": 0.5892273352614471,
+      "min": 0.06892703473567963,
+      "max": 0.8498755097389221
+    },
+    "x_raw_within_cosine": {
+      "mean": 0.45037275047174524,
+      "min": 0.0580640509724617,
+      "max": 0.7767184972763062
+    },
+    "x_raw_between_cosine": {
+      "mean": 0.4253752005419561,
+      "min": 0.04419954866170883,
+      "max": 0.750859260559082
+    },
+    "x_raw_sequence_gap": {
+      "mean": 0.024997549929789135,
+      "min": 0.008364170789718628,
+      "max": 0.03612333536148071
+    },
+    "x_raw_sequence_centroid_accuracy": {
+      "mean": 0.6124790736607143,
+      "min": 0.26513671875,
+      "max": 0.84130859375
+    },
+    "x_centered_adjacent_cosine": {
+      "mean": 0.4065973266427006,
+      "min": 0.028350912034511566,
+      "max": 0.6677372455596924
+    },
+    "x_centered_within_cosine": {
+      "mean": 0.1820082640208836,
+      "min": 0.01021105982363224,
+      "max": 0.6154677867889404
+    },
+    "x_centered_between_cosine": {
+      "mean": 0.13862820109976123,
+      "min": -0.005942788906395435,
+      "max": 0.6080303192138672
+    },
+    "x_centered_sequence_gap": {
+      "mean": 0.043380062921122384,
+      "min": 0.007437467575073242,
+      "max": 0.1083857724443078
+    },
+    "x_centered_sequence_centroid_accuracy": {
+      "mean": 0.5768345424107143,
+      "min": 0.24951171875,
+      "max": 0.8173828125
+    },
+    "a_raw_adjacent_cosine": {
+      "mean": 0.621501621391092,
+      "min": 0.3554736375808716,
+      "max": 0.8296411037445068
+    },
+    "a_raw_within_cosine": {
+      "mean": 0.3197674426649298,
+      "min": 0.14878985285758972,
+      "max": 0.6264957189559937
+    },
+    "a_raw_between_cosine": {
+      "mean": 0.25410101216818604,
+      "min": 0.09473101049661636,
+      "max": 0.562669575214386
+    },
+    "a_raw_sequence_gap": {
+      "mean": 0.06566643049674374,
+      "min": 0.017060399055480957,
+      "max": 0.10438314080238342
+    },
+    "a_raw_sequence_centroid_accuracy": {
+      "mean": 0.8235037667410714,
+      "min": 0.35009765625,
+      "max": 0.91845703125
+    },
+    "a_centered_adjacent_cosine": {
+      "mean": 0.5036247809018407,
+      "min": 0.136248379945755,
+      "max": 0.7406034469604492
+    },
+    "a_centered_within_cosine": {
+      "mean": 0.09933715333629932,
+      "min": 0.022295618429780006,
+      "max": 0.16466835141181946
+    },
+    "a_centered_between_cosine": {
+      "mean": 0.004599501634532187,
+      "min": -0.0037878535222262144,
+      "max": 0.012449294328689575
+    },
+    "a_centered_sequence_gap": {
+      "mean": 0.09473765170176714,
+      "min": 0.025072271237149835,
+      "max": 0.16541466931812465
+    },
+    "a_centered_sequence_centroid_accuracy": {
+      "mean": 0.7880510602678571,
+      "min": 0.32568359375,
+      "max": 0.90234375
+    },
+    "h_raw_adjacent_cosine": {
+      "mean": 0.6328735032251903,
+      "min": 0.35117825865745544,
+      "max": 0.8559280037879944
+    },
+    "h_raw_within_cosine": {
+      "mean": 0.483575881591865,
+      "min": 0.2717949151992798,
+      "max": 0.7790491580963135
+    },
+    "h_raw_between_cosine": {
+      "mean": 0.4554280106510435,
+      "min": 0.2547794580459595,
+      "max": 0.7501403093338013
+    },
+    "h_raw_sequence_gap": {
+      "mean": 0.028147870940821513,
+      "min": 0.012158721685409546,
+      "max": 0.038188636302948
+    },
+    "h_raw_sequence_centroid_accuracy": {
+      "mean": 0.6673060825892857,
+      "min": 0.3603515625,
+      "max": 0.85791015625
+    },
+    "h_centered_adjacent_cosine": {
+      "mean": 0.4303943089076451,
+      "min": 0.1362772285938263,
+      "max": 0.6517574787139893
+    },
+    "h_centered_within_cosine": {
+      "mean": 0.17876564152538776,
+      "min": 0.021730825304985046,
+      "max": 0.5795813202857971
+    },
+    "h_centered_between_cosine": {
+      "mean": 0.12702159945495492,
+      "min": -0.0025625356938689947,
+      "max": 0.565938413143158
+    },
+    "h_centered_sequence_gap": {
+      "mean": 0.05174404207043283,
+      "min": 0.01364290714263916,
+      "max": 0.12129339715465903
+    },
+    "h_centered_sequence_centroid_accuracy": {
+      "mean": 0.6225062779017857,
+      "min": 0.3271484375,
+      "max": 0.83203125
+    },
+    "hx_overlap_top1": {
+      "mean": 0.8437736736211393,
+      "min": 0.01813673786818981,
+      "max": 0.965933620929718
+    },
+    "ha_overlap_top1": {
+      "mean": 0.19420768240732805,
+      "min": 0.09383401274681091,
+      "max": 0.9670488834381104
+    },
+    "h_recovery_x_top1": {
+      "mean": 0.9545232619063565,
+      "min": 0.04922705838043787,
+      "max": 0.9999958024614366
+    },
+    "h_recovery_a_top1": {
+      "mean": 0.4532432523217379,
+      "min": 0.13678290502151044,
+      "max": 0.9746764907166124
+    },
+    "h_optimal_energy_top1": {
+      "mean": 0.9008109131028824,
+      "min": 0.21029119030703083,
+      "max": 0.9998374217873391
+    },
+    "hx_overlap_top5": {
+      "mean": 0.8460879179516009,
+      "min": 0.058196790516376495,
+      "max": 0.9398451447486877
+    },
+    "ha_overlap_top5": {
+      "mean": 0.1814865211823157,
+      "min": 0.07511705160140991,
+      "max": 0.9390265941619873
+    },
+    "h_recovery_x_top5": {
+      "mean": 0.9594311880273484,
+      "min": 0.10176007666963775,
+      "max": 0.9999920051710554
+    },
+    "h_recovery_a_top5": {
+      "mean": 0.5418293964502563,
+      "min": 0.2110790180102409,
+      "max": 0.9779124026834243
+    },
+    "h_optimal_energy_top5": {
+      "mean": 0.9400552204215209,
+      "min": 0.5179904015715269,
+      "max": 0.9998977765755672
+    },
+    "hx_overlap_top10": {
+      "mean": 0.7463083416223526,
+      "min": 0.11256146430969238,
+      "max": 0.8168068528175354
+    },
+    "ha_overlap_top10": {
+      "mean": 0.19960197699921473,
+      "min": 0.09471157193183899,
+      "max": 0.8065564632415771
+    },
+    "h_recovery_x_top10": {
+      "mean": 0.9618840531953671,
+      "min": 0.1499467723232607,
+      "max": 0.9999895071582167
+    },
+    "h_recovery_a_top10": {
+      "mean": 0.5930725529496025,
+      "min": 0.23338002279147838,
+      "max": 0.9788602214255613
+    },
+    "h_optimal_energy_top10": {
+      "mean": 0.962204360088025,
+      "min": 0.6932496808543762,
+      "max": 0.9999331500772771
+    },
+    "attention_energy_common": {
+      "mean": 0.09611531152451493,
+      "min": 0.040376367446982045,
+      "max": 0.21739549072660008
+    },
+    "attention_common_centered_sequence_gap": {
+      "mean": 0.18997309040943428,
+      "min": 0.03995334077626467,
+      "max": 0.3935665637254715
+    },
+    "attention_common_centered_sequence_accuracy": {
+      "mean": 0.4545200892857143,
+      "min": 0.2265625,
+      "max": 0.72998046875
+    },
+    "attention_energy_middle": {
+      "mean": 0.14766122678410445,
+      "min": 0.0662490638433826,
+      "max": 0.3421930026689367
+    },
+    "attention_middle_centered_sequence_gap": {
+      "mean": 0.1270663796666278,
+      "min": 0.01855256233830005,
+      "max": 0.22042382415384054
+    },
+    "attention_middle_centered_sequence_accuracy": {
+      "mean": 0.7296142578125,
+      "min": 0.33837890625,
+      "max": 0.89404296875
+    },
+    "attention_energy_tail": {
+      "mean": 0.7562234993107636,
+      "min": 0.44041165711124214,
+      "max": 0.8474252007783205
+    },
+    "attention_tail_centered_sequence_gap": {
+      "mean": 0.07808882421107098,
+      "min": 0.016783364582806826,
+      "max": 0.12975271977484226
+    },
+    "attention_tail_centered_sequence_accuracy": {
+      "mean": 0.8531842912946429,
+      "min": 0.57275390625,
+      "max": 0.9365234375
+    },
+    "x_to_a_norm_ratio": {
+      "mean": 22.096791944333486,
+      "min": 0.1537693738937378,
+      "max": 70.70223236083984
+    }
+  }
+}
