@@ -5,23 +5,21 @@ This branch uses date-based research sync packages.
 ## Current Read Path
 
 ```text
-sync/2026-06-25/a06_18_revision_audit/
+sync/2026-07-01/feature_route_margin_common_interference/
 ```
 
 Read first:
 
 ```text
-sync/2026-06-25/a06_18_revision_audit/report_card.md
+sync/2026-07-01/feature_route_margin_common_interference/report_card.md
 ```
 
 Then audit details if needed:
 
 ```text
-sync/2026-06-25/a06_18_revision_audit/summary.md
-sync/2026-06-25/a06_18_revision_audit/detailed.md
-sync/2026-06-25/a06_18_revision_audit/protocol.md
-sync/2026-06-25/a06_18_revision_audit/06_18_label_free_route_relevant_state_selection_anchor.md
-sync/2026-06-25/a06_18_revision_audit/06_proxy_preservation_line_cn.md
+sync/2026-07-01/feature_route_margin_common_interference/meeting_brief_cn.md
+sync/2026-07-01/feature_route_margin_common_interference/figures/
+sync/2026-06-29/feature_center_margin_mechanism/
 ```
 
 ## Mainline
@@ -35,10 +33,9 @@ Each date package should contain only curated research material:
 
 ```text
 report_card.md
-summary.md
-detailed.md
-protocol_for_approval.md
-<anchor_id>.md
+meeting_brief.md or meeting_brief_cn.md
+summary.md / detailed.md / protocol.md when copied directly
+source or theory notes when explicitly used by the package
 figures/
 tables/
 ```

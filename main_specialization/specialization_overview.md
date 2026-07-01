@@ -28,6 +28,7 @@ geometry. The current bottleneck is:
 ```text
 select the route-relevant hidden-state population
 -> initialize a step-0 proxy partition
+-> understand whether the partition margin is feature-residual or common-band
 -> preserve it through step 5/10 real-text training
 -> only then test functional expert utility
 ```
@@ -85,14 +86,18 @@ A06 explains where the usable feature geometry lives.
 - Route-position feature centers are recoverable in controlled settings.
 - All-position clustering is unreliable because it mixes route states with
   non-route, role, neutral, or nuisance states.
+- In the controlled no-position bridge, center initialization preserves by a
+  positive margin buffer, not by active router-center tracking.
+- Margin shrink and forced-crossing audits show that positive margin is a real
+  geometric safety region in the controlled bridge.
 - Real DCLM proxy routing can exist at step 0, but ordinary training can erase
   the partition by step 5/10.
 
 Current interpretation:
 
 ```text
-The next step is route-relevant state selection and early-training
-preservation, not another proof that feature centers exist.
+The next step is to distinguish feature-residual margin from high-gain
+common-band margin, then test early-training preservation under real DCLM.
 ```
 
 ## What A07 Says
@@ -133,7 +138,14 @@ KV-cache retrieval follows from current evidence.
 
 ## Next Decision
 
-Write and approve one real-text early-preservation protocol:
+First run a mechanism audit:
+
+```text
+Does the positive route margin come from feature residual directions, or from a
+high-gain common spectral band?
+```
+
+Then write and approve one real-text early-preservation protocol:
 
 ```text
 Can a step-0 DCLM proxy partition survive the step-5/10 training window without
