@@ -11,6 +11,9 @@ Both variants use hidden size 768, 12 attention heads, tied input/output
 embeddings, one always-active common expert, and one top-1 routed tail expert.
 Their total expert capacity is equal because `768 + 4*768 = 384 + 4*864`.
 
+The `dense` variant uses one `d_ff=1248` SwiGLU FFN per layer and no router.
+Its active FFN width matches the proposed model because `384 + 864 = 1248`.
+
 Run both experiments sequentially:
 
 ```bash
@@ -38,4 +41,10 @@ the loss curve, and runs final route-continuity analysis:
 
 ```bash
 bash fdong_embedding_dim/codex_scripts/real_data_moe/run_baseline_then_proposed_v2.sh
+```
+
+Run the active-width-matched dense control on the same seeded data order:
+
+```bash
+bash fdong_embedding_dim/codex_scripts/real_data_moe/run_dense_active_matched.sh
 ```

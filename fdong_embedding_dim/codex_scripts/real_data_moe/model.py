@@ -12,6 +12,7 @@ from torch.utils.checkpoint import checkpoint
 
 @dataclass
 class ModelConfig:
+    architecture: str = "moe"
     vocab_size: int = 16_384
     hidden_size: int = 768
     num_hidden_layers: int = 4
@@ -54,7 +55,21 @@ class ModelConfig:
         values.update(overrides)
         return cls(**values)
 
+    @classmethod
+    def dense(cls, **overrides: object) -> "ModelConfig":
+        values: Dict[str, object] = {
+            "architecture": "dense",
+            "num_tail_experts": 0,
+            "common_intermediate_size": 1_248,
+            "tail_intermediate_size": 0,
+            "orthogonalize_tail": False,
+        }
+        values.update(overrides)
+        return cls(**values)
+
     def validate(self) -> None:
+        if self.architecture not in {"moe", "dense"}:
+            raise ValueError("architecture must be moe or dense")
         if self.num_attention_heads * self.head_dim != self.hidden_size:
             raise ValueError("num_attention_heads * head_dim must equal hidden_size")
         if self.num_attention_heads % self.num_key_value_heads:
@@ -63,6 +78,10 @@ class ModelConfig:
             raise ValueError("router_input must be residual, attention, or attention_mean")
         if self.router_window < 1:
             raise ValueError("router_window must be positive")
+        if self.architecture == "moe" and self.num_tail_experts < 1:
+            raise ValueError("MoE architecture requires at least one tail expert")
+        if self.architecture == "dense" and self.num_tail_experts != 0:
+            raise ValueError("dense architecture must have zero tail experts")
         if not 0 < self.orthogonal_rank <= min(
             self.hidden_size, self.common_intermediate_size
         ):
@@ -302,6 +321,21 @@ class QwenMoEBlock(nn.Module):
         return x + moe_output, diagnostics
 
 
+class QwenDenseBlock(nn.Module):
+    def __init__(self, config: ModelConfig) -> None:
+        super().__init__()
+        self.input_layernorm = RMSNorm(config.hidden_size, config.rms_norm_eps)
+        self.self_attn = QwenAttention(config)
+        self.post_attention_layernorm = RMSNorm(config.hidden_size, config.rms_norm_eps)
+        self.dense_ffn = SwiGLUExpert(config, config.common_intermediate_size)
+
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        attention_output = self.self_attn(self.input_layernorm(x))
+        x = x + attention_output
+        dense_output = self.dense_ffn(self.post_attention_layernorm(x))
+        return x + dense_output, {}
+
+
 class RealDataMoEForCausalLM(nn.Module):
     def __init__(self, config: ModelConfig) -> None:
         super().__init__()
@@ -309,12 +343,14 @@ class RealDataMoEForCausalLM(nn.Module):
         self.config = config
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size)
         nn.init.normal_(self.embed_tokens.weight, mean=0.0, std=config.initializer_range)
-        self.layers = nn.ModuleList(QwenMoEBlock(config) for _ in range(config.num_hidden_layers))
+        block_type = QwenDenseBlock if config.architecture == "dense" else QwenMoEBlock
+        self.layers = nn.ModuleList(block_type(config) for _ in range(config.num_hidden_layers))
         self.norm = RMSNorm(config.hidden_size, config.rms_norm_eps)
 
     def set_training_step(self, step: int) -> None:
         for layer in self.layers:
-            layer.moe.set_training_step(step)
+            if isinstance(layer, QwenMoEBlock):
+                layer.moe.set_training_step(step)
 
     def forward(
         self, input_ids: torch.Tensor
@@ -337,7 +373,14 @@ class RealDataMoEForCausalLM(nn.Module):
 
 
 def parameter_counts(model: nn.Module) -> Dict[str, int]:
-    groups = {"embedding": 0, "attention": 0, "common": 0, "tail": 0, "router_norm": 0}
+    groups = {
+        "embedding": 0,
+        "attention": 0,
+        "common": 0,
+        "tail": 0,
+        "dense": 0,
+        "router_norm": 0,
+    }
     for name, parameter in model.named_parameters():
         count = parameter.numel()
         if name.startswith("embed_tokens"):
@@ -348,6 +391,8 @@ def parameter_counts(model: nn.Module) -> Dict[str, int]:
             groups["common"] += count
         elif ".tail_experts." in name:
             groups["tail"] += count
+        elif ".dense_ffn." in name:
+            groups["dense"] += count
         else:
             groups["router_norm"] += count
     groups["total"] = sum(groups.values())

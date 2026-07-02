@@ -67,7 +67,9 @@ def format_duration(seconds: float) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--variant", choices=("baseline", "proposed"), required=True)
+    parser.add_argument(
+        "--variant", choices=("baseline", "proposed", "dense"), required=True
+    )
     parser.add_argument("--data-dir", required=True)
     parser.add_argument("--tokenizer-dir", required=True)
     parser.add_argument("--output-dir", required=True)
@@ -181,7 +183,11 @@ def build_config(args: argparse.Namespace, vocab_size: int) -> ModelConfig:
         "router_window": args.router_window,
         "gradient_checkpointing": args.gradient_checkpointing,
     }
-    return ModelConfig.baseline(**shared) if args.variant == "baseline" else ModelConfig.proposed(**shared)
+    if args.variant == "baseline":
+        return ModelConfig.baseline(**shared)
+    if args.variant == "proposed":
+        return ModelConfig.proposed(**shared)
+    return ModelConfig.dense(**shared)
 
 
 def main() -> None:
@@ -216,7 +222,8 @@ def main() -> None:
     resume_path = resolve_resume(args.output_dir, args.resume)
     if resume_path is not None:
         payload = torch.load(resume_path, map_location="cpu", weights_only=False)
-        if payload["model_config"] != model.config_dict():
+        checkpoint_config = ModelConfig(**payload["model_config"])
+        if asdict(checkpoint_config) != model.config_dict():
             raise RuntimeError("checkpoint model config does not match current config")
         model.load_state_dict(payload["model"])
         optimizer.load_state_dict(payload["optimizer"])
@@ -252,7 +259,8 @@ def main() -> None:
             (loss / args.gradient_accumulation).backward()
             accumulated_loss += loss.detach().item() / args.gradient_accumulation
             for layer_stats in diagnostics.values():
-                route_totals += layer_stats["route_counts"].cpu()
+                if "route_counts" in layer_stats:
+                    route_totals += layer_stats["route_counts"].cpu()
 
         torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
         current_lr = learning_rate(step, args)
