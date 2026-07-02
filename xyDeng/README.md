@@ -5,21 +5,23 @@ This branch uses date-based research sync packages.
 ## Current Read Path
 
 ```text
-sync/2026-07-01/feature_route_margin_common_interference/
+sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/
 ```
 
 Read first:
 
 ```text
-sync/2026-07-01/feature_route_margin_common_interference/report_card.md
+sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/meeting_brief_cn.md
 ```
 
 Then audit details if needed:
 
 ```text
-sync/2026-07-01/feature_route_margin_common_interference/meeting_brief_cn.md
-sync/2026-07-01/feature_route_margin_common_interference/figures/
+sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/report_card.md
+sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/experiment/summary.md
+sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/experiment/detailed.md
 sync/2026-06-29/feature_center_margin_mechanism/
+sync/2026-07-01/feature_route_margin_common_interference/
 ```
 
 ## Mainline
