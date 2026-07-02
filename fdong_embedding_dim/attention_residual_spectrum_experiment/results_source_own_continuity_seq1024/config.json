@@ -1,0 +1,59 @@
+{
+  "args": {
+    "model_dir": "fdong/Qwen3-0.6B",
+    "data_dir": "/Users/bytedance/Desktop/dclm",
+    "output_dir": "fdong_embedding_dim/attention_residual_spectrum_experiment/results_source_own_continuity_seq1024",
+    "seq_len": 1024,
+    "num_sequences": 8,
+    "sample_pairs_per_sequence": 64,
+    "layers": "all",
+    "device": "mps",
+    "analysis_device": "cpu",
+    "dtype": "float16",
+    "seed": 42
+  },
+  "device": "mps",
+  "dtype": "torch.float16",
+  "documents": [
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8696,
+      "tokens": 2242
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8716,
+      "tokens": 2523
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8732,
+      "tokens": 2297
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 5005,
+      "tokens": 1102
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 5450,
+      "tokens": 1210
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8082,
+      "tokens": 1827
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 6303,
+      "tokens": 1691
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 7970,
+      "tokens": 1797
+    }
+  ]
+}

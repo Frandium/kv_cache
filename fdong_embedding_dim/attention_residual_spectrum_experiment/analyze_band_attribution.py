@@ -119,10 +119,12 @@ def analyze_layer(layer, x_full, a_full, positions, analysis_device):
     dim = h.shape[-1]
 
     h_basis = top50_basis(h)
+    x_basis = top50_basis(x)
     a_basis = top50_basis(a)
-    available = min(h_basis.shape[1], a_basis.shape[1])
+    available = min(h_basis.shape[1], x_basis.shape[1], a_basis.shape[1])
     top50_end = min(math.ceil(0.50 * dim), available)
     h_top50 = h_basis[:, :top50_end]
+    x_top50 = x_basis[:, :top50_end]
     a_top50 = a_basis[:, :top50_end]
     ranges = explicit_band_ranges(dim, available)
 
@@ -137,6 +139,8 @@ def analyze_layer(layer, x_full, a_full, positions, analysis_device):
     for name, start, end in ranges:
         xb = component(x, h_basis, start, end, h_top50)
         ab = component(a, h_basis, start, end, h_top50)
+        x_own = component(x, x_basis, start, end, x_top50)
+        a_own = component(a, a_basis, start, end, a_top50)
         hb = xb + ab
         ex = energy(xb)
         ea = energy(ab)
@@ -158,10 +162,12 @@ def analyze_layer(layer, x_full, a_full, positions, analysis_device):
         }
         for prefix, values in (("a", ab), ("h", hb)):
             row.update({f"{prefix}_{key}": value for key, value in sequence_metrics(values).items()})
+        for prefix, values in (("x_own", x_own), ("a_own", a_own)):
+            row.update({f"{prefix}_{key}": value for key, value in sequence_metrics(values).items()})
         rows.append(row)
         h_components[name] = hb
         a_in_h_components[name] = ab
-        a_own_components[name] = component(a, a_basis, start, end, a_top50)
+        a_own_components[name] = a_own
 
     transfer = []
     for source_name, source in a_own_components.items():

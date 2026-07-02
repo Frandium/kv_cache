@@ -40,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max_chunks", type=int, default=8)
     parser.add_argument("--max_chars", type=int, default=220_000)
     parser.add_argument("--power_iters", type=int, default=40)
+    parser.add_argument("--device", default="cpu")
     return parser.parse_args()
 
 
@@ -56,12 +57,14 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model_dir, local_files_only=True)
     input_ids = make_chunks(tokenizer, text, args.seq_len, args.max_chunks)
 
+    device = torch.device(args.device)
+    dtype = torch.float16 if device.type == "mps" else torch.float32
     model = AutoModelForCausalLM.from_pretrained(
         args.model_dir,
         local_files_only=True,
-        torch_dtype=torch.float32,
+        torch_dtype=dtype,
         device_map=None,
-    )
+    ).to(device)
     model.eval()
     num_layers = len(model.model.layers)
 
@@ -83,12 +86,12 @@ def main() -> None:
 
     with torch.no_grad():
         for i in range(input_ids.shape[0]):
-            _ = model(input_ids=input_ids[i : i + 1])
+            _ = model(input_ids=input_ids[i : i + 1].to(device))
 
     for h in handles:
         h.remove()
 
-    def build_rows(captures: Dict[int, List[torch.Tensor]], representation: str) -> List[Dict[str, float | int | str]]:
+    def build_rows(captures: Dict[int, List[torch.Tensor]], representation: str):
         pcs: Dict[int, torch.Tensor] = {}
         rows: List[Dict[str, float | int | str]] = []
         for layer_id in range(num_layers):
@@ -109,9 +112,52 @@ def main() -> None:
                     "sqcos_to_prev_layer_pc1": abs_cos(pc1, pcs[layer_id - 1]) ** 2 if layer_id > 0 else 1.0,
                 }
             )
-        return rows
+        return rows, pcs
 
-    rows = build_rows(raw_captures, "raw_layer_input") + build_rows(normed_captures, "attention_input_after_input_layernorm")
+    raw_rows, raw_pcs = build_rows(raw_captures, "raw_layer_input")
+    normed_rows, normed_pcs = build_rows(normed_captures, "attention_input_after_input_layernorm")
+    rows = raw_rows + normed_rows
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    def pairwise_matrix(pcs):
+        vectors = torch.stack([normalized(pcs[layer].float()) for layer in range(num_layers)])
+        return (vectors @ vectors.T).abs().numpy()
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.5))
+    raw_matrix = pairwise_matrix(raw_pcs)
+    matrices = [
+        ("Raw residual input", raw_matrix),
+        ("After input LayerNorm", pairwise_matrix(normed_pcs)),
+    ]
+    for axis, (title, matrix) in zip(axes, matrices):
+        image = axis.imshow(matrix, vmin=0.0, vmax=1.0, cmap="viridis", origin="lower")
+        axis.set_title(title)
+        axis.set_xlabel("Layer")
+        axis.set_ylabel("Layer")
+        axis.set_xticks(range(0, num_layers, 3))
+        axis.set_yticks(range(0, num_layers, 3))
+    fig.colorbar(image, ax=axes, label="Absolute cosine between layer PC1 directions", fraction=0.025)
+    fig.suptitle("Cross-layer similarity of residual dominant directions")
+    fig.subplots_adjust(left=0.07, right=0.9, bottom=0.11, top=0.86, wspace=0.22)
+    heatmap_path = outdir / "qwen_layer_input_pc1_similarity_heatmap.png"
+    fig.savefig(heatmap_path, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+
+    fig, axis = plt.subplots(figsize=(7.2, 6.2))
+    image = axis.imshow(raw_matrix, vmin=0.0, vmax=1.0, cmap="viridis", origin="lower")
+    axis.set_title("Cross-layer similarity of raw residual dominant directions")
+    axis.set_xlabel("Layer")
+    axis.set_ylabel("Layer")
+    axis.set_xticks(range(0, num_layers, 3))
+    axis.set_yticks(range(0, num_layers, 3))
+    fig.colorbar(image, ax=axis, label="Absolute cosine between layer PC1 directions")
+    fig.tight_layout()
+    raw_heatmap_path = outdir / "qwen_raw_residual_pc1_cross_layer_heatmap.png"
+    fig.savefig(raw_heatmap_path, dpi=200, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
 
     csv_path = outdir / "qwen_layer_input_pc1_similarity.csv"
     with csv_path.open("w", newline="") as f:
@@ -133,6 +179,8 @@ def main() -> None:
         "num_source_files": len(used_files),
         "source_files_preview": used_files[:20],
         "csv_path": str(csv_path),
+        "heatmap_path": str(heatmap_path),
+        "raw_heatmap_path": str(raw_heatmap_path),
         "lowest_adjacent_similarity_layers_by_representation": turns_by_representation,
         "rows": rows,
     }
