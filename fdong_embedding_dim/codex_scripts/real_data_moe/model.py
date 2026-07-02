@@ -274,6 +274,7 @@ class CommonTailMoE(nn.Module):
         self.last_route_counts = counts.detach().cpu()
         diagnostics = {
             "route_counts": counts.detach(),
+            "route_indices": routes.detach(),
             "router_entropy": (
                 -(router_probs.float() * router_probs.float().clamp_min(1e-9).log())
                 .sum(dim=-1)

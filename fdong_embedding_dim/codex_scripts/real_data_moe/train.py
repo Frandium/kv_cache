@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import json
 import math
 import os
 import random
+import sys
+import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, Optional
@@ -18,6 +21,50 @@ from .data import DCLMTokenStream
 from .model import ModelConfig, RealDataMoEForCausalLM, parameter_counts
 
 
+class Tee:
+    def __init__(self, *streams: object) -> None:
+        self.streams = streams
+
+    def write(self, value: str) -> int:
+        for stream in self.streams:
+            stream.write(value)  # type: ignore[attr-defined]
+            stream.flush()  # type: ignore[attr-defined]
+        return len(value)
+
+    def flush(self) -> None:
+        for stream in self.streams:
+            stream.flush()  # type: ignore[attr-defined]
+
+
+def prepare_metrics_file(path: str, resume_step: int) -> None:
+    if not os.path.exists(path):
+        return
+    retained = []
+    with open(path, "r", encoding="utf-8") as handle:
+        for line in handle:
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if int(record.get("step", -1)) <= resume_step:
+                retained.append(json.dumps(record, sort_keys=True))
+    with open(path, "w", encoding="utf-8") as handle:
+        if retained:
+            handle.write("\n".join(retained) + "\n")
+
+
+def append_metric(path: str, record: Dict[str, object]) -> None:
+    with open(path, "a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, sort_keys=True) + "\n")
+
+
+def format_duration(seconds: float) -> str:
+    total_seconds = max(0, round(seconds))
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--variant", choices=("baseline", "proposed"), required=True)
@@ -28,7 +75,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-steps", type=int, default=5_000)
     parser.add_argument("--save-every", type=int, default=250)
     parser.add_argument("--log-every", type=int, default=10)
-    parser.add_argument("--keep-last", type=int, default=3)
+    parser.add_argument(
+        "--keep-last",
+        type=int,
+        default=3,
+        help="numbered checkpoints to retain; 0 keeps every checkpoint",
+    )
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--sequence-length", type=int, default=512)
     parser.add_argument("--gradient-accumulation", type=int, default=4)
@@ -113,9 +165,10 @@ def save_checkpoint(
     os.symlink(os.path.basename(path), tmp)
     os.replace(tmp, latest)
 
-    checkpoints = sorted(Path(args.output_dir).glob("checkpoint-*.pt"))
-    for old in checkpoints[: max(0, len(checkpoints) - args.keep_last)]:
-        old.unlink()
+    if args.keep_last > 0:
+        checkpoints = sorted(Path(args.output_dir).glob("checkpoint-*.pt"))
+        for old in checkpoints[: max(0, len(checkpoints) - args.keep_last)]:
+            old.unlink()
 
 
 def build_config(args: argparse.Namespace, vocab_size: int) -> ModelConfig:
@@ -135,9 +188,19 @@ def main() -> None:
     args = parse_args()
     if args.device == "mps" and not torch.backends.mps.is_available():
         raise RuntimeError("MPS requested but unavailable")
-    if args.max_steps < 1 or args.save_every < 1 or args.gradient_accumulation < 1:
+    if (
+        args.max_steps < 1
+        or args.save_every < 1
+        or args.gradient_accumulation < 1
+        or args.keep_last < 0
+    ):
         raise ValueError("step and accumulation arguments must be positive")
     os.makedirs(args.output_dir, exist_ok=True)
+    log_handle = open(
+        os.path.join(args.output_dir, "train.log"), "a", encoding="utf-8", buffering=1
+    )
+    sys.stdout = Tee(sys.stdout, log_handle)  # type: ignore[assignment]
+    sys.stderr = Tee(sys.stderr, log_handle)  # type: ignore[assignment]
     set_seed(args.seed)
     device = torch.device(args.device)
 
@@ -162,13 +225,18 @@ def main() -> None:
         step = int(payload["step"])
         print(f"[resume] {resume_path} at step {step}")
 
+    metrics_path = os.path.join(args.output_dir, "metrics.jsonl")
+    prepare_metrics_file(metrics_path, step)
+
     counts = parameter_counts(model)
     print("[config]", json.dumps(asdict(config), sort_keys=True))
     print("[parameters]", json.dumps(counts, sort_keys=True))
     print(f"[train] device={device} start={step} target={args.max_steps}")
     model.train()
+    recent_step_seconds = deque(maxlen=50)
 
     while step < args.max_steps:
+        step_started_at = time.perf_counter()
         model.set_training_step(step)
         optimizer.zero_grad(set_to_none=True)
         accumulated_loss = 0.0
@@ -192,13 +260,35 @@ def main() -> None:
             group["lr"] = current_lr
         optimizer.step()
         step += 1
+        step_seconds = time.perf_counter() - step_started_at
+        recent_step_seconds.append(step_seconds)
 
         if step % args.log_every == 0 or step == 1:
             shares = route_totals.float() / route_totals.sum().clamp_min(1)
+            perplexity = math.exp(min(accumulated_loss, 20))
+            route_shares = [round(value, 6) for value in shares.tolist()]
+            mean_step_seconds = sum(recent_step_seconds) / len(recent_step_seconds)
+            remaining_seconds = mean_step_seconds * (args.max_steps - step)
+            remaining_text = format_duration(remaining_seconds)
+            append_metric(
+                metrics_path,
+                {
+                    "step": step,
+                    "loss": accumulated_loss,
+                    "perplexity": perplexity,
+                    "learning_rate": current_lr,
+                    "route_shares": route_shares,
+                    "step_seconds": step_seconds,
+                    "mean_step_seconds_50": mean_step_seconds,
+                    "estimated_remaining_seconds": remaining_seconds,
+                },
+            )
             print(
                 f"[step {step:05d}] loss={accumulated_loss:.4f} "
-                f"ppl={math.exp(min(accumulated_loss, 20)):.2f} lr={current_lr:.3e} "
-                f"routes={[round(value, 4) for value in shares.tolist()]}",
+                f"ppl={perplexity:.2f} lr={current_lr:.3e} "
+                f"routes={[round(value, 4) for value in route_shares]} "
+                f"step_time={step_seconds:.2f}s avg50={mean_step_seconds:.2f}s "
+                f"remaining={remaining_text}",
                 flush=True,
             )
 
