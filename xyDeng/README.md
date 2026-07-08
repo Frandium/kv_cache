@@ -5,13 +5,14 @@ This branch uses date-based research sync packages.
 ## Current Read Path
 
 ```text
-sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/
+sync/2026-07-08/mtp_long_horizon_theory/
 ```
 
 Read first:
 
 ```text
-sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/meeting_brief_cn.md
+sync/2026-07-08/mtp_long_horizon_theory/README.md
+sync/2026-07-08/mtp_long_horizon_theory/01_long_horizon_mtp_self_contained_story_v0.md
 ```
 
 Then audit details if needed:
@@ -20,6 +21,7 @@ Then audit details if needed:
 sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/report_card.md
 sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/experiment/summary.md
 sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/experiment/detailed.md
+sync/2026-07-03/a06_24_synthetic_common_rare_transformer_moe/meeting_brief_cn.md
 sync/2026-06-29/feature_center_margin_mechanism/
 sync/2026-07-01/feature_route_margin_common_interference/
 ```
