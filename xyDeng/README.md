@@ -5,20 +5,24 @@ This branch uses date-based research sync packages.
 ## Current Read Path
 
 ```text
-sync/2026-07-10/mtp_long_horizon_semantic_efficiency/
+sync/2026-07-13/mtp_composition_capacity_causal_use/
 ```
 
 Read first:
 
 ```text
-sync/2026-07-10/mtp_long_horizon_semantic_efficiency/README.md
-sync/2026-07-10/mtp_long_horizon_semantic_efficiency/meeting_brief_cn.md
-sync/2026-07-10/mtp_long_horizon_semantic_efficiency/story_cn.md
+sync/2026-07-13/mtp_composition_capacity_causal_use/README.md
+sync/2026-07-13/mtp_composition_capacity_causal_use/meeting_brief_cn.md
+sync/2026-07-13/mtp_composition_capacity_causal_use/anchors/11_27_standard_head_causal_representation_use_anchor_cn.md
+sync/2026-07-13/mtp_composition_capacity_causal_use/protocol/standard_head_causal_representation_use_protocol_cn.md
 ```
 
 Then audit details if needed:
 
 ```text
+sync/2026-07-13/mtp_composition_capacity_causal_use/source_results/
+sync/2026-07-13/mtp_composition_capacity_causal_use/supporting_summaries/
+sync/2026-07-10/mtp_long_horizon_semantic_efficiency/
 sync/2026-07-10/mtp_long_horizon_semantic_efficiency/anchor/
 sync/2026-07-10/mtp_long_horizon_semantic_efficiency/experiments/
 sync/2026-07-08/mtp_long_horizon_theory/
