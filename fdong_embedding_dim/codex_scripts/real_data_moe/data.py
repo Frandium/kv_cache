@@ -31,12 +31,22 @@ class DCLMTokenStream:
         data_dir: str,
         tokenizer: PreTrainedTokenizerFast,
         seed: int = 42,
+        rank: int = 0,
+        world_size: int = 1,
+        file_pattern: str = "*.txt",
     ) -> None:
-        self.files = sorted(glob.glob(os.path.join(data_dir, "part-*.txt")))
+        all_files = sorted(
+            glob.glob(os.path.join(data_dir, "**", file_pattern), recursive=True)
+        )
+        self.files = all_files[rank::world_size]
         if not self.files:
-            raise FileNotFoundError(f"no part-*.txt files found in {data_dir}")
+            raise FileNotFoundError(
+                f"no {file_pattern} files assigned to rank {rank}/{world_size} in {data_dir}"
+            )
         self.tokenizer = tokenizer
         self.seed = seed
+        self.rank = rank
+        self.world_size = world_size
         self.state = StreamState()
         self._handle = None
         self._order: List[str] = []
@@ -71,7 +81,7 @@ class DCLMTokenStream:
                 try:
                     value = json.loads(line)
                 except json.JSONDecodeError:
-                    continue
+                    value = line
                 if isinstance(value, str) and value.strip():
                     return value
             else:

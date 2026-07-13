@@ -79,6 +79,19 @@ def main() -> None:
         f"loss={loss.detach().item():.4f}, orthogonal_leakage={leakage:.3e}"
     )
 
+    checkpoint_config = tiny_config(orthogonalize_tail=False)
+    checkpoint_config.gradient_checkpointing = True
+    checkpoint_model = RealDataMoEForCausalLM(checkpoint_config)
+    checkpoint_ids = torch.randint(0, checkpoint_config.vocab_size, (2, 16))
+    checkpoint_logits, _ = checkpoint_model(checkpoint_ids)
+    checkpoint_loss = torch.nn.functional.cross_entropy(
+        checkpoint_logits[:, :-1].reshape(-1, checkpoint_config.vocab_size),
+        checkpoint_ids[:, 1:].reshape(-1),
+    )
+    checkpoint_loss.backward()
+    assert checkpoint_model.layers[0].moe.common_expert.down_proj.weight.grad is not None
+    print("gradient-checkpoint forward/backward passed")
+
 
 if __name__ == "__main__":
     main()

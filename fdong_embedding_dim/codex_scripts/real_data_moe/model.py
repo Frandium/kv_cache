@@ -70,8 +70,8 @@ class ModelConfig:
     def validate(self) -> None:
         if self.architecture not in {"moe", "dense"}:
             raise ValueError("architecture must be moe or dense")
-        if self.num_attention_heads * self.head_dim != self.hidden_size:
-            raise ValueError("num_attention_heads * head_dim must equal hidden_size")
+        if self.num_attention_heads < 1 or self.num_key_value_heads < 1:
+            raise ValueError("attention head counts must be positive")
         if self.num_attention_heads % self.num_key_value_heads:
             raise ValueError("num_attention_heads must be divisible by num_key_value_heads")
         if self.router_input not in {"residual", "attention", "attention_mean"}:
@@ -361,7 +361,16 @@ class RealDataMoEForCausalLM(nn.Module):
         diagnostics: Dict[str, Dict[str, torch.Tensor]] = {}
         for index, layer in enumerate(self.layers):
             if self.config.gradient_checkpointing and self.training:
-                x = checkpoint(lambda value: layer(value)[0], x, use_reentrant=False)
+                # Bind the current layer explicitly. Capturing the loop variable
+                # directly would make backward recomputation call the final
+                # layer after the loop has completed.
+                def layer_forward(
+                    value: torch.Tensor,
+                    current_layer: nn.Module = layer,
+                ) -> torch.Tensor:
+                    return current_layer(value)[0]
+
+                x = checkpoint(layer_forward, x, use_reentrant=False)
             else:
                 x, layer_diagnostics = layer(x)
                 diagnostics[f"layer_{index}"] = layer_diagnostics

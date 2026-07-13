@@ -1,0 +1,6 @@
+mlp_d8_seed971_mtp1 linear_probe_test_acc= 0.125 effective_rank= 4.574
+mlp_d8_seed971_mtp3 linear_probe_test_acc= 0.000 effective_rank= 4.497
+mlp_d8_seed972_mtp1 linear_probe_test_acc= 0.000 effective_rank= 4.598
+mlp_d8_seed972_mtp3 linear_probe_test_acc= 0.000 effective_rank= 4.888
+mlp_d8_seed973_mtp1 linear_probe_test_acc= 0.125 effective_rank= 4.010
+mlp_d8_seed973_mtp3 linear_probe_test_acc= 0.062 effective_rank= 5.321

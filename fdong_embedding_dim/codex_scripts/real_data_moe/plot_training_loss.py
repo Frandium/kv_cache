@@ -64,7 +64,7 @@ def main() -> None:
             moving_average(losses, args.smooth_window),
             color=colors[name],
             linewidth=2,
-            label=f"{name} ({args.smooth_window}-step mean)",
+            label=f"{name} ({args.smooth_window}-record mean)",
         )
     axis.set_xlabel("Optimizer step")
     axis.set_ylabel("Training next-token loss")

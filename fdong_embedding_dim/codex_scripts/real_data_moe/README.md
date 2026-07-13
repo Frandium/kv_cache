@@ -48,3 +48,29 @@ Run the active-width-matched dense control on the same seeded data order:
 ```bash
 bash fdong_embedding_dim/codex_scripts/real_data_moe/run_dense_active_matched.sh
 ```
+
+Run the proposed model with baseline-matched active FFN width
+(`common=384`, `tail=1152`, hence `384+1152=1536`):
+
+```bash
+bash fdong_embedding_dim/codex_scripts/real_data_moe/run_proposed_baseline_active_matched.sh
+```
+
+Run the routing-only comparison with baseline-matched expert shapes
+(`common=768`, `tail=768`):
+
+```bash
+bash fdong_embedding_dim/codex_scripts/real_data_moe/run_proposed_routing_only_matched.sh
+```
+
+Run the 10000-step, 163.84M-token baseline/proposed comparison:
+
+```bash
+bash fdong_embedding_dim/codex_scripts/real_data_moe/run_large_batch_baseline_then_proposed.sh
+```
+
+Run both experiment groups sequentially:
+
+```bash
+bash fdong_embedding_dim/codex_scripts/real_data_moe/run_overnight_experiments.sh
+```

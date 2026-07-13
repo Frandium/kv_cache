@@ -11,9 +11,11 @@ from transformers import PreTrainedTokenizerFast
 from .model import ModelConfig, RealDataMoEForCausalLM
 
 
-def iter_fixed_documents(data_dir: str) -> Iterator[str]:
+def iter_fixed_documents(data_dir: str, file_pattern: str = "*.txt") -> Iterator[str]:
     """Read from lexicographically last shards, separate from stream startup."""
-    paths = sorted(glob.glob(os.path.join(data_dir, "part-*.txt")), reverse=True)
+    paths = sorted(
+        glob.glob(os.path.join(data_dir, "**", file_pattern), recursive=True), reverse=True
+    )
     if not paths:
         raise FileNotFoundError(f"no part-*.txt files found in {data_dir}")
     for path in paths:
@@ -22,7 +24,7 @@ def iter_fixed_documents(data_dir: str) -> Iterator[str]:
                 try:
                     value = json.loads(line)
                 except json.JSONDecodeError:
-                    continue
+                    value = line
                 if isinstance(value, str) and value.strip():
                     yield value
 
@@ -57,7 +59,9 @@ def load_model(
     checkpoint_path: str,
     device: torch.device,
 ) -> Tuple[RealDataMoEForCausalLM, int]:
-    payload = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    payload = torch.load(
+        checkpoint_path, map_location="cpu", weights_only=False, mmap=True
+    )
     config = ModelConfig(**payload["model_config"])
     model = RealDataMoEForCausalLM(config)
     model.load_state_dict(payload["model"])

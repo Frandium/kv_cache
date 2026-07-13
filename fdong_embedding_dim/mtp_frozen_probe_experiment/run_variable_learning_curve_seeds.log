@@ -1,0 +1,6 @@
+mlp_d4_seed971_mtp1 step= 3000 train_total_ce= 1.1394 test_total_ce= 3.1466
+mlp_d4_seed971_mtp3 step= 3000 train_total_ce= 1.0800 test_total_ce= 2.1713
+mlp_d4_seed972_mtp1 step= 3000 train_total_ce= 1.1893 test_total_ce= 4.2285
+mlp_d4_seed972_mtp3 step= 3000 train_total_ce= 1.1223 test_total_ce= 1.4737
+mlp_d4_seed973_mtp1 step= 3000 train_total_ce= 1.1178 test_total_ce= 2.6590
+mlp_d4_seed973_mtp3 step= 3000 train_total_ce= 1.1276 test_total_ce= 1.7380

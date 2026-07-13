@@ -97,6 +97,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--orthogonal-rank", type=int, default=16)
     parser.add_argument("--orthogonal-refresh-steps", type=int, default=50)
     parser.add_argument("--router-window", type=int, default=16)
+    parser.add_argument("--common-intermediate-size", type=int, default=None)
+    parser.add_argument("--tail-intermediate-size", type=int, default=None)
     parser.add_argument("--gradient-checkpointing", action=argparse.BooleanOptionalAction, default=False)
     return parser.parse_args()
 
@@ -183,6 +185,10 @@ def build_config(args: argparse.Namespace, vocab_size: int) -> ModelConfig:
         "router_window": args.router_window,
         "gradient_checkpointing": args.gradient_checkpointing,
     }
+    if args.common_intermediate_size is not None:
+        shared["common_intermediate_size"] = args.common_intermediate_size
+    if args.tail_intermediate_size is not None:
+        shared["tail_intermediate_size"] = args.tail_intermediate_size
     if args.variant == "baseline":
         return ModelConfig.baseline(**shared)
     if args.variant == "proposed":
