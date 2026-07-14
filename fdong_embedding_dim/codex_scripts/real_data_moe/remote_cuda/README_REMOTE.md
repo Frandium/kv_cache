@@ -35,9 +35,14 @@ DATA_DIR=/mnt/workspace/dclm/global-shard_01_of_10
 OUTPUT_ROOT=/mnt/workspace/fmoe_cuda_2b_outputs
 NPROC_PER_NODE=8
 MAX_STEPS=0
+LOAD_BALANCE_WEIGHT=0.0
+RESUME=auto
 ```
 
 Override them before launching when needed.
+
+Set `LOAD_BALANCE_WEIGHT` to enable Switch-style router load-balance auxiliary
+loss. The default `0.0` preserves the original training objective.
 
 ## Launch one experiment per instance
 
@@ -90,6 +95,15 @@ limit, launch with an environment override, for example:
 MAX_STEPS=100000 bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/run_baseline.sh
 ```
 
+Example with load-balance loss:
+
+```bash
+LOAD_BALANCE_WEIGHT=0.01 bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/run_proposed_total_matched.sh
+```
+
+To write a new run directory while initializing from an existing checkpoint,
+override both `OUTPUT_ROOT` and `RESUME`.
+
 ## Analyze at any time
 
 Plot all currently available training curves:
@@ -109,6 +123,19 @@ Analyze expert continuity:
 ```bash
 bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/continuity.sh
 ```
+
+Run lm-evaluation-harness downstream tasks for one checkpoint:
+
+```bash
+RUN_NAME=baseline bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/lm_eval.sh
+RUN_NAME=proposed_total_matched bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/lm_eval.sh
+RUN_NAME=routing_only bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/lm_eval.sh
+```
+
+The default task set is
+`arc_challenge,arc_easy,hellaswag,lambada_openai,piqa,siqa,race,winogrande`.
+Override `TASKS`, `CHECKPOINT`, `EVAL_BATCH_SIZE`, `EVAL_DEVICE`, or
+`EVAL_OUTPUT_DIR` when needed.
 
 Override any checkpoint without editing scripts:
 

@@ -43,6 +43,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--decay-steps", type=int, default=50_000)
     parser.add_argument("--weight-decay", type=float, default=0.1)
     parser.add_argument("--grad-clip", type=float, default=1.0)
+    parser.add_argument(
+        "--load-balance-weight",
+        type=float,
+        default=0.0,
+        help="coefficient for Switch-style router load-balance auxiliary loss",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--resume", default="auto")
     parser.add_argument("--hidden-size", type=int, default=1_536)
@@ -144,6 +150,20 @@ def current_route_counts(model: RealDataMoEForCausalLM) -> torch.Tensor:
         if hasattr(layer, "moe") and layer.moe.last_route_counts is not None:
             counts += layer.moe.last_route_counts.to(counts.device)
     return counts
+
+
+def load_balance_loss(
+    diagnostics: Dict[str, Dict[str, torch.Tensor]],
+    device: torch.device,
+) -> torch.Tensor:
+    losses = [
+        layer_stats["load_balance_loss"]
+        for layer_stats in diagnostics.values()
+        if "load_balance_loss" in layer_stats
+    ]
+    if not losses:
+        return torch.zeros((), device=device)
+    return torch.stack(losses).mean()
 
 
 def save_checkpoint(
@@ -265,7 +285,8 @@ def main() -> None:
             started = time.perf_counter()
             module.set_training_step(step)
             optimizer.zero_grad(set_to_none=True)
-            local_loss = 0.0
+            local_ce_loss = 0.0
+            local_aux_loss = 0.0
             route_totals = torch.zeros(config.num_tail_experts, device=device)
             for micro_step in range(args.gradient_accumulation):
                 input_ids, labels = stream.next_batch(args.batch_size, args.sequence_length, device)
@@ -276,12 +297,17 @@ def main() -> None:
                     else nullcontext()
                 )
                 with sync_context, autocast_context:
-                    logits, _ = model(input_ids)
-                    loss = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), labels.reshape(-1))
+                    logits, diagnostics = model(input_ids)
+                    ce_loss = F.cross_entropy(
+                        logits.reshape(-1, logits.shape[-1]), labels.reshape(-1)
+                    )
+                    aux_loss = load_balance_loss(diagnostics, device)
+                    loss = ce_loss + args.load_balance_weight * aux_loss
                     scaled_loss = loss / args.gradient_accumulation
                 route_totals += current_route_counts(module)
                 scaled_loss.backward()
-                local_loss += loss.detach().float().item() / args.gradient_accumulation
+                local_ce_loss += ce_loss.detach().float().item() / args.gradient_accumulation
+                local_aux_loss += aux_loss.detach().float().item() / args.gradient_accumulation
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
             lr = learning_rate(step, args)
@@ -290,9 +316,19 @@ def main() -> None:
             optimizer.step()
             step += 1
 
-            loss_tensor = torch.tensor(local_loss, device=device)
+            loss_tensor = torch.tensor(
+                [
+                    local_ce_loss + args.load_balance_weight * local_aux_loss,
+                    local_ce_loss,
+                    local_aux_loss,
+                ],
+                device=device,
+            )
             dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
-            loss_value = loss_tensor.item() / world_size
+            loss_tensor = loss_tensor / world_size
+            total_loss_value = loss_tensor[0].item()
+            ce_loss_value = loss_tensor[1].item()
+            aux_loss_value = loss_tensor[2].item()
             dist.all_reduce(route_totals, op=dist.ReduceOp.SUM)
             step_seconds = time.perf_counter() - started
             recent_step_seconds.append(step_seconds)
@@ -311,8 +347,12 @@ def main() -> None:
                 record = {
                     "step": step,
                     "tokens": step * args.batch_size * world_size * args.gradient_accumulation * args.sequence_length,
-                    "loss": loss_value,
-                    "perplexity": math.exp(min(loss_value, 20)),
+                    "loss": ce_loss_value,
+                    "total_loss": total_loss_value,
+                    "ce_loss": ce_loss_value,
+                    "load_balance_loss": aux_loss_value,
+                    "load_balance_weight": args.load_balance_weight,
+                    "perplexity": math.exp(min(ce_loss_value, 20)),
                     "learning_rate": lr,
                     "route_shares": shares.cpu().tolist(),
                     "step_seconds": step_seconds,
@@ -325,7 +365,9 @@ def main() -> None:
                 append_metric(metrics_path, record)
                 remaining_text = format_duration(remaining) if remaining is not None else "unbounded"
                 print(
-                    f"[step {step:07d}] tokens={record['tokens']:,} loss={loss_value:.4f} "
+                    f"[step {step:07d}] tokens={record['tokens']:,} loss={ce_loss_value:.4f} "
+                    f"total={total_loss_value:.4f} "
+                    f"ce={ce_loss_value:.4f} lb={aux_loss_value:.4f} "
                     f"lr={lr:.3e} routes={[round(x, 4) for x in record['route_shares']]} "
                     f"step_time={step_seconds:.2f}s avg50={mean_seconds:.2f}s "
                     f"remaining={remaining_text} next_ckpt={format_duration(checkpoint_remaining)} "

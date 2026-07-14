@@ -10,6 +10,8 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-/mnt/workspace/fmoe_cuda_2b_outputs}"
 NPROC_PER_NODE="${NPROC_PER_NODE:-8}"
 MAX_STEPS="${MAX_STEPS:-0}"
 SEED="${SEED:-42}"
+LOAD_BALANCE_WEIGHT="${LOAD_BALANCE_WEIGHT:-0.0}"
+RESUME="${RESUME:-auto}"
 
 COMMON_ARGS=(
   --data-dir "${DATA_DIR}"
@@ -35,8 +37,9 @@ COMMON_ARGS=(
   --router-window 16
   --no-gradient-checkpointing
   --amp-dtype bfloat16
+  --load-balance-weight "${LOAD_BALANCE_WEIGHT}"
   --seed "${SEED}"
-  --resume auto
+  --resume "${RESUME}"
 )
 
 run_distributed() {

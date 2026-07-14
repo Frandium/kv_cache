@@ -294,6 +294,16 @@ class CommonTailMoE(nn.Module):
         diagnostics = {
             "route_counts": counts.detach(),
             "route_indices": routes.detach(),
+            "load_balance_loss": (
+                self.config.num_tail_experts
+                * (
+                    F.one_hot(routes, num_classes=self.config.num_tail_experts)
+                    .float()
+                    .mean(dim=(0, 1))
+                    .detach()
+                    * router_probs.float().mean(dim=(0, 1))
+                ).sum()
+            ),
             "router_entropy": (
                 -(router_probs.float() * router_probs.float().clamp_min(1e-9).log())
                 .sum(dim=-1)

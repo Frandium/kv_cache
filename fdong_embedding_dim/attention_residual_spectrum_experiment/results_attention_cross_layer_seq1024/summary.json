@@ -1,0 +1,73 @@
+{
+  "config": {
+    "model_dir": "fdong/Qwen3-0.6B",
+    "data_dir": "/Users/bytedance/Desktop/dclm",
+    "output_dir": "fdong_embedding_dim/attention_residual_spectrum_experiment/results_attention_cross_layer_seq1024",
+    "seq_len": 1024,
+    "num_sequences": 8,
+    "tokens_per_sequence": 64,
+    "top_ratio": 0.01,
+    "device": "mps",
+    "dtype": "float16",
+    "pca_niter": 4,
+    "seed": 42
+  },
+  "device": "mps",
+  "effective_dtype": "torch.float16",
+  "hidden_size": 1024,
+  "top_rank": 11,
+  "sampled_tokens": 512,
+  "documents": [
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8696,
+      "tokens": 2242
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8716,
+      "tokens": 2523
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8732,
+      "tokens": 2297
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 5005,
+      "tokens": 1102
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 5450,
+      "tokens": 1210
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 8082,
+      "tokens": 1827
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 6303,
+      "tokens": 1691
+    },
+    {
+      "path": "/Users/bytedance/Desktop/dclm/part-17010.txt",
+      "chars": 7970,
+      "tokens": 1797
+    }
+  ],
+  "pc1_adjacent_layer_abs_cosine": 0.39877066016197205,
+  "pc1_all_layer_abs_cosine": 0.2779129445552826,
+  "top1pct_adjacent_layer_overlap": 0.07220879942178726,
+  "top1pct_all_layer_overlap": 0.04503325745463371,
+  "random_subspace_overlap": 0.0107421875,
+  "top1pct_adjacent_overlap_over_random": 6.721982782537287,
+  "top1pct_all_overlap_over_random": 4.1921868757768115,
+  "full_a_same_token_adjacent_layer_cosine": 0.07887179404497147,
+  "full_a_same_token_all_layer_cosine": 0.055197037756443024,
+  "top1pct_a_same_token_adjacent_layer_cosine": 0.1322302669286728,
+  "top1pct_a_same_token_all_layer_cosine": 0.07878027856349945
+}

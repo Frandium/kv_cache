@@ -1,0 +1,120 @@
+{
+  "common_step": 58890,
+  "common_tokens": 15437660160,
+  "baseline": {
+    "config": {
+      "architecture": "moe",
+      "attention_dropout": 0.0,
+      "common_intermediate_size": 3072,
+      "gradient_checkpointing": false,
+      "head_dim": 128,
+      "hidden_size": 1024,
+      "initializer_range": 0.02,
+      "max_position_embeddings": 2048,
+      "num_attention_heads": 16,
+      "num_hidden_layers": 28,
+      "num_key_value_heads": 8,
+      "num_tail_experts": 4,
+      "orthogonal_rank": 16,
+      "orthogonal_refresh_steps": 50,
+      "orthogonalize_tail": false,
+      "rms_norm_eps": 1e-06,
+      "rope_theta": 1000000.0,
+      "router_input": "residual",
+      "router_window": 16,
+      "tail_intermediate_size": 3072,
+      "vocab_size": 151936
+    },
+    "parameters": {
+      "attention": 176167936,
+      "common": 264241152,
+      "dense": 0,
+      "embedding": 155582464,
+      "router_norm": 173056,
+      "tail": 1056964608,
+      "total": 1653129216
+    },
+    "distributed": {
+      "world_size": 8,
+      "global_batch": 256,
+      "tokens_per_step": 262144
+    }
+  },
+  "routing": {
+    "config": {
+      "architecture": "moe",
+      "attention_dropout": 0.0,
+      "common_intermediate_size": 3072,
+      "gradient_checkpointing": false,
+      "head_dim": 128,
+      "hidden_size": 1024,
+      "initializer_range": 0.02,
+      "max_position_embeddings": 2048,
+      "num_attention_heads": 16,
+      "num_hidden_layers": 28,
+      "num_key_value_heads": 8,
+      "num_tail_experts": 4,
+      "orthogonal_rank": 16,
+      "orthogonal_refresh_steps": 50,
+      "orthogonalize_tail": false,
+      "rms_norm_eps": 1e-06,
+      "rope_theta": 1000000.0,
+      "router_input": "attention_mean",
+      "router_window": 16,
+      "tail_intermediate_size": 3072,
+      "vocab_size": 151936
+    },
+    "parameters": {
+      "attention": 176167936,
+      "common": 264241152,
+      "dense": 0,
+      "embedding": 155582464,
+      "router_norm": 173056,
+      "tail": 1056964608,
+      "total": 1653129216
+    },
+    "distributed": {
+      "world_size": 8,
+      "global_batch": 256,
+      "tokens_per_step": 262144
+    }
+  },
+  "active_parameters_including_tied_embedding_head": 860405760,
+  "active_parameter_fraction": 0.5204709660155205,
+  "loss_tail": {
+    "Residual routing": {
+      "last_step": 58890,
+      "last_tokens": 15437660160,
+      "last_100_record_mean_loss": 3.1499610000000002,
+      "last_500_record_mean_loss": 3.1524728
+    },
+    "Attention-Top routing": {
+      "last_step": 58890,
+      "last_tokens": 15437660160,
+      "last_100_record_mean_loss": 3.18759,
+      "last_500_record_mean_loss": 3.1900028000000002
+    }
+  },
+  "attention_band_continuity": {
+    "bands": [
+      "0-1%",
+      "1-2%",
+      "2-5%",
+      "5-10%",
+      "10-20%",
+      "20-50%",
+      "50-100%"
+    ],
+    "values": [
+      0.6448777516682943,
+      0.5772954909889786,
+      0.5279043449295892,
+      0.46542552996564795,
+      0.38694453625767317,
+      0.2185628745290968,
+      -0.11853641202604329
+    ],
+    "full_a": 0.5182718325544287,
+    "value_key": "a_own_adjacent_cosine"
+  }
+}

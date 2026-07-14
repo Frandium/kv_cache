@@ -91,6 +91,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warmup-steps", type=int, default=200)
     parser.add_argument("--weight-decay", type=float, default=0.1)
     parser.add_argument("--grad-clip", type=float, default=1.0)
+    parser.add_argument(
+        "--load-balance-weight",
+        type=float,
+        default=0.0,
+        help="coefficient for Switch-style router load-balance auxiliary loss",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--resume", default="auto", help="auto, none, or checkpoint path")
     parser.add_argument("--orthogonalize-tail", action=argparse.BooleanOptionalAction, default=False)
@@ -175,6 +181,20 @@ def save_checkpoint(
             old.unlink()
 
 
+def load_balance_loss(
+    diagnostics: Dict[str, Dict[str, torch.Tensor]],
+    device: torch.device,
+) -> torch.Tensor:
+    losses = [
+        layer_stats["load_balance_loss"]
+        for layer_stats in diagnostics.values()
+        if "load_balance_loss" in layer_stats
+    ]
+    if not losses:
+        return torch.zeros((), device=device)
+    return torch.stack(losses).mean()
+
+
 def build_config(args: argparse.Namespace, vocab_size: int) -> ModelConfig:
     shared = {
         "vocab_size": vocab_size,
@@ -252,7 +272,8 @@ def main() -> None:
         step_started_at = time.perf_counter()
         model.set_training_step(step)
         optimizer.zero_grad(set_to_none=True)
-        accumulated_loss = 0.0
+        accumulated_ce_loss = 0.0
+        accumulated_aux_loss = 0.0
         route_totals = torch.zeros(config.num_tail_experts, dtype=torch.long)
         for _ in range(args.gradient_accumulation):
             input_ids, labels = stream.next_batch(
@@ -262,8 +283,11 @@ def main() -> None:
             loss = F.cross_entropy(
                 logits.reshape(-1, logits.shape[-1]), labels.reshape(-1)
             )
-            (loss / args.gradient_accumulation).backward()
-            accumulated_loss += loss.detach().item() / args.gradient_accumulation
+            aux_loss = load_balance_loss(diagnostics, device)
+            total_loss = loss + args.load_balance_weight * aux_loss
+            (total_loss / args.gradient_accumulation).backward()
+            accumulated_ce_loss += loss.detach().item() / args.gradient_accumulation
+            accumulated_aux_loss += aux_loss.detach().item() / args.gradient_accumulation
             for layer_stats in diagnostics.values():
                 if "route_counts" in layer_stats:
                     route_totals += layer_stats["route_counts"].cpu()
@@ -278,8 +302,11 @@ def main() -> None:
         recent_step_seconds.append(step_seconds)
 
         if step % args.log_every == 0 or step == 1:
+            accumulated_total_loss = (
+                accumulated_ce_loss + args.load_balance_weight * accumulated_aux_loss
+            )
             shares = route_totals.float() / route_totals.sum().clamp_min(1)
-            perplexity = math.exp(min(accumulated_loss, 20))
+            perplexity = math.exp(min(accumulated_ce_loss, 20))
             route_shares = [round(value, 6) for value in shares.tolist()]
             mean_step_seconds = sum(recent_step_seconds) / len(recent_step_seconds)
             remaining_seconds = mean_step_seconds * (args.max_steps - step)
@@ -288,7 +315,11 @@ def main() -> None:
                 metrics_path,
                 {
                     "step": step,
-                    "loss": accumulated_loss,
+                    "loss": accumulated_ce_loss,
+                    "total_loss": accumulated_total_loss,
+                    "ce_loss": accumulated_ce_loss,
+                    "load_balance_loss": accumulated_aux_loss,
+                    "load_balance_weight": args.load_balance_weight,
                     "perplexity": perplexity,
                     "learning_rate": current_lr,
                     "route_shares": route_shares,
@@ -298,7 +329,9 @@ def main() -> None:
                 },
             )
             print(
-                f"[step {step:05d}] loss={accumulated_loss:.4f} "
+                f"[step {step:05d}] loss={accumulated_ce_loss:.4f} "
+                f"total={accumulated_total_loss:.4f} "
+                f"ce={accumulated_ce_loss:.4f} lb={accumulated_aux_loss:.4f} "
                 f"ppl={perplexity:.2f} lr={current_lr:.3e} "
                 f"routes={[round(value, 4) for value in route_shares]} "
                 f"step_time={step_seconds:.2f}s avg50={mean_step_seconds:.2f}s "
