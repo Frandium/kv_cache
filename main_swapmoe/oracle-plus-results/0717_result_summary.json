@@ -1,6 +1,6 @@
 {
-  "common_step": 58890,
-  "common_tokens": 15437660160,
+  "common_step": 109090,
+  "common_tokens": 28597288960,
   "baseline": {
     "config": {
       "architecture": "moe",
@@ -83,16 +83,16 @@
   "active_parameter_fraction": 0.5204709660155205,
   "loss_tail": {
     "Residual routing": {
-      "last_step": 58890,
-      "last_tokens": 15437660160,
-      "last_100_record_mean_loss": 3.1499610000000002,
-      "last_500_record_mean_loss": 3.1524728
+      "last_step": 109090,
+      "last_tokens": 28597288960,
+      "last_100_record_mean_loss": 3.137177,
+      "last_500_record_mean_loss": 3.1253913999999994
     },
     "Attention-Top routing": {
-      "last_step": 58890,
-      "last_tokens": 15437660160,
-      "last_100_record_mean_loss": 3.18759,
-      "last_500_record_mean_loss": 3.1900028000000002
+      "last_step": 109090,
+      "last_tokens": 28597288960,
+      "last_100_record_mean_loss": 3.173035,
+      "last_500_record_mean_loss": 3.1612843999999996
     }
   },
   "attention_band_continuity": {
