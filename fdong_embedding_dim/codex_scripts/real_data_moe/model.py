@@ -25,6 +25,7 @@ class ModelConfig:
     initializer_range: float = 0.02
     attention_dropout: float = 0.0
     num_tail_experts: int = 4
+    num_experts_per_token: int = 1
     common_intermediate_size: int = 384
     tail_intermediate_size: int = 864
     router_input: str = "attention_mean"
@@ -80,6 +81,8 @@ class ModelConfig:
             raise ValueError("router_window must be positive")
         if self.architecture == "moe" and self.num_tail_experts < 1:
             raise ValueError("MoE architecture requires at least one tail expert")
+        if self.architecture == "moe" and self.num_experts_per_token != 1:
+            raise ValueError("this implementation currently supports top-1 routing only")
         if self.architecture == "dense" and self.num_tail_experts != 0:
             raise ValueError("dense architecture must have zero tail experts")
         if not 0 < self.orthogonal_rank <= min(

@@ -45,6 +45,9 @@ def main() -> None:
             "mean_total_switches": raw["mean_total_switches"],
             "mean_total_loads_including_initial": raw["mean_total_loads_including_initial"],
             "stay_probability": raw["stay_probability"],
+            "switch_probability": 1.0 - raw["stay_probability"],
+            "maximum_switches": args.num_tokens - 1,
+            "maximum_total_switches": (args.num_tokens - 1) * len(shares),
             "expert_shares_by_layer": shares,
             "mean_normalized_entropy": sum(entropy(layer) for layer in shares) / len(shares),
         }
@@ -55,12 +58,19 @@ def main() -> None:
     (output_dir / "continuity.json").write_text(json.dumps(results, indent=2) + "\n")
     names = list(results)
     switches = [results[name]["mean_total_switches"] for name in names]
+    rates = [results[name]["switch_probability"] * 100 for name in names]
     figure, axis = plt.subplots(figsize=(8, 5), constrained_layout=True)
     bars = axis.bar(names, switches)
     axis.set_ylabel(f"Expert switches per {args.num_tokens} tokens across all layers")
     axis.set_title("Expert activation continuity")
-    for bar, value in zip(bars, switches):
-        axis.text(bar.get_x() + bar.get_width() / 2, value, f"{value:.1f}", ha="center", va="bottom")
+    for bar, value, rate in zip(bars, switches, rates):
+        axis.text(
+            bar.get_x() + bar.get_width() / 2,
+            value,
+            f"{value:.1f}\n({rate:.1f}%)",
+            ha="center",
+            va="bottom",
+        )
     figure.savefig(output_dir / "continuity.png", dpi=180)
     plt.close(figure)
 

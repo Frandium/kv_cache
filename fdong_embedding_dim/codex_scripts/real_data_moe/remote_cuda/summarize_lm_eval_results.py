@@ -7,15 +7,10 @@ import json
 import math
 import re
 from pathlib import Path
-from typing import Dict, Iterable, Optional
+from typing import Dict, Optional
 
 
-RUNS = ("baseline", "proposed_total_matched", "routing_only")
-RUN_LABELS = {
-    "baseline": "baseline",
-    "proposed_total_matched": "proposed",
-    "routing_only": "routing_only",
-}
+RUNS = ("baseline_lb", "proposed_no_lb", "proposed_lb")
 SKIP_METRIC_PARTS = ("stderr", "perplexity", "alias", "exact_match_stderr")
 
 
@@ -23,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--eval-dir",
-        default="/mnt/workspace/fmoe_cuda_2b_outputs/lm_eval",
+        default="/mnt/workspace/fmoe_cuda_2b_8e_outputs/lm_eval",
         help="Directory containing *_stepXXXXXXX_results.json files.",
     )
     parser.add_argument(
@@ -140,11 +135,11 @@ def write_markdown(rows: list[dict[str, object]], path: Path) -> None:
     headers = [
         "task",
         "metric",
-        "baseline",
-        "proposed",
-        "routing_only",
-        "proposed-baseline",
-        "routing-baseline",
+        "baseline_lb",
+        "proposed_no_lb",
+        "proposed_lb",
+        "no_lb-baseline",
+        "proposed_lb-baseline",
     ]
     with path.open("w", encoding="utf-8") as handle:
         handle.write("| " + " | ".join(headers) + " |\n")
@@ -164,11 +159,11 @@ def write_csv(rows: list[dict[str, object]], path: Path) -> None:
     headers = [
         "task",
         "metric",
-        "baseline",
-        "proposed",
-        "routing_only",
-        "proposed-baseline",
-        "routing-baseline",
+        "baseline_lb",
+        "proposed_no_lb",
+        "proposed_lb",
+        "no_lb-baseline",
+        "proposed_lb-baseline",
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=headers)
@@ -185,18 +180,18 @@ def main() -> None:
     rows = []
     for task in ordered_tasks(all_results, args.tasks):
         metric = choose_metric(task, all_results)
-        baseline = all_results["baseline"][task][metric]
-        proposed = all_results["proposed_total_matched"][task][metric]
-        routing = all_results["routing_only"][task][metric]
+        baseline = all_results["baseline_lb"][task][metric]
+        proposed_no_lb = all_results["proposed_no_lb"][task][metric]
+        proposed_lb = all_results["proposed_lb"][task][metric]
         rows.append(
             {
                 "task": task,
                 "metric": metric,
-                "baseline": baseline,
-                "proposed": proposed,
-                "routing_only": routing,
-                "proposed-baseline": proposed - baseline,
-                "routing-baseline": routing - baseline,
+                "baseline_lb": baseline,
+                "proposed_no_lb": proposed_no_lb,
+                "proposed_lb": proposed_lb,
+                "no_lb-baseline": proposed_no_lb - baseline,
+                "proposed_lb-baseline": proposed_lb - baseline,
             }
         )
 
@@ -205,14 +200,14 @@ def main() -> None:
             {
                 "task": "average",
                 "metric": "mean_selected",
-                "baseline": sum(float(row["baseline"]) for row in rows) / len(rows),
-                "proposed": sum(float(row["proposed"]) for row in rows) / len(rows),
-                "routing_only": sum(float(row["routing_only"]) for row in rows) / len(rows),
-                "proposed-baseline": sum(
-                    float(row["proposed-baseline"]) for row in rows
+                "baseline_lb": sum(float(row["baseline_lb"]) for row in rows) / len(rows),
+                "proposed_no_lb": sum(float(row["proposed_no_lb"]) for row in rows) / len(rows),
+                "proposed_lb": sum(float(row["proposed_lb"]) for row in rows) / len(rows),
+                "no_lb-baseline": sum(
+                    float(row["no_lb-baseline"]) for row in rows
                 )
                 / len(rows),
-                "routing-baseline": sum(float(row["routing-baseline"]) for row in rows)
+                "proposed_lb-baseline": sum(float(row["proposed_lb-baseline"]) for row in rows)
                 / len(rows),
             }
         )

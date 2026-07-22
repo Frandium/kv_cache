@@ -42,11 +42,15 @@ def main() -> None:
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
     input_ids = torch.randint(0, config.vocab_size, (2, 16), device=device)
     logits, diagnostics = model(input_ids)
+    auxiliary_loss = torch.stack(
+        [layer["load_balance_loss"] for layer in diagnostics.values()]
+    ).mean()
+    assert auxiliary_loss.requires_grad
     loss = torch.nn.functional.cross_entropy(
         logits[:, :-1].reshape(-1, config.vocab_size),
         input_ids[:, 1:].reshape(-1),
     )
-    loss.backward()
+    (loss + 0.01 * auxiliary_loss).backward()
     optimizer.step()
     assert model.layers[0].moe.router.weight.grad is not None
     assert any(

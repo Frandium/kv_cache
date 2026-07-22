@@ -60,6 +60,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--common-intermediate-size", type=int, required=True)
     parser.add_argument("--tail-intermediate-size", type=int, required=True)
     parser.add_argument("--num-tail-experts", type=int, default=4)
+    parser.add_argument("--num-experts-per-token", type=int, default=1)
     parser.add_argument("--router-window", type=int, default=16)
     parser.add_argument("--gradient-checkpointing", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--amp-dtype", choices=("bfloat16", "float16", "none"), default="bfloat16")
@@ -120,6 +121,7 @@ def build_config(args: argparse.Namespace, vocab_size: int) -> ModelConfig:
         "head_dim": args.head_dim,
         "max_position_embeddings": max(2_048, args.sequence_length),
         "num_tail_experts": args.num_tail_experts,
+        "num_experts_per_token": args.num_experts_per_token,
         "common_intermediate_size": args.common_intermediate_size,
         "tail_intermediate_size": args.tail_intermediate_size,
         "router_window": args.router_window,
