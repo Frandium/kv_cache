@@ -1,0 +1,61 @@
+{
+  "status": "complete",
+  "corpus": {
+    "documents": 10000,
+    "train_tokens": 5537453,
+    "valid_tokens": 1413403,
+    "total_tokens": 6950856,
+    "documents_at_max_length": 4113,
+    "level1_events_train": 16564305,
+    "level1_events_valid": 4228263
+  },
+  "c4": {
+    "unique_train_candidates": 6586545,
+    "pass_train_support": 10308,
+    "pass_valid_support": 9989,
+    "pass_npmi": 4828,
+    "pass_stability": 4818,
+    "retained_after_beam": 4818
+  },
+  "c8_real": {
+    "unique_train_candidates": 2005763,
+    "pass_train_support": 13633,
+    "pass_valid_support": 10181,
+    "pass_npmi": 8201,
+    "pass_stability": 7613,
+    "pass_stability_hetero": 7535,
+    "pass_stability_self": 78,
+    "retained_after_beam": 7613,
+    "retained_hetero": 7535,
+    "retained_self": 78
+  },
+  "c8_null": {
+    "unique_train_candidates": 2868704,
+    "pass_train_support": 3719,
+    "pass_valid_support": 2820,
+    "pass_npmi": 325,
+    "pass_stability": 308,
+    "pass_stability_hetero": 242,
+    "pass_stability_self": 66,
+    "retained_after_beam": 308,
+    "retained_hetero": 242,
+    "retained_self": 66
+  },
+  "c8_events": {
+    "real": 4898336,
+    "null": 4898336
+  },
+  "hetero_pass_count_ratio_real_over_null": 31.136363636363637,
+  "parent_reuse": {
+    "patterns": 4818,
+    "reused_by_at_least_1": 1422,
+    "reused_by_at_least_2": 934,
+    "reused_by_at_least_5": 593,
+    "p50": 0.0,
+    "p90": 6.0,
+    "p99": 52.82999999999993,
+    "max": 409
+  },
+  "examples_saved": 300,
+  "elapsed_seconds": 318.783793625
+}

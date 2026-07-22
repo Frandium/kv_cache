@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+results/*
+!results/pilot_10k/
+results/pilot_10k/*
+!results/pilot_10k/c4_patterns.csv
+!results/pilot_10k/c8_real_patterns.csv
+!results/pilot_10k/c8_null_patterns.csv
+!results/pilot_10k/summary.json
+!results/pilot_10k/analysis_summary.json
+!results/pilot_10k/run_config.json

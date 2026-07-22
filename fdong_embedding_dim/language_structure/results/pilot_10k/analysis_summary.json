@@ -1,0 +1,86 @@
+{
+  "real_hetero_patterns": 7535,
+  "null_hetero_patterns": 242,
+  "real_over_null_count_ratio": 31.136363636363637,
+  "real": {
+    "support_percentiles": {
+      "10": 23.0,
+      "25": 29.0,
+      "50": 42.0,
+      "75": 79.0,
+      "90": 130.0,
+      "99": 536.5799999999981
+    },
+    "npmi_percentiles": {
+      "10": 0.135436182,
+      "25": 0.1841774,
+      "50": 0.26253652,
+      "75": 0.367388055,
+      "90": 0.5323049200000001,
+      "99": 0.8504281631999998
+    },
+    "document_coverage_percentiles": {
+      "10": 0.0023,
+      "25": 0.0029,
+      "50": 0.0042,
+      "75": 0.0077,
+      "90": 0.0127,
+      "99": 0.045997999999999956
+    },
+    "composition_classes": {
+      "contains_digit": 5576,
+      "punctuation_or_space_only": 79,
+      "contains_alpha_no_digit": 1880
+    },
+    "top_100_composition_classes": {
+      "contains_digit": 97,
+      "punctuation_or_space_only": 2,
+      "contains_alpha_no_digit": 1
+    }
+  },
+  "null": {
+    "support_percentiles": {
+      "10": 21.0,
+      "25": 25.0,
+      "50": 33.0,
+      "75": 45.75,
+      "90": 70.9,
+      "99": 117.59
+    },
+    "npmi_percentiles": {
+      "10": 0.10509189499999999,
+      "25": 0.117723155,
+      "50": 0.14491682,
+      "75": 0.1831107475,
+      "90": 0.25470757600000005,
+      "99": 0.3293676238
+    },
+    "document_coverage_percentiles": {
+      "10": 0.0024,
+      "25": 0.002825,
+      "50": 0.0034,
+      "75": 0.005050000000000001,
+      "90": 0.007080000000000001,
+      "99": 0.010759000000000001
+    },
+    "composition_classes": {
+      "punctuation_or_space_only": 57,
+      "contains_digit": 181,
+      "contains_alpha_no_digit": 4
+    }
+  },
+  "level1_parent_reuse": {
+    "patterns": 4818,
+    "at_least_1": 1422,
+    "at_least_2": 934,
+    "at_least_5": 593,
+    "percentiles": {
+      "50": 0.0,
+      "75": 1.0,
+      "90": 6.0,
+      "95": 13.0,
+      "99": 52.82999999999993
+    },
+    "max": 409
+  }
+}
