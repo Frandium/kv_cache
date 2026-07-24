@@ -1,0 +1,22 @@
+{
+  "package": "a14_ntp_conditional_low_rank_theory",
+  "sync_date": "2026-07-24",
+  "branch": "xyDeng",
+  "source_zip_sha256": "9f16514854e10299d25ebf0358f519a77eef9b4b3a19698a2d4dfd00b5056746",
+  "files": [
+    "README.md",
+    "01_理论论文_共享组合结构与条件低有效秩.md",
+    "02_证明附录.md",
+    "03_物理先验与假设审计.md",
+    "references.bib"
+  ],
+  "excluded": [
+    "03_实验协议.md",
+    "05_审核清单.md"
+  ],
+  "status": "theory_draft_reviewed_for_sync",
+  "formula_delimiters": {
+    "inline": "$...$",
+    "display": "$$...$$"
+  }
+}

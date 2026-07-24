@@ -2,6 +2,23 @@
 
 This branch uses date-based research sync packages.
 
+## Latest Theory Sync
+
+```text
+sync/2026-07-24/a14_ntp_conditional_low_rank_theory/
+```
+
+Read first:
+
+```text
+sync/2026-07-24/a14_ntp_conditional_low_rank_theory/README.md
+sync/2026-07-24/a14_ntp_conditional_low_rank_theory/03_物理先验与假设审计.md
+sync/2026-07-24/a14_ntp_conditional_low_rank_theory/01_理论论文_共享组合结构与条件低有效秩.md
+sync/2026-07-24/a14_ntp_conditional_low_rank_theory/02_证明附录.md
+```
+
+This sync is theory-only; no experiment protocol is included.
+
 ## Current Read Path
 
 ```text
