@@ -1,0 +1,37 @@
+{
+  "package": "a14_probability_tree_ntp_low_rank_parameter_update",
+  "sync_date": "2026-07-28",
+  "branch": "xyDeng",
+  "source_directory": "daily_research_reports/0728/NTP_hierarchical_low_rank_parameter_update_theory_package/",
+  "source_theory_bundle_sha256": "8b8fdc4e01e2985150b5a6bf6cd1cc5f7bf1cde3678be7cac065d89d492864b1",
+  "files": [
+    "README.md",
+    "01_理论论文_从概率树与NTP到低秩参数更新子空间.md",
+    "02_证明附录.md",
+    "03_物理先验与假设审计.md"
+  ],
+  "excluded": [
+    "03_实验协议.md",
+    "05_审核清单.md",
+    "daily_research_reports/0728/focus.md",
+    "references.bib",
+    "experiment_code",
+    "raw_logs",
+    "checkpoints",
+    "datasets"
+  ],
+  "status": "self_contained_theory_draft_reviewed_for_sync",
+  "primary_object": "rank_kr_relative_spectral_tail_of_full_registered_writer_W_T",
+  "exact_result": "rank_delta_W_T_le_kr_and_tau_kr_W_T_to_zero_under_controlled_tree_recurrent_contrast_ntp_and_pure_sgd",
+  "proof_statuses": [
+    "已证明",
+    "条件证明",
+    "未证明"
+  ],
+  "formula_delimiters": {
+    "inline": "$...$",
+    "display": "$$...$$"
+  },
+  "protocol_included": false,
+  "external_sgd_theorem_required": false
+}

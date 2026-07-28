@@ -5,16 +5,16 @@ This branch uses date-based research sync packages.
 ## Latest Theory Sync
 
 ```text
-sync/2026-07-24/a14_ntp_conditional_low_rank_theory/
+sync/2026-07-28/a14_probability_tree_ntp_low_rank_parameter_update/
 ```
 
 Read first:
 
 ```text
-sync/2026-07-24/a14_ntp_conditional_low_rank_theory/README.md
-sync/2026-07-24/a14_ntp_conditional_low_rank_theory/03_物理先验与假设审计.md
-sync/2026-07-24/a14_ntp_conditional_low_rank_theory/01_理论论文_共享组合结构与条件低有效秩.md
-sync/2026-07-24/a14_ntp_conditional_low_rank_theory/02_证明附录.md
+sync/2026-07-28/a14_probability_tree_ntp_low_rank_parameter_update/README.md
+sync/2026-07-28/a14_probability_tree_ntp_low_rank_parameter_update/03_物理先验与假设审计.md
+sync/2026-07-28/a14_probability_tree_ntp_low_rank_parameter_update/01_理论论文_从概率树与NTP到低秩参数更新子空间.md
+sync/2026-07-28/a14_probability_tree_ntp_low_rank_parameter_update/02_证明附录.md
 ```
 
 This sync is theory-only; no experiment protocol is included.
