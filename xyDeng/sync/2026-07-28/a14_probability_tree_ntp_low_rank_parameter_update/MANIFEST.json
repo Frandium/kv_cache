@@ -3,7 +3,7 @@
   "sync_date": "2026-07-28",
   "branch": "xyDeng",
   "source_directory": "daily_research_reports/0728/NTP_hierarchical_low_rank_parameter_update_theory_package/",
-  "source_theory_bundle_sha256": "8b8fdc4e01e2985150b5a6bf6cd1cc5f7bf1cde3678be7cac065d89d492864b1",
+  "source_theory_bundle_sha256": "cd21ffbdff76f7970ec409643cc9e71a35f8b5323a2a1809b5ba35bc12e0fcbf",
   "files": [
     "README.md",
     "01_理论论文_从概率树与NTP到低秩参数更新子空间.md",
@@ -22,7 +22,8 @@
   ],
   "status": "self_contained_theory_draft_reviewed_for_sync",
   "primary_object": "rank_kr_relative_spectral_tail_of_full_registered_writer_W_T",
-  "exact_result": "rank_delta_W_T_le_kr_and_tau_kr_W_T_to_zero_under_controlled_tree_recurrent_contrast_ntp_and_pure_sgd",
+  "exact_result": "rank_delta_W_T_le_qstar_le_q0_eq_kr_and_tau_q0_eq_tau_kr_W_T_to_zero_under_controlled_tree_recurrent_contrast_ntp_and_pure_sgd",
+  "notation_version": "v0.4_q0_registered_budget_qstar_actual_dimension",
   "proof_statuses": [
     "已证明",
     "条件证明",
