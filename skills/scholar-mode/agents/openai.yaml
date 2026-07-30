@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scholar Mode"
+  short_description: "Research judgment, literature reasoning, theory, methods, and scholarly writing"
+  default_prompt: "Use $scholar-mode to analyze the research idea, evidence, assumptions, and next scholarly move."

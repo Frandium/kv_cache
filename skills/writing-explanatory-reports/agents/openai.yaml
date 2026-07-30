@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writing Explanatory Reports"
+  short_description: "Write concise research and experiment reports that explain context, evidence, limits, and decisions"
+  default_prompt: "Use $writing-explanatory-reports to write or revise a Markdown or HTML report from Codex-run research, experiments, or analysis."

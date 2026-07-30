@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <style>
+      .title { font: 700 27px Arial, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #17202a; }
+      .subtitle { font: 500 15px Arial, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #52606d; }
+      .axis { stroke: #334155; stroke-width: 2; }
+      .grid { stroke: #d8dee6; stroke-width: 1; }
+      .tick { font: 500 14px Arial, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #475569; }
+      .axis-label { font: 600 17px Arial, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #263442; }
+      .legend { font: 600 14px Arial, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #334155; }
+      .measure { stroke: #dc2626; stroke-width: 2; stroke-dasharray: 8 6; }
+      .measure-old { stroke: #9f1239; stroke-width: 2; stroke-dasharray: 4 5; }
+      .measure-label { font: 600 13px Arial, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #991b1b; }
+      .line4 { fill: none; stroke: #2563eb; stroke-width: 4; }
+      .line8 { fill: none; stroke: #15803d; stroke-width: 4; }
+      .line16 { fill: none; stroke: #d97706; stroke-width: 4; }
+      .line32 { fill: none; stroke: #7c3aed; stroke-width: 4; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="720" fill="#ffffff"/>
+  <text x="640" y="38" text-anchor="middle" class="title">Expert 命中率与 Context Length 对高速存储字节覆盖率的共同影响</text>
+  <text x="640" y="67" text-anchor="middle" class="subtitle">Qwen3-30B-A3B，BF16；attention、router、KV 和命中 expert 由高速层服务</text>
+
+  <!-- Plot area: x=120..1120 maps h=80%..100%; y=610..110 maps rho=85%..100%. -->
+  <line x1="120" y1="610" x2="1120" y2="610" class="axis"/>
+  <line x1="120" y1="110" x2="120" y2="610" class="axis"/>
+
+  <!-- Horizontal grid and y ticks -->
+  <line x1="120" y1="610" x2="1120" y2="610" class="grid"/>
+  <line x1="120" y1="443.3" x2="1120" y2="443.3" class="grid"/>
+  <line x1="120" y1="276.7" x2="1120" y2="276.7" class="grid"/>
+  <line x1="120" y1="110" x2="1120" y2="110" class="grid"/>
+  <text x="105" y="615" text-anchor="end" class="tick">85%</text>
+  <text x="105" y="448" text-anchor="end" class="tick">90%</text>
+  <text x="105" y="282" text-anchor="end" class="tick">95%</text>
+  <text x="105" y="115" text-anchor="end" class="tick">100%</text>
+
+  <!-- Vertical grid and x ticks -->
+  <line x1="120" y1="110" x2="120" y2="610" class="grid"/>
+  <line x1="320" y1="110" x2="320" y2="610" class="grid"/>
+  <line x1="520" y1="110" x2="520" y2="610" class="grid"/>
+  <line x1="720" y1="110" x2="720" y2="610" class="grid"/>
+  <line x1="920" y1="110" x2="920" y2="610" class="grid"/>
+  <line x1="1120" y1="110" x2="1120" y2="610" class="grid"/>
+  <text x="120" y="635" text-anchor="middle" class="tick">80%</text>
+  <text x="320" y="635" text-anchor="middle" class="tick">84%</text>
+  <text x="520" y="635" text-anchor="middle" class="tick">88%</text>
+  <text x="720" y="635" text-anchor="middle" class="tick">92%</text>
+  <text x="920" y="635" text-anchor="middle" class="tick">96%</text>
+  <text x="1120" y="635" text-anchor="middle" class="tick">100%</text>
+
+  <!-- Context-length curves -->
+  <polyline points="120.0,522.0 220.0,480.8 320.0,439.6 420.0,398.4 520.0,357.2 620.0,316.0 720.0,274.8 820.0,233.6 920.0,192.4 1020.0,151.2 1120.0,110.0" class="line4"/>
+  <polyline points="120.0,495.5 220.0,457.0 320.0,418.4 420.0,379.9 520.0,341.3 620.0,302.8 720.0,264.2 820.0,225.7 920.0,187.1 1020.0,148.6 1120.0,110.0" class="line8"/>
+  <polyline points="120.0,451.6 220.0,417.5 320.0,383.3 420.0,349.1 520.0,315.0 620.0,280.8 720.0,246.7 820.0,212.5 920.0,178.3 1020.0,144.2 1120.0,110.0" class="line16"/>
+  <polyline points="120.0,388.3 220.0,360.4 320.0,332.6 420.0,304.8 520.0,277.0 620.0,249.1 720.0,221.3 820.0,193.5 920.0,165.7 1020.0,137.8 1120.0,110.0" class="line32"/>
+
+  <!-- Project measurements -->
+  <line x1="755" y1="110" x2="755" y2="610" class="measure"/>
+  <line x1="918.5" y1="110" x2="918.5" y2="610" class="measure-old"/>
+  <rect x="641" y="78" width="228" height="25" fill="#ffffff"/>
+  <text x="755" y="96" text-anchor="middle" class="measure-label">本项目 0731：92.70%</text>
+  <rect x="926" y="120" width="232" height="25" fill="#ffffff"/>
+  <text x="1042" y="138" text-anchor="middle" class="measure-label">本项目 0717：95.97%</text>
+
+  <!-- Axis labels -->
+  <text x="620" y="674" text-anchor="middle" class="axis-label">Expert 高速层命中率 h</text>
+  <text x="35" y="360" text-anchor="middle" transform="rotate(-90 35 360)" class="axis-label">高速层服务的运行时字节比例 rho</text>
+
+  <!-- Legend -->
+  <line x1="165" y1="697" x2="210" y2="697" class="line4"/>
+  <text x="220" y="702" class="legend">4K context</text>
+  <line x1="405" y1="697" x2="450" y2="697" class="line8"/>
+  <text x="460" y="702" class="legend">8K context</text>
+  <line x1="650" y1="697" x2="695" y2="697" class="line16"/>
+  <text x="705" y="702" class="legend">16K context</text>
+  <line x1="900" y1="697" x2="945" y2="697" class="line32"/>
+  <text x="955" y="702" class="legend">32K context</text>
+</svg>

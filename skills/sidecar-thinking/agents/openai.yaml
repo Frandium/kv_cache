@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sidecar Thinking"
+  short_description: "Use Research Sidecar only when explicitly requested"
+  default_prompt: "Use $sidecar-thinking only when I explicitly ask to use/open/start Research Sidecar, inspect a sidecar research graph, install sidecar workspace skills, or run an external sidecar thinking pass."

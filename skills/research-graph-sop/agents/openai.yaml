@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Graph SOP"
+  short_description: "Build and maintain lightweight research hypothesis graphs"
+  default_prompt: "Use $research-graph-sop to inspect this research repo, build or update graph.yaml, and keep hypothesis testing traceable."
