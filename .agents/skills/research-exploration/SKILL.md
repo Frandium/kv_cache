@@ -1,11 +1,18 @@
 ---
 name: research-exploration
-description: Guide disciplined research exploration loops for ambiguous scientific, ML, robotics, computer vision, or algorithm-design work. Use when Codex needs to turn hypotheses into testable claims, design benchmarks, run experiments, inspect visual/quantitative evidence, build or revise experiment result viewers, diagnose failure modes, refine priors or models, write research notes, or decide the next experiment without drifting into vague speculation.
+description: "Guide the KV-cache repository's project-local exploration workflow for ambiguous scientific or algorithm-design questions. Use to maintain its docs/design.md, docs/experiment_design.md, and docs/visualization_results.md chain, inspect evidence, diagnose failures, and decide the next experiment. Do not replace canonical Research_System anchors or result records, write customer-facing documents, or manage restricted-remote transport."
 ---
 
 # Research Exploration
 
 Use this skill to keep research work concrete, testable, and evidence-driven.
+
+## Parent-System Boundary
+
+When this repository is used under `Research_System`, treat the three local
+`docs/` files as implementation-side technical records. Link them to the
+canonical Research_System anchor, protocol, summary, and detailed record; do
+not create a competing claim boundary or next decision here.
 
 ## Communication Rule
 

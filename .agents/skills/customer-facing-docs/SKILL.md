@@ -1,6 +1,6 @@
 ---
 name: customer-facing-docs
-description: Use this skill before drafting or revising customer-facing or partner-facing technical documents, reports, weekly updates, executive summaries, milestone summaries, or proposal text where the writing must sound confident, concise, conclusion-first, and suitable to send directly to an external customer.
+description: "Draft or revise concise, conclusion-first technical documents for external customers or partners. Use for customer reports, weekly or milestone updates, executive summaries, and proposal text. Do not use for internal research records, raw experiment logs, or code implementation."
 ---
 
 # Customer-Facing Docs
@@ -15,10 +15,14 @@ The document should show that we understand the problem, have a clear technical 
 
 - Lead with the conclusion, then give evidence.
 - State what the result means for the customer's objective.
-- Keep uncertainty out of the main conclusion; put boundary conditions in the detailed discussion only when needed.
-- Do not narrate failure paths, discarded hypotheses, or embarrassing caveats.
-- Do not write "we tried X but it did not work" unless the customer specifically needs that history.
-- Say "current result indicates the next optimization direction is..." instead of "this failed because...".
+- State decision-relevant uncertainty and claim boundaries concisely; never
+  omit a limitation that would change the customer's decision.
+- Omit irrelevant internal trial history, but preserve material negative
+  results, failed assumptions, and caveats.
+- Do not narrate every failed attempt unless the customer needs that history;
+  state any decision-relevant failure and its measured consequence directly.
+- Name an optimization direction only when the evidence supports it, and keep
+  it separate from the direct result.
 - Use exact numbers when available, but frame them as evidence for a decision.
 - Avoid overexplaining implementation details that do not affect the customer's decision.
 - Keep section titles plain and outcome-oriented.
@@ -72,13 +76,17 @@ Next we will <concrete next step>.
 
 ## Framing Experimental Gaps
 
-When a metric is not yet ideal, explain it as an optimization direction:
+When a metric is not yet ideal, state the measured gap first, then its claim
+boundary and the evidence-backed optimization direction:
 
-- "This gap indicates that routing constraints should be paired with expert-space specialization."
-- "The result validates the expected routing structure and identifies the next architectural constraint."
-- "The current version preserves the target behavior while leaving room for capacity optimization."
+- "This measured gap is consistent with overlapping expert functions; a
+  specialization test is the next discriminator."
+- "The routing distribution passes the predefined balance guard, but this does
+  not establish expert specialization."
+- "The current version preserves the measured target behavior under the tested
+  conditions; capacity optimization remains untested."
 
-Avoid phrases like:
+Avoid vague or self-deprecating phrases like:
 
 - "we failed"
 - "we tried many variants"
@@ -86,13 +94,17 @@ Avoid phrases like:
 - "we hide/exclude this task"
 - "the result is not beautiful"
 - "blind test"
-- "not enough evidence"
+
+Use `insufficient evidence for <specific claim>` when that is the actual
+verdict; do not replace it with optimistic wording.
 
 ## Tables And Metrics
 
 - Choose one metric story and keep it consistent.
-- Do not reveal awkward metric filtering decisions in customer-facing prose.
-- If using a subset, name it positively, such as "core downstream tasks".
+- Disclose every metric-selection or filtering rule that could materially
+  change the interpretation.
+- If using a subset, define it neutrally and explain why that subset answers
+  the stated decision.
 - Put metric interpretation immediately after the table.
 - Explain why the number matters, not just whether it is higher or lower.
 
@@ -113,4 +125,6 @@ Before delivering or editing a customer-facing document, check:
 - Are caveats placed after the claim, not inside the headline claim?
 - Are bullets parallel and short?
 - Did we avoid internal-process language?
+- Did we preserve every material negative result and claim boundary?
+- Are metric selection and filtering rules disclosed when decision-relevant?
 - Can this paragraph be sent directly to the customer without apology or extra explanation?

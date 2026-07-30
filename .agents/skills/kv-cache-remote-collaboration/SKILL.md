@@ -1,6 +1,6 @@
 ---
 name: kv-cache-remote-collaboration
-description: Use this skill when collaborating on the kv_cache project under restricted cloud-server access, where Codex cannot SSH directly and must use GitHub plus user-run remote commands to ship code, run experiments, collect logs, and iterate.
+description: "Coordinate KV-cache development and experiments when cloud access is restricted and Codex cannot SSH directly. Use when GitHub plus user-run remote commands must ship code, run experiments, collect logs, and iterate. Do not use to define the research question or when Codex can operate the target environment directly."
 ---
 
 # KV Cache Remote Collaboration
@@ -220,4 +220,3 @@ Then send back:
 3. last 200 lines of log
 4. any error trace
 ```
-

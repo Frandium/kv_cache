@@ -1,0 +1,7 @@
+interface:
+  display_name: "Research Exploration"
+  short_description: "Run evidence-driven research exploration loops"
+  default_prompt: "Use $research-exploration for this repository's project-local design, experiment, and visualization records without replacing canonical Research_System artifacts."
+
+policy:
+  allow_implicit_invocation: true

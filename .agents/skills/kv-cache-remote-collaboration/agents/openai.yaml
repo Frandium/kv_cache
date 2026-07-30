@@ -1,0 +1,7 @@
+interface:
+  display_name: "KV Cache Remote Collaboration"
+  short_description: "Coordinate restricted remote KV-cache experiments"
+  default_prompt: "Use $kv-cache-remote-collaboration to coordinate a KV-cache code and experiment loop when Codex cannot access the remote server directly."
+
+policy:
+  allow_implicit_invocation: true

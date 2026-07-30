@@ -1,0 +1,7 @@
+interface:
+  display_name: "Customer-Facing Docs"
+  short_description: "Draft concise external technical documents"
+  default_prompt: "Use $customer-facing-docs to draft a concise external technical document that preserves material evidence, uncertainty, and claim boundaries."
+
+policy:
+  allow_implicit_invocation: true
