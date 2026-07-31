@@ -1,0 +1,6 @@
+condition,median_T_head_steps,median_T_middle_steps,median_T_tail_steps,median_D_middle_head,median_D_tail_head,reference_middle_head_low,reference_middle_head_high,reference_tail_head_low,reference_tail_head_high,reference,decision
+flat,140.821728,140.827540,140.795532,-0.000541548,-0.000186037,,,,,descriptive flat control,near-equal times
+moderate,55.756536,111.459409,223.007070,0.692683219,1.385878448,,0.003276503,,0.003018908,pooled flat-rotation q95,above null
+strong,28.629516,114.379667,457.394308,1.384772795,2.771449955,,0.003276503,,0.003018908,pooled flat-rotation q95,above null
+strong_whitened,140.779170,140.823176,140.883319,0.000052888,0.000636857,-0.004013820,0.003915756,-0.003817868,0.003675620,pooled flat-rotation 95% envelope,inside null envelope
+strong_tail_only,,,451.660239,,,,,,,held-out KL reduction >= 0.5 for every seed,tail capability passed

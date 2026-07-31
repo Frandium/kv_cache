@@ -1,0 +1,42 @@
+{
+  "decision_boundary": {
+    "can_answer": [
+      "equal_energy_band_access",
+      "realized_band_response",
+      "current_native_route_dependence",
+      "saved_interval_net_allocation"
+    ],
+    "cannot_answer": [
+      "functional_band_utility",
+      "per_step_gradient_dynamics",
+      "causal_origin_before_30k",
+      "loss_per_flop_improvement"
+    ]
+  },
+  "experiment_id": "A15_00_E01_actual_router_input_band_response",
+  "guards": {
+    "actual_input_native_replay": true,
+    "band_energy_reconstruction": true,
+    "basis_reconstruction": true,
+    "checkpoint_provenance": true,
+    "coarse_half_split_overlap": true,
+    "orientation_null_singular_preservation": true,
+    "response_cross_terms_reported": true
+  },
+  "lineages": {
+    "decommon": {
+      "endpoint_head_access": "pass",
+      "fixed_basis_head_strengthening": "fail",
+      "head_oriented_net_displacement": "pass",
+      "strict_persistent_allocation": false
+    },
+    "lb": {
+      "endpoint_head_access": "pass",
+      "fixed_basis_head_strengthening": "fail",
+      "head_oriented_net_displacement": "pass",
+      "strict_persistent_allocation": false
+    }
+  },
+  "strict_protocol_verdict": "fail",
+  "typed_outcome": "head_aligned_endpoints_and_head_oriented_displacements_without_persistent_fixed_basis_strengthening"
+}

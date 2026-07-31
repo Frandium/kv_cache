@@ -1,0 +1,13 @@
+model,layer,split,pairs,self_pass_fraction,half_eta_spearman,restore_all_exact,status
+lb,1,fit,256,1.0,0.9519862712337935,True,pass
+lb,1,validation,256,1.0,0.9574413027881941,True,pass
+lb,6,fit,256,1.0,0.9915230797058779,True,pass
+lb,6,validation,256,1.0,0.9905369025734748,True,pass
+lb,12,fit,256,1.0,0.9954866615097451,True,pass
+lb,12,validation,256,1.0,0.9968458891273347,True,pass
+decommon,1,fit,256,1.0,0.8767719372615854,True,pass
+decommon,1,validation,256,1.0,0.8746856725716587,True,pass
+decommon,6,fit,256,1.0,0.9668219836416916,True,pass
+decommon,6,validation,256,1.0,0.974906899684115,True,pass
+decommon,12,fit,256,1.0,0.993766508930926,True,pass
+decommon,12,validation,256,1.0,0.992777867733657,True,pass

@@ -1,0 +1,83 @@
+{
+  "decision_boundary": {
+    "can_answer": [
+      "equal_energy_head_alignment_by_10k",
+      "saved_interval_net_update_orientation",
+      "fixed_basis_strengthening_maintenance_or_dilution",
+      "lineage_agreement"
+    ],
+    "cannot_answer": [
+      "exact_onset_before_10k",
+      "per_step_gradient_dynamics",
+      "pure_batch_gradient_causal_effect",
+      "functional_band_utility",
+      "loss_per_flop_improvement"
+    ]
+  },
+  "early_onset_before_10k": "pass",
+  "experiment_id": "A15_00_E02_early_head_alignment_onset",
+  "guards": {
+    "actual_input_native_replay": true,
+    "band_energy_reconstruction": true,
+    "basis_reconstruction": true,
+    "checkpoint_provenance": true,
+    "coarse_half_split_overlap": true,
+    "orientation_null_singular_preservation": true,
+    "response_cross_terms_reported": true
+  },
+  "lineages": {
+    "batchgrad": {
+      "all_net_displacements_head_oriented": true,
+      "early_endpoint": {
+        "head_alignment": "pass",
+        "inside_matched_orientation_null": false,
+        "step": 10000
+      },
+      "intervals": [
+        {
+          "fixed_basis_effect": "diluting",
+          "interval": "10000->20000",
+          "net_displacement_head_oriented": true
+        },
+        {
+          "fixed_basis_effect": "diluting",
+          "interval": "20000->30000",
+          "net_displacement_head_oriented": true
+        }
+      ],
+      "later_supported_steps": [
+        20000,
+        30000
+      ],
+      "typed_outcome": "early_present_diluted"
+    },
+    "lb": {
+      "all_net_displacements_head_oriented": true,
+      "early_endpoint": {
+        "head_alignment": "pass",
+        "inside_matched_orientation_null": false,
+        "step": 10000
+      },
+      "intervals": [
+        {
+          "fixed_basis_effect": "maintained_or_mixed",
+          "interval": "10000->20000",
+          "net_displacement_head_oriented": true
+        },
+        {
+          "fixed_basis_effect": "maintained_or_mixed",
+          "interval": "20000->30000",
+          "net_displacement_head_oriented": true
+        }
+      ],
+      "later_supported_steps": [
+        20000,
+        30000
+      ],
+      "typed_outcome": "early_present_maintained_or_mixed"
+    }
+  },
+  "progressive_strengthening_10k_to_30k": "fail",
+  "strict_protocol_verdict": "pass",
+  "typed_outcome": "lineage_conditioned"
+}
