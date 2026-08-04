@@ -1,0 +1,5 @@
+clause,pass,decision
+depth_relative_discriminability,True,fine/coarse discriminability increases with depth
+actual_variance_head_dominance,True,F1 is the largest actual semantic-variance band
+fine_middle_relative_enrichment,False,fine semantics are specifically enriched in F2-F8
+fine_tail_relative_enrichment,False,fine semantics are specifically enriched in F9-F16

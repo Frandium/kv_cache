@@ -1,0 +1,16 @@
+{
+  "calibration_token_sha256": "5c2e9f6b7d307436eda018b7719bc38cddab6387881d77f89bc74fb717b2f792",
+  "dataset_sha256": "cb440b98d81bac3f9813344f85e6efdbd994b7b988d8009ba64e207e64a11859",
+  "definition_exact_match_count": 0,
+  "definition_hits": [],
+  "full_text_exact_match_count": 0,
+  "full_text_hits": [],
+  "independence_guard_pass": true,
+  "selected_calibration_documents_verified": 128,
+  "template_literal_hits": {
+    "Classification:": [],
+    "Identify the broad academic field and the specific subfield.": [],
+    "Topic description:": []
+  },
+  "template_literal_match_count": 0
+}

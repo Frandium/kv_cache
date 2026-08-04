@@ -1,0 +1,11 @@
+layer,metric,band,parent_mean,child_mean,parent_minus_child,ci_low,ci_high,paired_log_ratio,parent_over_child,stable_interpretation
+10,raw,H,5.535242,5.606038,-0.070796,-0.109355,-0.029681,-0.012791,0.987291,child_more_actual_head_energy
+10,white,H,1.134795,1.180078,-0.045282,-0.056936,-0.033570,-0.039623,0.961152,child_more_head_selective
+29,raw,H,106.073519,99.050554,7.022965,5.786802,8.416986,0.067655,1.069997,parent_more_actual_head_energy
+29,white,H,0.624826,0.577510,0.047316,0.038270,0.057212,0.077354,1.080426,parent_more_head_selective
+35,raw,H,398.951633,413.524692,-14.573059,-23.681626,-6.218217,-0.032705,0.967824,no_stable_head_role_difference
+35,white,H,0.368780,0.375516,-0.006735,-0.016324,0.004538,-0.017728,0.982428,no_stable_head_role_difference
+36,raw,H,873.618520,900.734728,-27.116209,-54.648872,-0.351312,-0.032307,0.968209,child_more_actual_head_energy_but_not_terminal_only
+36,white,H,0.413131,0.451561,-0.038431,-0.052936,-0.022597,-0.088444,0.915356,child_more_head_selective_but_not_terminal_only
+36,white,M,0.632499,0.605615,0.026884,0.012010,0.041068,0.044693,1.045708,parent_more_middle_selective
+36,white,T,1.144159,1.056770,0.087389,0.050180,0.124288,0.078709,1.081890,parent_more_tail_selective

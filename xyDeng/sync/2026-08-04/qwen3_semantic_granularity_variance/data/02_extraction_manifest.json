@@ -1,0 +1,389 @@
+{
+  "analyzed_sites": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36
+  ],
+  "common_readout_absolute_position": 57,
+  "dataset_sha256": "cb440b98d81bac3f9813344f85e6efdbd994b7b988d8009ba64e207e64a11859",
+  "device": "cuda:0",
+  "dtype": "bfloat16",
+  "elapsed_seconds": 58.539196491241455,
+  "hidden_width": 4096,
+  "hooked_sites": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36
+  ],
+  "mode": "full",
+  "model_path": "/data/share/Qwen3-8B",
+  "replay_max_abs_error": 0.0,
+  "representation": "embedding output and raw decoder-block residual outputs before final norm",
+  "semantic_records": 512,
+  "states": {
+    "0": {
+      "path": "runs/full/semantic_states/layer_00.pt",
+      "sha256": "790c67fbb57cc65fc9e56cc7bfa7f0d6f7c2c004fe5b34fc2172d3e166ef859f",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "1": {
+      "path": "runs/full/semantic_states/layer_01.pt",
+      "sha256": "52f01076bdd740ee7c63d43e38b3aa713c319a949932ee912765f3d2d86d2edc",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "10": {
+      "path": "runs/full/semantic_states/layer_10.pt",
+      "sha256": "ef3c1934d09e124d06312ffffacacc0961e8ab8dcd129a5343b7f108c016e55e",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "11": {
+      "path": "runs/full/semantic_states/layer_11.pt",
+      "sha256": "74e847701692bff92a669beba441eea45e9ad958573f058582cc2cd1dd2c3a4e",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "12": {
+      "path": "runs/full/semantic_states/layer_12.pt",
+      "sha256": "b8e2303ba34f986643580cbae7ca9e0d23f562d86c2f47f7f39c91a428a1fe9f",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "13": {
+      "path": "runs/full/semantic_states/layer_13.pt",
+      "sha256": "a9e18dc51485abf4853228e17c5ce542674ed9240a7f27dd18cb006c4f267464",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "14": {
+      "path": "runs/full/semantic_states/layer_14.pt",
+      "sha256": "7cb370ce7c448ef1026a8ad71e6bef8aa5e9cdff2c6cfd4af9de0086569554ff",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "15": {
+      "path": "runs/full/semantic_states/layer_15.pt",
+      "sha256": "e9c7088cc6c22876fb042787f8d127a61aeadb9ffe31824302d1510d6a166efd",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "16": {
+      "path": "runs/full/semantic_states/layer_16.pt",
+      "sha256": "e21c7433d50e33a9e57327ae6b6082fb5ca91d7bf525d32ca14633d9e9aabf52",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "17": {
+      "path": "runs/full/semantic_states/layer_17.pt",
+      "sha256": "e6a27dc43e0ddb9d4ee8b754c3feb5daf6b2fc4e429953a0f12a43094436b199",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "18": {
+      "path": "runs/full/semantic_states/layer_18.pt",
+      "sha256": "e0e4acc115e9212462388fd0d6fb415b6514a9a65b16868e2c61cbf1c9fd4e60",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "19": {
+      "path": "runs/full/semantic_states/layer_19.pt",
+      "sha256": "87a690d5e25c5e6128851b5a5023d8cca81d033c934802f299871686d871477a",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "2": {
+      "path": "runs/full/semantic_states/layer_02.pt",
+      "sha256": "0ad164b64d06c94c36fa4ef7d82ba4e060e838ce0643f3191ce695e7761d3151",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "20": {
+      "path": "runs/full/semantic_states/layer_20.pt",
+      "sha256": "71c4c6d35808331d539084b8d3e0153d97cd46acc1e6613c7266456498b7ff58",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "21": {
+      "path": "runs/full/semantic_states/layer_21.pt",
+      "sha256": "e92cdb5e7828f4587a7351098dfa1ed129f364d54c17aa513e8f77bc76d922f2",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "22": {
+      "path": "runs/full/semantic_states/layer_22.pt",
+      "sha256": "67d2ce4a9ec6a5c68e8b397790af6fdced18786bdbf6e1398c12892a12846159",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "23": {
+      "path": "runs/full/semantic_states/layer_23.pt",
+      "sha256": "e8e8264c1f6392870865da4faf51a4b8689cff53ac9ea277289ee64251aad27f",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "24": {
+      "path": "runs/full/semantic_states/layer_24.pt",
+      "sha256": "f006a32f431a1c1c58a3d3c7036989c69a51e4625a94ff88157e5e3f82a9a62f",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "25": {
+      "path": "runs/full/semantic_states/layer_25.pt",
+      "sha256": "eed1ffc5c0b749ed48dd16c4e50d0d73010008147c19873ae8692c3ab96dff03",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "26": {
+      "path": "runs/full/semantic_states/layer_26.pt",
+      "sha256": "273af657e359e0ac678149425383c5298b4dbcd94ffa1932c1336bd8e6bdad43",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "27": {
+      "path": "runs/full/semantic_states/layer_27.pt",
+      "sha256": "941add45c2bd7bb824978b7b46d91508fed3d9d74960d628c256b44fd85dff33",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "28": {
+      "path": "runs/full/semantic_states/layer_28.pt",
+      "sha256": "4081e27f5665aea7963da7cc8853b4996d6f6a7f9d80ca779fa2793636a8857f",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "29": {
+      "path": "runs/full/semantic_states/layer_29.pt",
+      "sha256": "7f380a7fd30851161fdcf0738f86d349a2a4716a42af460a5b6233382f886306",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "3": {
+      "path": "runs/full/semantic_states/layer_03.pt",
+      "sha256": "9f23c41bb4dc442b641998c50fe22db0a2ebb530f64e653eaaff4f88bf99bccc",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "30": {
+      "path": "runs/full/semantic_states/layer_30.pt",
+      "sha256": "cfaa2a6e7b1b7140418dd539aeff348781c8f684fe2abe2972cc72814d37e2f3",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "31": {
+      "path": "runs/full/semantic_states/layer_31.pt",
+      "sha256": "757602eaa3c0aa83d1a4936b31b71900fc7204db13dea2ae0d3a44b25bf46751",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "32": {
+      "path": "runs/full/semantic_states/layer_32.pt",
+      "sha256": "40db246179acc2706913045b682e30d095aa8ca268d8a0fe19579b0b7b1506ce",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "33": {
+      "path": "runs/full/semantic_states/layer_33.pt",
+      "sha256": "dbe08a250c60999caa5a700759ff8936ead0c9e2a120ff07ee23192221199142",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "34": {
+      "path": "runs/full/semantic_states/layer_34.pt",
+      "sha256": "60d4e66638c35763cb6ca49ae83054f91f56b282264909ddbffa88335cf60e3f",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "35": {
+      "path": "runs/full/semantic_states/layer_35.pt",
+      "sha256": "6b6082c707056244525513135dc49fbe9a5580f674a16de5d50ddc6e66779ec6",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "36": {
+      "path": "runs/full/semantic_states/layer_36.pt",
+      "sha256": "355336c2456a42651295b62df66c54959bf77a746e50cb22744e2ab8784628b0",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "4": {
+      "path": "runs/full/semantic_states/layer_04.pt",
+      "sha256": "c67f5b59bd637975f475792689535ab9b338921be3eaf883eccf7293531d706b",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "5": {
+      "path": "runs/full/semantic_states/layer_05.pt",
+      "sha256": "81fc312b5c863b1df6aeb936470a5f83a314db5c19991aff2dc610c2d5caf981",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "6": {
+      "path": "runs/full/semantic_states/layer_06.pt",
+      "sha256": "b3db3cf4c063d024e763a88ee04454b14485c577b586b39918e4c5f1d1873025",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "7": {
+      "path": "runs/full/semantic_states/layer_07.pt",
+      "sha256": "efd9c5c09aa3207064e6f8b07abe2a4cdcc0f87df62b144c572ebe0a714c01a4",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "8": {
+      "path": "runs/full/semantic_states/layer_08.pt",
+      "sha256": "0c269b1ab5e555f36a4e2aa6d1be9fc29dc5e3ecf907a67cfce0de03caad304b",
+      "shape": [
+        512,
+        4096
+      ]
+    },
+    "9": {
+      "path": "runs/full/semantic_states/layer_09.pt",
+      "sha256": "45c654969e7aef1ec0b3d56d6a0917696c9397a496e633282ba7380ad40ff931",
+      "shape": [
+        512,
+        4096
+      ]
+    }
+  }
+}
