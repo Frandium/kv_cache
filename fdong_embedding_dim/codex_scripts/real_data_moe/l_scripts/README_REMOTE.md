@@ -1,4 +1,4 @@
-# CUDA 8-GPU Common/Tail MoE Experiments
+# L-scale CUDA 8-GPU Common/Tail MoE Experiments
 
 ## Fixed configuration
 
@@ -64,21 +64,21 @@ mkdir -p /mnt/workspace/fmoe_cuda_2b_8e_outputs
 Baseline routing with load balancing:
 
 ```bash
-nohup bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/run_baseline_lb.sh \
+nohup bash l_scripts/run_baseline_lb.sh \
   > /mnt/workspace/fmoe_cuda_2b_8e_outputs/baseline_lb_launcher.log 2>&1 < /dev/null &
 ```
 
 Attention-mean routing without load balancing:
 
 ```bash
-nohup bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/run_proposed_no_lb.sh \
+nohup bash l_scripts/run_proposed_no_lb.sh \
   > /mnt/workspace/fmoe_cuda_2b_8e_outputs/proposed_no_lb_launcher.log 2>&1 < /dev/null &
 ```
 
 Attention-mean routing with load balancing:
 
 ```bash
-nohup bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/run_proposed_lb.sh \
+nohup bash l_scripts/run_proposed_lb.sh \
   > /mnt/workspace/fmoe_cuda_2b_8e_outputs/proposed_lb_launcher.log 2>&1 < /dev/null &
 ```
 
@@ -101,13 +101,13 @@ Stop cleanly with `kill <torchrun-pid>` after a checkpoint. To impose a finite
 limit, launch with an environment override, for example:
 
 ```bash
-MAX_STEPS=100000 bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/run_baseline_lb.sh
+MAX_STEPS=100000 bash l_scripts/run_baseline_lb.sh
 ```
 
 Example with a different load-balance coefficient:
 
 ```bash
-PROPOSED_LB_WEIGHT=0.02 bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/run_proposed_lb.sh
+PROPOSED_LB_WEIGHT=0.02 bash l_scripts/run_proposed_lb.sh
 ```
 
 To write a new run directory while initializing from an existing checkpoint,
@@ -118,28 +118,28 @@ override both `OUTPUT_ROOT` and `RESUME`.
 Plot all training curves through their shared latest step:
 
 ```bash
-bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/plot_loss.sh
+bash l_scripts/plot_loss.sh
 ```
 
 Evaluate the latest checkpoint step shared by all three runs on fixed DCLM samples:
 
 ```bash
-bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/test_loss.sh
+bash l_scripts/test_loss.sh
 ```
 
 Analyze expert continuity at the same shared checkpoint. The default uses 16
 sequences of 1024 consecutive tokens and reports both switch counts and rates:
 
 ```bash
-bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/continuity.sh
+bash l_scripts/continuity.sh
 ```
 
 Run lm-evaluation-harness downstream tasks for one checkpoint:
 
 ```bash
-RUN_NAME=baseline_lb bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/lm_eval.sh
-RUN_NAME=proposed_no_lb bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/lm_eval.sh
-RUN_NAME=proposed_lb bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/lm_eval.sh
+RUN_NAME=baseline_lb bash l_scripts/lm_eval.sh
+RUN_NAME=proposed_no_lb bash l_scripts/lm_eval.sh
+RUN_NAME=proposed_lb bash l_scripts/lm_eval.sh
 ```
 
 The default task set is
@@ -151,8 +151,8 @@ Launch all three downstream evaluations at their latest common checkpoint on
 CUDA devices 7, 6, and 5, then summarize the resulting task table:
 
 ```bash
-bash fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/lm_eval_common_ckpt_3gpu.sh
-python3 fdong_embedding_dim/codex_scripts/real_data_moe/remote_cuda/summarize_lm_eval_results.py
+bash l_scripts/lm_eval_common_ckpt_3gpu.sh
+python3 l_scripts/summarize_lm_eval_results.py
 ```
 
 Set `CHECKPOINT_STEP` to evaluate a specific common checkpoint with

@@ -16,4 +16,5 @@ MPLBACKEND=Agg python3 -m "${MOE_MODULE}.analyze_multi_continuity" \
   --output-dir "${ANALYSIS_DIR}/continuity_step${STEP_PADDED}" \
   --device cuda:0 \
   --num-sequences "${CONTINUITY_SEQUENCES:-16}" \
-  --num-tokens "${CONTINUITY_TOKENS:-1024}"
+  --num-tokens "${CONTINUITY_TOKENS:-1024}" \
+  --cache-capacities "${CONTINUITY_CACHE_CAPACITIES:-1,2,3,4}"
