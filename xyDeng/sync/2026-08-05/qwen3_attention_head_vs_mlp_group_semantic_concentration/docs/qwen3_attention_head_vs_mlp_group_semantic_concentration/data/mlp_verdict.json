@@ -1,0 +1,63 @@
+{
+  "calibration_counts": [
+    32768,
+    32768
+  ],
+  "capability_pass": true,
+  "dataset_sha256": "cb440b98d81bac3f9813344f85e6efdbd994b7b988d8009ba64e207e64a11859",
+  "elapsed_seconds": 148.06474137306213,
+  "figures": [
+    "figure0_mlp_covariance_spectrum.png",
+    "figure1_mlp_raw_variance_heatmaps.png",
+    "figure2_mlp_unit_advantage_heatmaps.png",
+    "figure3_mlp_layer_band_heatmaps.png",
+    "figure4_mlp_depth_trajectories.png",
+    "figure5_mlp_random_partition_calibration.png"
+  ],
+  "maximum_basis_orthogonality_error": 2.0055732859285632e-15,
+  "maximum_concat_error": 0.0,
+  "maximum_replay_error": 0.0,
+  "maximum_site_identity_relative_error": 0.0,
+  "metrics": {
+    "coarse": {
+      "bootstrap_max_low": 0.6766027167439461,
+      "bootstrap_typical_low": -0.014674191526137293,
+      "design_max": 1.093478798866272,
+      "design_typical": -0.0035085584968328476,
+      "fixed_max": 0.8774402737617493,
+      "fixed_typical": -0.003115256899036467,
+      "random_max_q95": 0.964523309469223,
+      "random_typical_q95": -0.0006503064825665286,
+      "sparse_max_pass": false,
+      "typical_pass": false
+    },
+    "fine": {
+      "bootstrap_max_low": 0.4070324391126633,
+      "bootstrap_typical_low": -0.01520369176287204,
+      "design_max": 0.6234273910522461,
+      "design_typical": -0.009275645948946476,
+      "fixed_max": 0.6236433386802673,
+      "fixed_typical": -0.012501936871558428,
+      "random_max_q95": 0.7315307229757309,
+      "random_typical_q95": -0.0060219089034944774,
+      "sparse_max_pass": false,
+      "typical_pass": false
+    },
+    "fine_relative": {
+      "bootstrap_max_low": 0.7307697549462319,
+      "bootstrap_typical_low": -0.017071042954921723,
+      "design_max": 1.2512476444244385,
+      "design_typical": -0.0064141154289245605,
+      "fixed_max": 0.9454307556152344,
+      "fixed_typical": -0.007020175457000732,
+      "random_max_q95": 1.1056809306144715,
+      "random_typical_q95": 0.0020920794457197165,
+      "sparse_max_pass": false,
+      "typical_pass": false
+    }
+  },
+  "selected_unit_from_design": 21,
+  "site": "mlp",
+  "stable_band_fraction": 0.4722222222222222,
+  "typed_verdict": "mlp_concentration_fail"
+}

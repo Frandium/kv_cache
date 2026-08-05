@@ -1,0 +1,338 @@
+{
+  "cross_site": {
+    "bootstrap_draws": 2000,
+    "metrics": {
+      "coarse": {
+        "maximum": {
+          "attention_fixed": 3.221403121948242,
+          "attention_minus_mlp_calibrated": 2.0929688453674316,
+          "attention_random_q95": 1.2155173122882843,
+          "metric": "coarse",
+          "mlp_fixed": 0.8774402737617493,
+          "mlp_random_q95": 0.964523309469223,
+          "paired_bootstrap_high": 2.4370786249637604,
+          "paired_bootstrap_low": 1.6484601974487305,
+          "statistic": "maximum",
+          "winner": "attention"
+        },
+        "mean": {
+          "attention_fixed": -0.009948925176545994,
+          "attention_minus_mlp_calibrated": -0.0048214236210696974,
+          "attention_random_q95": NaN,
+          "metric": "coarse",
+          "mlp_fixed": -0.0051275015554762965,
+          "mlp_random_q95": NaN,
+          "paired_bootstrap_high": 0.02417518547736106,
+          "paired_bootstrap_low": -0.0379271293990314,
+          "statistic": "mean",
+          "winner": "indistinguishable"
+        },
+        "median": {
+          "attention_fixed": -0.02205103635787964,
+          "attention_minus_mlp_calibrated": -0.008570159034570686,
+          "attention_random_q95": -0.011015926906839014,
+          "metric": "coarse",
+          "mlp_fixed": -0.003115256899036467,
+          "mlp_random_q95": -0.0006503064825665286,
+          "paired_bootstrap_high": 0.012865639827214165,
+          "paired_bootstrap_low": -0.038611273653805255,
+          "statistic": "median",
+          "winner": "indistinguishable"
+        }
+      },
+      "fine": {
+        "maximum": {
+          "attention_fixed": 1.0454167127609253,
+          "attention_minus_mlp_calibrated": 0.5639869868755342,
+          "attention_random_q95": 0.5893171101808546,
+          "metric": "fine",
+          "mlp_fixed": 0.6236433386802673,
+          "mlp_random_q95": 0.7315307229757309,
+          "paired_bootstrap_high": 0.8933040887117382,
+          "paired_bootstrap_low": 0.2786558657884598,
+          "statistic": "maximum",
+          "winner": "attention"
+        },
+        "mean": {
+          "attention_fixed": -0.09045472732416654,
+          "attention_minus_mlp_calibrated": -0.07842630643547832,
+          "attention_random_q95": NaN,
+          "metric": "fine",
+          "mlp_fixed": -0.012028420888688223,
+          "mlp_random_q95": NaN,
+          "paired_bootstrap_high": -0.029063968081027302,
+          "paired_bootstrap_low": -0.07841049656271934,
+          "statistic": "mean",
+          "winner": "mlp"
+        },
+        "median": {
+          "attention_fixed": -0.06726424023509026,
+          "attention_minus_mlp_calibrated": -0.060227250948082664,
+          "attention_random_q95": -0.0005569613189436503,
+          "metric": "fine",
+          "mlp_fixed": -0.012501936871558428,
+          "mlp_random_q95": -0.0060219089034944774,
+          "paired_bootstrap_high": -0.027428422681987294,
+          "paired_bootstrap_low": -0.06643063817173242,
+          "statistic": "median",
+          "winner": "mlp"
+        }
+      },
+      "fine_relative": {
+        "maximum": {
+          "attention_fixed": 2.544071674346924,
+          "attention_minus_mlp_calibrated": 1.2961709439754487,
+          "attention_random_q95": 1.4081509053707122,
+          "metric": "fine_relative",
+          "mlp_fixed": 0.9454307556152344,
+          "mlp_random_q95": 1.1056809306144715,
+          "paired_bootstrap_high": 1.5739945352077478,
+          "paired_bootstrap_low": 0.18665850162506104,
+          "statistic": "maximum",
+          "winner": "attention"
+        },
+        "mean": {
+          "attention_fixed": -0.08050581163926317,
+          "attention_minus_mlp_calibrated": -0.07360489819132324,
+          "attention_random_q95": NaN,
+          "metric": "fine_relative",
+          "mlp_fixed": -0.006900913447939924,
+          "mlp_random_q95": NaN,
+          "paired_bootstrap_high": -0.005236139788758014,
+          "paired_bootstrap_low": -0.08895699270069599,
+          "statistic": "mean",
+          "winner": "mlp"
+        },
+        "median": {
+          "attention_fixed": -0.02613861858844757,
+          "attention_minus_mlp_calibrated": -0.03821666017174719,
+          "attention_random_q95": 0.021190296486020072,
+          "metric": "fine_relative",
+          "mlp_fixed": -0.007020175457000732,
+          "mlp_random_q95": 0.0020920794457197165,
+          "paired_bootstrap_high": 0.01514050576370208,
+          "paired_bootstrap_low": -0.04807079313322902,
+          "statistic": "median",
+          "winner": "indistinguishable"
+        }
+      }
+    },
+    "pairing": "same taxonomy hierarchy and nested resample indices at both sites",
+    "positive_difference_means": "attention heads are more concentrated after each site's random-partition q95 calibration"
+  },
+  "figure": "runs/a15-01-06-e01-cross-site-20260805/posthoc_analysis_v2/figures/figure6_cross_site_null_calibrated_concentration.png",
+  "site_audits": {
+    "attention": {
+      "floor_sensitivity": {
+        "comparisons": {
+          "0.0001": {
+            "correlation_with_1e-6_log_q": 0.9999999917904419,
+            "maximum_absolute_log_q_change": 0.013018379651392742,
+            "median_absolute_log_q_change": 0.0
+          },
+          "1e-08": {
+            "correlation_with_1e-6_log_q": 0.9999999999999999,
+            "maximum_absolute_log_q_change": 0.0,
+            "median_absolute_log_q_change": 0.0
+          }
+        },
+        "reference_floor_over_lambda1": 1e-06,
+        "site": "attention"
+      },
+      "label_permutation": {
+        "metrics": {
+          "coarse_D": {
+            "actual_late_global_max": 1.401522529204174,
+            "label_permutation_global_max_q95": 0.060615522973239425,
+            "pass": true
+          },
+          "fine_D": {
+            "actual_late_global_max": 1.0650357485596764,
+            "label_permutation_global_max_q95": 0.34078210592269903,
+            "pass": true
+          }
+        },
+        "permutation_draws": 5000,
+        "scope": "selected unit; global maximum over preregistered late blocks 25-35",
+        "selected_unit_from_design": 25,
+        "site": "attention"
+      },
+      "orientation": {
+        "metric_specific_design_selected_cells": {
+          "coarse": {
+            "actual_max_over_stable_real_bands": 1.2625739482015426,
+            "concentration_eligible": true,
+            "confirmation_concentration": 2.505539655685425,
+            "confirmation_layer_random_max_q95": 0.7702560991048812,
+            "design_concentration": 2.8182902336120605,
+            "layer": 28,
+            "random_eight_subspace_max_q95": 1.6877395338032293,
+            "spectral_pass": false,
+            "unit": 28
+          },
+          "fine": {
+            "actual_max_over_stable_real_bands": 0.5838611206356464,
+            "concentration_eligible": true,
+            "confirmation_concentration": 1.0454167127609253,
+            "confirmation_layer_random_max_q95": 0.2300097659230232,
+            "design_concentration": 1.1892417669296265,
+            "layer": 33,
+            "random_eight_subspace_max_q95": 0.6244854609105497,
+            "spectral_pass": false,
+            "unit": 31
+          },
+          "fine_relative": {
+            "actual_max_over_stable_real_bands": 1.900478483413419,
+            "concentration_eligible": true,
+            "confirmation_concentration": 2.2911248207092285,
+            "confirmation_layer_random_max_q95": 1.318719762563705,
+            "design_concentration": 2.6637728214263916,
+            "layer": 1,
+            "random_eight_subspace_max_q95": 2.049834115366561,
+            "spectral_pass": false,
+            "unit": 10
+          }
+        },
+        "metrics": {
+          "coarse": {
+            "actual_global_max_over_stable_bands": 0.6920011983333628,
+            "pass": false,
+            "random_orientation_global_max_q95": 1.7545301472606047,
+            "winning_cell": {
+              "band": "F1",
+              "layer": 10
+            }
+          },
+          "fine": {
+            "actual_global_max_over_stable_bands": -0.09060372386076701,
+            "pass": false,
+            "random_orientation_global_max_q95": 0.22842515225160379,
+            "winning_cell": {
+              "band": "F8",
+              "layer": 33
+            }
+          },
+          "fine_relative": {
+            "actual_global_max_over_stable_bands": 2.0583251895328716,
+            "pass": false,
+            "random_orientation_global_max_q95": 2.1179658249020004,
+            "winning_cell": {
+              "band": "F6",
+              "layer": 1
+            }
+          }
+        },
+        "orientation_draws": 256,
+        "selected_unit_from_design": 25,
+        "selection_scope": "global maximum across blocks 1-35 and eight 16-d random subspaces",
+        "site": "attention"
+      }
+    },
+    "mlp": {
+      "floor_sensitivity": {
+        "comparisons": {
+          "0.0001": {
+            "correlation_with_1e-6_log_q": 0.9999999989424151,
+            "maximum_absolute_log_q_change": 0.0035642391170886967,
+            "median_absolute_log_q_change": 0.0
+          },
+          "1e-08": {
+            "correlation_with_1e-6_log_q": 0.9999999999999013,
+            "maximum_absolute_log_q_change": 3.570662318086448e-05,
+            "median_absolute_log_q_change": 0.0
+          }
+        },
+        "reference_floor_over_lambda1": 1e-06,
+        "site": "mlp"
+      },
+      "label_permutation": {
+        "metrics": {
+          "coarse_D": {
+            "actual_late_global_max": 0.787888189612613,
+            "label_permutation_global_max_q95": 0.04483878239989281,
+            "pass": true
+          },
+          "fine_D": {
+            "actual_late_global_max": 1.7498758323549084,
+            "label_permutation_global_max_q95": 0.30814000070095066,
+            "pass": true
+          }
+        },
+        "permutation_draws": 5000,
+        "scope": "selected unit; global maximum over preregistered late blocks 25-35",
+        "selected_unit_from_design": 21,
+        "site": "mlp"
+      },
+      "orientation": {
+        "metric_specific_design_selected_cells": {
+          "coarse": {
+            "actual_max_over_stable_real_bands": 0.7522494723132662,
+            "concentration_eligible": false,
+            "confirmation_concentration": 0.739838719367981,
+            "confirmation_layer_random_max_q95": 0.8285138577222824,
+            "design_concentration": 1.093478798866272,
+            "layer": 2,
+            "random_eight_subspace_max_q95": 0.843929350437984,
+            "spectral_pass": false,
+            "unit": 31
+          },
+          "fine": {
+            "actual_max_over_stable_real_bands": 0.4928621971473261,
+            "concentration_eligible": false,
+            "confirmation_concentration": 0.6236433386802673,
+            "confirmation_layer_random_max_q95": 0.7315307229757309,
+            "design_concentration": 0.6234273910522461,
+            "layer": 1,
+            "random_eight_subspace_max_q95": 0.5197206049682783,
+            "spectral_pass": false,
+            "unit": 21
+          },
+          "fine_relative": {
+            "actual_max_over_stable_real_bands": 0.678653179349287,
+            "concentration_eligible": false,
+            "confirmation_concentration": 0.8650904893875122,
+            "confirmation_layer_random_max_q95": 0.9295517235994338,
+            "design_concentration": 1.2512476444244385,
+            "layer": 4,
+            "random_eight_subspace_max_q95": 0.841763548755383,
+            "spectral_pass": false,
+            "unit": 18
+          }
+        },
+        "metrics": {
+          "coarse": {
+            "actual_global_max_over_stable_bands": 0.8454481656594015,
+            "pass": true,
+            "random_orientation_global_max_q95": 0.7654761652954355,
+            "winning_cell": {
+              "band": "F8",
+              "layer": 4
+            }
+          },
+          "fine": {
+            "actual_global_max_over_stable_bands": 0.9600234047030266,
+            "pass": true,
+            "random_orientation_global_max_q95": 0.89339668088393,
+            "winning_cell": {
+              "band": "F1",
+              "layer": 33
+            }
+          },
+          "fine_relative": {
+            "actual_global_max_over_stable_bands": 1.7896609499971279,
+            "pass": false,
+            "random_orientation_global_max_q95": 2.095466496984642,
+            "winning_cell": {
+              "band": "F1",
+              "layer": 33
+            }
+          }
+        },
+        "orientation_draws": 256,
+        "selected_unit_from_design": 21,
+        "selection_scope": "global maximum across blocks 1-35 and eight 16-d random subspaces",
+        "site": "mlp"
+      }
+    }
+  }
+}

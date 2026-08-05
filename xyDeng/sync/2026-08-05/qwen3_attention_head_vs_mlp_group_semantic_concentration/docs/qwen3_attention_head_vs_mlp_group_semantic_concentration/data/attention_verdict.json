@@ -1,0 +1,63 @@
+{
+  "calibration_counts": [
+    32768,
+    32768
+  ],
+  "capability_pass": true,
+  "dataset_sha256": "cb440b98d81bac3f9813344f85e6efdbd994b7b988d8009ba64e207e64a11859",
+  "elapsed_seconds": 148.3989770412445,
+  "figures": [
+    "figure0_attention_covariance_spectrum.png",
+    "figure1_attention_raw_variance_heatmaps.png",
+    "figure2_attention_unit_advantage_heatmaps.png",
+    "figure3_attention_layer_band_heatmaps.png",
+    "figure4_attention_depth_trajectories.png",
+    "figure5_attention_random_partition_calibration.png"
+  ],
+  "maximum_basis_orthogonality_error": 2.080114868000437e-15,
+  "maximum_concat_error": 0.0,
+  "maximum_replay_error": 0.0,
+  "maximum_site_identity_relative_error": 2.0689081917918545e-07,
+  "metrics": {
+    "coarse": {
+      "bootstrap_max_low": 2.8390686988830565,
+      "bootstrap_typical_low": -0.05424794014543295,
+      "design_max": 2.8182902336120605,
+      "design_typical": -0.06146474368870258,
+      "fixed_max": 3.221403121948242,
+      "fixed_typical": -0.02205103635787964,
+      "random_max_q95": 1.2155173122882843,
+      "random_typical_q95": -0.011015926906839014,
+      "sparse_max_pass": true,
+      "typical_pass": false
+    },
+    "fine": {
+      "bootstrap_max_low": 0.7526779219508171,
+      "bootstrap_typical_low": -0.0713933665305376,
+      "design_max": 1.1892417669296265,
+      "design_typical": -0.06081247515976429,
+      "fixed_max": 1.0454167127609253,
+      "fixed_typical": -0.06726424023509026,
+      "random_max_q95": 0.5893171101808546,
+      "random_typical_q95": -0.0005569613189436503,
+      "sparse_max_pass": true,
+      "typical_pass": false
+    },
+    "fine_relative": {
+      "bootstrap_max_low": 1.8149242520332336,
+      "bootstrap_typical_low": -0.03139523668214679,
+      "design_max": 2.6637728214263916,
+      "design_typical": 0.029784470796585083,
+      "fixed_max": 2.544071674346924,
+      "fixed_typical": -0.02613861858844757,
+      "random_max_q95": 1.4081509053707122,
+      "random_typical_q95": 0.021190296486020072,
+      "sparse_max_pass": true,
+      "typical_pass": false
+    }
+  },
+  "selected_unit_from_design": 25,
+  "site": "attention",
+  "stable_band_fraction": 0.3649088541666667,
+  "typed_verdict": "attention_sparse_concentration_pass"
+}
