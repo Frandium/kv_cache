@@ -1,0 +1,65 @@
+{
+  "T_post_o_proj": {
+    "ci_high": 1.1477458894613524,
+    "ci_low": 0.5529197054570866,
+    "estimate": 0.6310703795963278
+  },
+  "basis_guard_pass": true,
+  "block35_R": 0.7565234537913912,
+  "block36_R": 0.8567592447384874,
+  "calibration_tensor_sha256": "d88620267dbdc9c2b87ec24c2f51d9e6fb317cb8c051ec96503414ea9bff60b9",
+  "depth_clause_pass": true,
+  "design_late_middle_log_ratio": 0.06426393556280556,
+  "design_late_tail_log_ratio": 0.18726999815866122,
+  "elapsed_seconds": 145.5881323814392,
+  "floor_middle_all_positive": true,
+  "floor_tail_all_positive": true,
+  "half_basis_middle_all_late_positive": true,
+  "half_basis_tail_all_late_positive": false,
+  "head_argmax_fraction_blocks_1_35": {
+    "coarse": 1.0,
+    "fine": 1.0
+  },
+  "head_dominance_pass": true,
+  "late_head_log_enrichment_ratio": {
+    "ci_high": -0.06393585773197588,
+    "ci_low": -0.16490775084493317,
+    "estimate": -0.10578310113193444
+  },
+  "late_middle_log_enrichment_ratio": {
+    "ci_high": 0.10818407412720837,
+    "ci_low": 0.053371205274889214,
+    "estimate": 0.06302879731627622
+  },
+  "late_tail_log_enrichment_ratio": {
+    "ci_high": 0.24910543051192963,
+    "ci_low": 0.1353506402238835,
+    "estimate": 0.15912767785377657
+  },
+  "leave_one_parent_contrasts": [
+    0.553144296368204,
+    0.7327808042010027,
+    0.6141393809034879,
+    0.6475897952991836,
+    0.7967511802782822,
+    0.6911930646975555,
+    0.5401957560886018,
+    0.6543266956835821
+  ],
+  "middle_enrichment_pass": true,
+  "nuisance_residual_late_middle_log_ratio": 0.06337855051534474,
+  "nuisance_residual_late_tail_log_ratio": 0.15817245524594853,
+  "numerical_guard_pass": true,
+  "random_equal_dimensional_late_q95": 0.05906873010098934,
+  "representation": "post_o_proj_attention_branch",
+  "semantic_dataset_sha256": "cb440b98d81bac3f9813344f85e6efdbd994b7b988d8009ba64e207e64a11859",
+  "spectral_clause_pass": false,
+  "tail_enrichment_pass": false,
+  "template_contrasts": [
+    0.5405217764083761,
+    0.3283072898792092,
+    0.3887719259201843,
+    0.669357805773782
+  ],
+  "typed_verdict": "depth_pass_spectral_fail"
+}
