@@ -6,9 +6,9 @@ This curated package answers one meeting question: after the failure of a
 universal fine-semantic spectral right-shift and fixed-band routing, what
 layer-wise representation object remains worth testing?
 
-The meeting wording and A15_07 design are currently
-`AI_DRAFT_AWAITING_HUMAN_CONFIRMATION` / `draft_human_review_required`. The
-package is a review surface, not an approved Protocol or execution request.
+The meeting focus is `HUMAN_CONFIRMED`. The A15_07 design remains
+`draft_human_review_required`; confirming the meeting focus does not approve
+the candidate Anchor, a Protocol, implementation, or execution.
 
 ## Reading Order
 
