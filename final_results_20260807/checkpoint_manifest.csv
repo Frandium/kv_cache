@@ -1,0 +1,5 @@
+size,method,run_name,run_dir,step,checkpoint,world_size,hidden_size,num_layers,num_attention_heads,num_kv_heads,head_dim,num_tail_experts,experts_per_token,common_intermediate_size,tail_intermediate_size,router_input,sequence_length,micro_batch_size,gradient_accumulation
+L,baseline,baseline_lb,/mnt/workspace/fmoe_cuda_2b_8e_outputs/baseline_lb,352000,/mnt/workspace/fmoe_cuda_2b_8e_outputs/baseline_lb/checkpoint-0352000.pt,8,1024,28,16,8,128,8,1,2048,2048,residual,1024,8,4
+L,proposed,proposed_lb,/mnt/workspace/fmoe_cuda_2b_8e_outputs/proposed_lb,352000,/mnt/workspace/fmoe_cuda_2b_8e_outputs/proposed_lb/checkpoint-0352000.pt,8,1024,28,16,8,128,8,1,2048,2048,attention_mean,1024,8,4
+M,baseline,baseline,/mnt/workspace/fmoe_cuda_m_8e_outputs/baseline,152000,/mnt/workspace/fmoe_cuda_m_8e_outputs/baseline/checkpoint-0152000.pt,8,768,24,12,6,128,8,1,1536,1536,residual,1024,8,4
+M,proposed,proposed,/mnt/workspace/fmoe_cuda_m_8e_outputs/proposed,152000,/mnt/workspace/fmoe_cuda_m_8e_outputs/proposed/checkpoint-0152000.pt,8,768,24,12,6,128,8,1,1536,1536,attention_mean,1024,8,4
