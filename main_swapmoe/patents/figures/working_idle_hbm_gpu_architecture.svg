@@ -34,15 +34,15 @@
   </defs>
 
   <rect width="1600" height="900" fill="#ffffff"/>
-  <text x="800" y="52" text-anchor="middle" class="title">全 HBM 基线与容量-带宽解耦分层存储加速器</text>
+  <text x="800" y="52" text-anchor="middle" class="title">全容量低带宽端侧基线与小容量高速、大容量低速分层存储加速器</text>
 
   <rect x="35" y="85" width="735" height="730" class="panel"/>
   <rect x="830" y="85" width="735" height="730" class="panel"/>
 
-  <text x="402" y="128" text-anchor="middle" class="panel-title">性能基线：完整模型使用同质 HBM</text>
+  <text x="402" y="128" text-anchor="middle" class="panel-title">端侧基线：完整模型共享容量型内存</text>
   <text x="1198" y="128" text-anchor="middle" class="panel-title">本方案：小容量高带宽 + 大容量低成本</text>
 
-  <!-- All-HBM baseline -->
+  <!-- All-capacity-memory edge baseline -->
   <rect x="238" y="170" width="330" height="190" class="compute"/>
   <text x="403" y="207" text-anchor="middle" class="label">GPU / NPU Compute Die</text>
   <rect x="278" y="235" width="250" height="62" class="buffer"/>
@@ -53,10 +53,10 @@
   <rect x="245" y="455" width="140" height="150" class="hbm"/>
   <rect x="412" y="455" width="140" height="150" class="hbm"/>
   <rect x="579" y="455" width="140" height="150" class="hbm"/>
-  <text x="148" y="500" text-anchor="middle" class="label">HBM 0</text>
-  <text x="315" y="500" text-anchor="middle" class="label">HBM 1</text>
-  <text x="482" y="500" text-anchor="middle" class="label">HBM 2</text>
-  <text x="649" y="500" text-anchor="middle" class="label">HBM 3</text>
+  <text x="148" y="500" text-anchor="middle" class="label">LPDDR Ch. 0</text>
+  <text x="315" y="500" text-anchor="middle" class="label">LPDDR Ch. 1</text>
+  <text x="482" y="500" text-anchor="middle" class="label">LPDDR Ch. 2</text>
+  <text x="649" y="500" text-anchor="middle" class="label">LPDDR Ch. 3</text>
   <text x="148" y="535" text-anchor="middle" class="small">Working + Idle</text>
   <text x="315" y="535" text-anchor="middle" class="small">Working + Idle</text>
   <text x="482" y="535" text-anchor="middle" class="small">Working + Idle</text>
@@ -66,14 +66,14 @@
   <text x="482" y="573" text-anchor="middle" class="tiny">统一条带化</text>
   <text x="649" y="573" text-anchor="middle" class="tiny">统一条带化</text>
 
-  <path d="M148 455 C148 405 290 407 315 360" class="arrow-wide"/>
-  <path d="M315 455 C315 410 360 405 375 360" class="arrow-wide"/>
-  <path d="M482 455 C482 410 445 405 430 360" class="arrow-wide"/>
-  <path d="M649 455 C649 405 515 407 490 360" class="arrow-wide"/>
+  <path d="M148 455 C148 405 290 407 315 360" class="arrow-slow"/>
+  <path d="M315 455 C315 410 360 405 375 360" class="arrow-slow"/>
+  <path d="M482 455 C482 410 445 405 430 360" class="arrow-slow"/>
+  <path d="M649 455 C649 405 515 407 490 360" class="arrow-slow"/>
 
   <rect x="115" y="655" width="575" height="88" class="band"/>
-  <text x="402" y="688" text-anchor="middle" class="label">容量与带宽绑定</text>
-  <text x="402" y="717" text-anchor="middle" class="small">Inactive experts 也占用高成本 HBM 容量</text>
+  <text x="402" y="688" text-anchor="middle" class="label">完整模型共享同一容量型带宽</text>
+  <text x="402" y="717" text-anchor="middle" class="small">模型装得下，但 batch-1 decode 受权重供数带宽限制</text>
 
   <!-- Tiered proposal -->
   <rect x="1030" y="170" width="335" height="190" class="compute"/>
@@ -113,8 +113,8 @@
   <text x="1198" y="795" text-anchor="middle" class="small">物理实现：HBM + DDR/LPDDR · 高速 DRAM + 容量 DRAM · HBM + Flash</text>
 
   <!-- Legend -->
-  <line x1="90" y1="858" x2="145" y2="858" class="arrow-wide"/>
-  <text x="160" y="864" class="tiny">同质 HBM 高带宽</text>
+  <line x1="90" y1="858" x2="145" y2="858" class="arrow-slow"/>
+  <text x="160" y="864" class="tiny">全容量内存共享带宽</text>
   <line x1="390" y1="858" x2="445" y2="858" class="arrow-fast"/>
   <text x="460" y="864" class="tiny">高速层主要数据流</text>
   <line x1="735" y1="858" x2="790" y2="858" class="arrow-slow"/>
