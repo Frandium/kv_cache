@@ -20,7 +20,7 @@
 
   <rect width="1280" height="720" fill="#ffffff"/>
   <text x="640" y="38" text-anchor="middle" class="title">Expert 命中率与 Context Length 对高速存储字节覆盖率的共同影响</text>
-  <text x="640" y="67" text-anchor="middle" class="subtitle">Qwen3-30B-A3B，BF16；attention、router、KV 和命中 expert 由高速层服务</text>
+  <text x="640" y="67" text-anchor="middle" class="subtitle">30B-A3B 结构参照模型，BF16；attention、router、KV 和命中 expert 由高速层服务</text>
 
   <!-- Plot area: x=120..1120 maps h=80%..100%; y=610..110 maps rho=85%..100%. -->
   <line x1="120" y1="610" x2="1120" y2="610" class="axis"/>
