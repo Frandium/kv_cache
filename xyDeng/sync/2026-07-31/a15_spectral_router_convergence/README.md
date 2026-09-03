@@ -59,8 +59,8 @@ Anchor、Protocol、Summary、理论主文及其关键图表可在包内直接�
 中指向 worker 代码、原始 run 目录或日志的链接只保留为 provenance 指针；这些对象
 因同步边界而刻意不打包。
 
-包内不含 Thinking Cards、原始会议录音、私有讨论问题、数据集、activation
-cache、checkpoint、运行日志或集群作业产物。Anchor 中指向 Thinking Card 的本地
+包内不含 研究者判断记录、原始会议录音、私有讨论问题、数据集、activation
+cache、checkpoint、运行日志或集群作业产物。Anchor 中指向 研究者判断记录 的本地
 来源字段也已从外部同步副本移除；项目主仓中的原始记录未改变。`MANIFEST.sha256`
 用于核对同步前后的文件完整性。
 

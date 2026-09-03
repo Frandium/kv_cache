@@ -1,6 +1,6 @@
 # A11_25 课程学习秩边界 Anchor
 
-## 0. Thinking Card
+## 0. researcher judgment record
 
 A11_24 已建立结构性 rank-1 tradeoff。课程可改变优化顺序，但不能创造缺失维度。必须在等辅助剂量下判断是否同时改善标准目标且不损害未来目标。
 

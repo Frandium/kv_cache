@@ -14,7 +14,7 @@ the candidate Anchor, a Protocol, implementation, or execution.
 
 1. [Meeting focus](focus.md)
 2. [A15_07 Chinese candidate Anchor](anchor/15_07_layerwise_conditional_fine_discriminant_directions_anchor_cn.md)
-3. [Researcher Thinking Card](anchor/15_07_layerwise_conditional_fine_discriminant_directions_thinking_card_cn.md)
+3. Researcher researcher judgment record
 4. [A15_07 English canonical candidate](anchor/15_07_layerwise_conditional_fine_discriminant_directions_anchor.md)
 5. Evidence summaries under `evidence/`
 
@@ -42,7 +42,7 @@ open only an independent expert-utility admission test, not Router training.
 ## Included
 
 - meeting focus;
-- A15_07 English/Chinese candidate Anchors and Thinking Card;
+- A15_07 English/Chinese candidate Anchors and researcher judgment record;
 - five decision-relevant result summaries;
 - only figures directly referenced by those summaries;
 - SHA-256 manifest.

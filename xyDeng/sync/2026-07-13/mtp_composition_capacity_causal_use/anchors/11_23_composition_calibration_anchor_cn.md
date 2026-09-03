@@ -1,6 +1,6 @@
 # A11_23 组合学习校准 Anchor
 
-## 0. Thinking Card
+## 0. researcher judgment record
 
 **现象：** A11_22 的 5 个 seed 都学会格式，但两跳答案仍为机会水平。
 **机制猜想：** 单层模型缺少两次顺序关系读取所需的计算深度，或 600 steps 不足。

@@ -1,6 +1,6 @@
 # A11_23b 显式绑定校准 Anchor
 
-## 0. Thinking Card
+## 0. researcher judgment record
 
 原三 token 行序列在更深、更宽、更长训练下仍无法拟合。候选阻塞是关系角色与 key-value 绑定不显式。以带关系角色的原子 mapping token 隔离该阻塞，主指标为五 seed 未见置换 test 准确率。
 

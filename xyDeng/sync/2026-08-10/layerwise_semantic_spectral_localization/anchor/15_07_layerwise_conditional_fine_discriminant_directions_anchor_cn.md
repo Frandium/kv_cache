@@ -2,7 +2,6 @@
 anchor_id: 15_07_layerwise_conditional_fine_discriminant_directions
 status: draft_human_review_required
 canonical_companion: 15_07_layerwise_conditional_fine_discriminant_directions_anchor.md
-thinking_card: 15_07_layerwise_conditional_fine_discriminant_directions_thinking_card_cn.md
 parent_line: 15_spectral_representation_and_functional_routing
 created: 2026-08-10
 updated: 2026-08-10
@@ -10,7 +9,7 @@ updated: 2026-08-10
 
 # A15_07：逐层 conditional-fine 判别方向
 
-研究者判断见 [Thinking Card](15_07_layerwise_conditional_fine_discriminant_directions_thinking_card_cn.md)。本 Anchor 是候选研究设计，等待研究者审核；当前不存在 Protocol，也未批准任何实现或运行。
+研究者判断见 研究者判断记录。本 Anchor 是候选研究设计，等待研究者审核；当前不存在 Protocol，也未批准任何实现或运行。
 
 ## 1. Problem Definition
 

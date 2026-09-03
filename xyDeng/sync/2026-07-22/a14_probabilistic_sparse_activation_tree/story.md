@@ -30,7 +30,7 @@ information and does not by itself imply MoE or a Router.
 
 The only next decision is whether to promote “a task-conditioned,
 low-dimensional active subtree that preserves held-out task utility” into the
-next formal Thinking Card. Router architecture design remains parked until that
+next formal researcher judgment record. Router architecture design remains parked until that
 decision is made.
 
 ---
@@ -509,7 +509,7 @@ candidate Router variables, not established expert labels.
 
 **Decide whether “a task-conditioned low-dimensional active subtree that
 preserves held-out task utility” should be promoted into the next formal
-Thinking Card. Until then, the probabilistic tree remains a completed
+researcher judgment record. Until then, the probabilistic tree remains a completed
 conditional theory and Router architecture design remains parked.**
 
 ---

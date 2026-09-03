@@ -1,6 +1,6 @@
 # A06_24 Synthetic：一层 Transformer-MoE 中 common/rare 路由审计
 
-## 0. Thinking Card
+## 0. researcher judgment record
 
 **现象：** 旧 A06 证据已经显示，简单减去 common 可以缓解 expert 集中，但不能自动把不同 feature 分到不同 expert。刚做的 A06_24_toy 向量实验有机制启发，但它不是一层 Transformer + 一层 MoE 的训练表面，所以不能作为主线可靠证据。
 

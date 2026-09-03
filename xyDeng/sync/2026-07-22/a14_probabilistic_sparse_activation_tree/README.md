@@ -53,5 +53,5 @@ shared-linear propagation claim remains closed.
 ## Next Action
 
 Decide whether to promote “task-conditioned low-dimensional active subtrees
-that preserve held-out task utility” into a new Thinking Card. Router
+that preserve held-out task utility” into a new researcher judgment record. Router
 architecture design remains parked until that decision.

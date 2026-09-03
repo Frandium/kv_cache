@@ -31,6 +31,6 @@ Insufficient，并据此写出一条结果性认识更新。
 
 ## 包含与排除
 
-包含 reader-friendly 日报、Anchor/Thinking Card/Protocol 快照和学长来源报告
+包含 reader-friendly 日报、Anchor/研究者判断记录/Protocol 快照和学长来源报告
 及其图表。排除私有组会记录、候选未批准 amendment、运行日志、原始数组、
 缓存、模型权重、数据集以及尚不存在的结果记录。

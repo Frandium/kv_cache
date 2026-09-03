@@ -2,7 +2,7 @@
 
 Document status: result-updated anchor after the A06_18 revision audit.
 
-## 0. Thinking Card
+## 0. researcher judgment record
 
 **Phenomenon:** A06_17 shows a sharp mismatch: route-position hidden states
 recover the feature partition perfectly, but all-position clustering often

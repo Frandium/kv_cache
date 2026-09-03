@@ -952,7 +952,7 @@ MoE 路由策略最优。
 ## 18. Exactly One Next Decision
 
 > 判断“任务条件下的低维活动子树，同时保持任务效用”是否值得提升为下一张正式
-> Thinking Card；在此之前不进入 Router 架构设计。
+> 研究者判断记录；在此之前不进入 Router 架构设计。
 
 ## 19. 来源
 

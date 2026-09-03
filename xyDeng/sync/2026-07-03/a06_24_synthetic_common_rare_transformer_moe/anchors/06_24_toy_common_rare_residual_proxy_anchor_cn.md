@@ -1,6 +1,6 @@
 # A06_24_toy_a--A06_24_toy_g Common-Removed Differential Expert Proxy Pre-Anchors
 
-## 0. Thinking Card
+## 0. researcher judgment record
 
 **Phenomenon:** MPI-style expert proxy can couple router rows to expert
 parameters, but the raw principal expert direction may mostly represent common

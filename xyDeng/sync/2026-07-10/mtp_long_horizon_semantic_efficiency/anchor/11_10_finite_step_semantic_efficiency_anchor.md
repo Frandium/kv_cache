@@ -4,7 +4,7 @@ Status: completed; A11_10 full run partially supports the finite-step assumption
 Parent line: `11_long_horizon_mtp_objective`.  
 Source package: `daily_research_reports/0710/mtp_long_horizon_semantic_efficiency_theory_closure/`.
 
-## 0. Thinking Card
+## 0. researcher judgment record
 
 **Phenomenon:** A11 has a controlled first-order result: when next-K prediction includes an informative future horizon, the loss gives the current decision hidden state `h_T` a direct readout-effective semantic velocity. A11 does not yet prove that this local velocity yields a smaller finite-step hitting time.
 

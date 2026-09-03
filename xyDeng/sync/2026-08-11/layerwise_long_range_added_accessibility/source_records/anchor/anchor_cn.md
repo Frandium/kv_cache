@@ -2,7 +2,6 @@
 anchor_id: 15_08_01_layerwise_long_range_compositional_innovation
 status: AWAITING_HUMAN_BLOCK_B_RECONFIRMATION
 canonical_companion: 15_08_01_layerwise_long_range_compositional_innovation_anchor.md
-thinking_card: 15_08_01_layerwise_long_range_compositional_innovation_thinking_card_cn.md
 parent_anchor: ../15_08_target_conditioned_layer_innovation_anchor_cn.md
 parent_line: 15_spectral_representation_and_functional_routing
 execution_authority: human_approved_2026_08_11
@@ -12,7 +11,7 @@ updated: 2026-08-11
 
 # A15_08_01：逐层长程新增可访问性与表征秩
 
-研究者判断见 [Thinking Card](15_08_01_layerwise_long_range_compositional_innovation_thinking_card_cn.md)。父定义见 [A15_08 目标条件层创新](../15_08_target_conditioned_layer_innovation_anchor_cn.md)。英文正式版见 [Anchor](15_08_01_layerwise_long_range_compositional_innovation_anchor.md)。执行合同见[已批准 Protocol](../../../../experiments/A15/15_08_target_conditioned_layer_innovation/A15_08_01_E01_layerwise_long_range_gain_and_representation_rank/protocol.md)。
+研究者判断见 研究者判断记录。父定义见 [A15_08 目标条件层创新](../15_08_target_conditioned_layer_innovation_anchor_cn.md)。英文正式版见 [Anchor](15_08_01_layerwise_long_range_compositional_innovation_anchor.md)。执行合同见[已批准 Protocol](../../../../experiments/A15/15_08_target_conditioned_layer_innovation/A15_08_01_E01_layerwise_long_range_gain_and_representation_rank/protocol.md)。
 
 研究者已经确认研究方向、attention-only 表征位置、完整逐层增益曲线、表征秩而非任务秩、暂不进入 Router，以及 TRAIN-only、逐层 trace-normalized、三十六层等权公共基。用户指定的 Reserved 镜像与当前容器环境已经通过验证。精确 tokenizer 预检发现原始长实体字符串无法装入注册 far slot 之前；候选修订 A4 只把实体表面编码改为紧凑且全局不重合的标识，并通过完整 320-world 预检，但 Block B 仍需研究者重新确认。此前任务均不具证据资格，当前没有科学结果。
 

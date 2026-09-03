@@ -45,7 +45,7 @@ TRAIN-label-permutation controls. This does not authorize Router training.
 
 - the reader-friendly daily report;
 - English and Chinese A15_08 Anchor snapshots plus the researcher-owned
-  Thinking Card;
+  researcher judgment record;
 - the frozen E04 Protocol and eligible E04 Summary;
 - the advisor variance-interval source report;
 - the two figures embedded by the daily report;

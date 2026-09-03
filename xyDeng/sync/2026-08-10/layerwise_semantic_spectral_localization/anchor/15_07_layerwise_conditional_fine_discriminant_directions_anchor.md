@@ -3,7 +3,6 @@ anchor_id: 15_07_layerwise_conditional_fine_discriminant_directions
 status: draft_human_review_required
 canonical_language: en
 chinese_companion: 15_07_layerwise_conditional_fine_discriminant_directions_anchor_cn.md
-thinking_card: 15_07_layerwise_conditional_fine_discriminant_directions_thinking_card_cn.md
 parent_line: 15_spectral_representation_and_functional_routing
 created: 2026-08-10
 updated: 2026-08-10
@@ -11,7 +10,7 @@ updated: 2026-08-10
 
 # A15_07 Layerwise Conditional-Fine Discriminant Directions
 
-Researcher judgment: [Chinese Thinking Card](15_07_layerwise_conditional_fine_discriminant_directions_thinking_card_cn.md). This Anchor is a candidate design awaiting human review. No Protocol exists, and no implementation or execution is authorized.
+Researcher judgment: Chinese researcher judgment record. This Anchor is a candidate design awaiting human review. No Protocol exists, and no implementation or execution is authorized.
 
 ## 1. Problem Definition
 

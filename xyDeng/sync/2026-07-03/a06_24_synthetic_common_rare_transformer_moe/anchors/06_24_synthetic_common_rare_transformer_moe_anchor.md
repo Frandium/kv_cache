@@ -1,6 +1,6 @@
 # A06_24 Synthetic Common/Rare Transformer-MoE Routing Audit
 
-## 0. Thinking Card
+## 0. researcher judgment record
 
 **Phenomenon:** Earlier A06 evidence shows that simple common subtraction can reduce expert concentration but does not by itself split features across experts. The previous A06_24_toy vector audit is useful as a mechanism toy, but it is not reliable enough for the mainline because it does not train a one-layer Transformer plus one-layer MoE.
 

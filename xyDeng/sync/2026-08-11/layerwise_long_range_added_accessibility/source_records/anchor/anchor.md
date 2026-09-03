@@ -3,7 +3,6 @@ anchor_id: 15_08_01_layerwise_long_range_compositional_innovation
 status: AWAITING_HUMAN_BLOCK_B_RECONFIRMATION
 canonical_language: en
 chinese_companion: 15_08_01_layerwise_long_range_compositional_innovation_anchor_cn.md
-thinking_card: 15_08_01_layerwise_long_range_compositional_innovation_thinking_card_cn.md
 parent_anchor: ../15_08_target_conditioned_layer_innovation_anchor.md
 parent_line: 15_spectral_representation_and_functional_routing
 execution_authority: human_approved_2026_08_11
@@ -13,7 +12,7 @@ updated: 2026-08-11
 
 # A15_08_01 Layerwise Long-Range Added Accessibility And Representation Rank
 
-Researcher judgment: [Chinese Thinking Card](15_08_01_layerwise_long_range_compositional_innovation_thinking_card_cn.md). Parent definition: [A15_08 Target-Conditioned Layer Innovation](../15_08_target_conditioned_layer_innovation_anchor.md). Chinese companion: [Anchor](15_08_01_layerwise_long_range_compositional_innovation_anchor_cn.md). Execution contract: [approved Protocol](../../../../experiments/A15/15_08_target_conditioned_layer_innovation/A15_08_01_E01_layerwise_long_range_gain_and_representation_rank/protocol.md).
+Researcher judgment: Chinese researcher judgment record. Parent definition: [A15_08 Target-Conditioned Layer Innovation](../15_08_target_conditioned_layer_innovation_anchor.md). Chinese companion: [Anchor](15_08_01_layerwise_long_range_compositional_innovation_anchor_cn.md). Execution contract: [approved Protocol](../../../../experiments/A15/15_08_target_conditioned_layer_innovation/A15_08_01_E01_layerwise_long_range_gain_and_representation_rank/protocol.md).
 
 The researcher confirmed the research direction, attention-only representation site, complete layerwise gain curves, representation rank rather than task rank, exclusion of Router work, and the TRAIN-only equal-layer trace-normalized common basis. The requested Reserved image and current-container runtime now pass validation. Exact-tokenizer preflight showed that the original long entity strings do not fit before the registered far slot. Candidate amendment A4 replaces only their surface encoding with compact globally disjoint identifiers and passes the full 320-world preflight, but Block B awaits human reconfirmation. All prior jobs are non-evidentiary; no scientific result exists.
 

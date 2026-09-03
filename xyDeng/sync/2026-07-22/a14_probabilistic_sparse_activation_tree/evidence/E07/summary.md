@@ -19,7 +19,7 @@ finite-sample activation. Full activation reached the reachable dimension in
 20/20 records; deficient activation produced a strict gap in 20/20 records.
 
 **What we do next:** use this accounting as the mathematical basis for a new
-Thinking Card on constrained conditional local low-rank composition. Do not
+researcher judgment record on constrained conditional local low-rank composition. Do not
 infer a real-language mechanism or authorize an experiment from this run.
 
 ## Terminology / Definitions
@@ -80,6 +80,6 @@ supported; or a MoE design follows.
 
 ## Next Decision
 
-Approve or reject a Thinking Card that fixes the finite condition variable,
+Approve or reject a researcher judgment record that fixes the finite condition variable,
 matched global baseline, held-out metric, and falsifier. A protocol comes only
 after that decision.

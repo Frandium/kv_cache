@@ -1,6 +1,6 @@
 # A11_24 任务秩竞争 Anchor
 
-## 0. Thinking Card
+## 0. researcher judgment record
 
 序列校准失败使容量问题无法在 Transformer 上解释；先用 oracle 提供独立因素 $u,z$，直接干预共享表示 rank。若 rank 1 下 MTP 挤出标准方向、rank 2 下代价消失，则支持结构性秩竞争。
 

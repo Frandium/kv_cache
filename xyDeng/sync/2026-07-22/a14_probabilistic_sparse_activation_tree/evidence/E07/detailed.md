@@ -115,7 +115,7 @@ The run establishes only that the synthetic implementation realizes the exact
 accounting and its activation boundary. The model-general real-language
 shared-linear propagation claim remains closed.
 
-Exactly one next decision: approve or reject a Thinking Card for constrained
+Exactly one next decision: approve or reject a researcher judgment record for constrained
 conditional local low-rank composition. No protocol is yet authorized.
 
 ## 7. Artifact Map

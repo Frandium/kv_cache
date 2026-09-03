@@ -3,13 +3,12 @@ anchor_id: 15_08_target_conditioned_layer_innovation
 status: e04_eligible_h2_pass_h1prime_fail
 canonical_language: en
 companion_language: zh
-thinking_card: 15_08_target_conditioned_layer_innovation_thinking_card_cn.md
 updated: 2026-08-11
 ---
 
 # A15_08 Target-Conditioned Layer Innovation
 
-Thinking Card source: [researcher-owned Chinese card](15_08_target_conditioned_layer_innovation_thinking_card_cn.md). Chinese companion: [anchor](15_08_target_conditioned_layer_innovation_anchor_cn.md).
+researcher judgment record source: researcher-owned Chinese card. Chinese companion: [anchor](15_08_target_conditioned_layer_innovation_anchor_cn.md).
 
 ## 1. Problem Definition
 
