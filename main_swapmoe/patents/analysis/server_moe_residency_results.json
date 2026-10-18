@@ -1,0 +1,153 @@
+{
+  "central": {
+    "params": {
+      "nodes": 4,
+      "gpus": 8,
+      "layers": 2,
+      "experts": 128,
+      "topk": 8,
+      "d": 7168,
+      "m": 2048,
+      "B": 2048,
+      "H": 64,
+      "K0": 10,
+      "u": 2,
+      "rb": 2.0,
+      "rp": 0.05,
+      "bw_node": 200000000000.0,
+      "bw_lane": 43000000000.0,
+      "rho": 0.5,
+      "common_ms": 1.9,
+      "gate_ms": 0.05,
+      "pp_ms": 0.16,
+      "group_ms": 1.0,
+      "control_ms": 0.002,
+      "repair_queue_ms": 0.02,
+      "waste": 0.05
+    },
+    "expert_bytes": 44050944,
+    "token_bytes": 21504,
+    "gemm_ms": 0.944,
+    "weight10_ms": 2.2025472,
+    "weight2_ms": 1.024440558139535,
+    "baseline_ms": 2.6004019200000004,
+    "proposal_ms": 2.3586784154418603,
+    "warm_ms": 2.2742238154418604,
+    "latency_drop_pct": 9.295620907638003,
+    "gain_pct": 10.248260338315651,
+    "warm_gain_pct": 14.342392439275663,
+    "traffic_base_MiB": 5376.0,
+    "traffic_new_MiB": 638.523046875,
+    "traffic_drop_pct": 88.12271118164062,
+    "base_net_ms": 0.44040192,
+    "base_service_tps": 3150282.2455999414,
+    "new_service_tps": 3473131.371520759,
+    "parts_ms": {
+      "common": 1.9,
+      "gate": 0.1,
+      "pp": 0.16,
+      "token": 0.011010048000000001,
+      "initial": 0.0688296,
+      "group": 0.015625,
+      "refresh": 0.03201376744186047,
+      "waste": 0.0472,
+      "control": 0.004,
+      "repair_queue": 0.02
+    },
+    "extra_expert_GiB_node": 0.9846153259277344,
+    "extra_expert_GiB_gpu": 0.1230769157409668,
+    "kv_GiB_gpu": 36.0,
+    "break_even_H": 6.155348557692308,
+    "stage_total_traffic_base_MiB": 12544.0,
+    "stage_total_traffic_new_MiB": 3069.04609375,
+    "path_baseline_ms": 78.41165568000001,
+    "path_proposal_ms": 71.40167404781396,
+    "path_latency_drop_pct": 8.939974001816731
+  },
+  "sensitivity": [
+    {
+      "parameter": "H",
+      "value": 16,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.7080835177674416,
+      "gain_pct": -3.9763026901110665
+    },
+    {
+      "parameter": "H",
+      "value": 64,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.3586784154418603,
+      "gain_pct": 10.248260338315651
+    },
+    {
+      "parameter": "H",
+      "value": 256,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.271327139860465,
+      "gain_pct": 14.488215914143998
+    },
+    {
+      "parameter": "rho",
+      "value": 0.25,
+      "baseline_ms": 2.3802009600000003,
+      "proposal_ms": 2.35317339144186,
+      "gain_pct": 1.1485583109360098
+    },
+    {
+      "parameter": "rho",
+      "value": 0.5,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.3586784154418603,
+      "gain_pct": 10.248260338315651
+    },
+    {
+      "parameter": "rho",
+      "value": 1.0,
+      "baseline_ms": 3.04080384,
+      "proposal_ms": 2.3696884634418605,
+      "gain_pct": 28.320827269563374
+    },
+    {
+      "parameter": "rp",
+      "value": 0.05,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.3586784154418603,
+      "gain_pct": 10.248260338315651
+    },
+    {
+      "parameter": "rp",
+      "value": 0.25,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.4027186074418605,
+      "gain_pct": 8.227484980798906
+    },
+    {
+      "parameter": "rp",
+      "value": 0.5,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.4577688474418604,
+      "gain_pct": 5.803355865080562
+    },
+    {
+      "parameter": "waste",
+      "value": 0,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.3114784154418606,
+      "gain_pct": 12.499511249076889
+    },
+    {
+      "parameter": "waste",
+      "value": 0.05,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.3586784154418603,
+      "gain_pct": 10.248260338315651
+    },
+    {
+      "parameter": "waste",
+      "value": 0.2,
+      "baseline_ms": 2.6004019200000004,
+      "proposal_ms": 2.5002784154418602,
+      "gain_pct": 4.00449421711484
+    }
+  ]
+}

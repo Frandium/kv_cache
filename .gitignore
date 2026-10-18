@@ -65,3 +65,11 @@ ymluo/.venv-qwen3/
 *.tgz
 *.zip
 *.gz
+
+# Local patent presentation builders and temporary build artifacts
+/main_swapmoe/patents/.ppt_build/
+/main_swapmoe/patents/**/.codex-finalizer/
+/main_swapmoe/patents/**/*.mjs
+/main_swapmoe/patents/**/*.js
+/main_swapmoe/patents/**/*.py
+/main_swapmoe/patents/**/*.sh
