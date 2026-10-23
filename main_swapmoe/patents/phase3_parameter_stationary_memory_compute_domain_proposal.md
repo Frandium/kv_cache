@@ -16,7 +16,9 @@
 
 1. **小容量高带宽层（fast tier）**：承载 working set 和绝大部分运行时读取流量；
 2. **大容量低带宽层（capacity tier）**：以较低单位容量成本承载其余 inactive parameters；
-3. **分层控制与迁移路径**：根据 expert 驻留状态选择高速读取、容量层读取或层间迁移。
+3. **分层控制与迁移路径**：根据 expert 驻留状态选择高速读取、容量层读取或层间迁移；
+4. **Expert-object 存储与驱动接口**：容量层按 `(layer_id, expert_id)` 管理只读 expert object；等尺寸 experts 采用固定步长地址生成，驱动以完整 expert 为逻辑分配、查询和传输单位；
+5. **候选 expert 预激活接口**：连续路由预测器给出下一 token 的候选 expert 集合，驱动根据候选排序对容量介质执行预激活、首块预读或 staging 预取，并在真实路由结果产生后继续、提交或取消相关请求。
 
 该架构只为高流量 working set 支付高带宽成本。为估计本项目模型未来扩展至 30B-A3B 规模时的下游部署效果，在 BF16、每层为 top-8 激活预留 16 个高速 expert slots 的同规模参照配置下，4K 和 32K context 对应的高速层容量比例约为 $16.4\%$ 和 $20.1\%$。本文进一步选取面向高端车载计算、机器人和边缘计算模组的代表性架构工作点：高速层带宽 1.5 TB/s、容量层带宽 273 GB/s、高速与容量型内存单位容量成本比 3。在“本项目模型扩展后仍保持当前驻留特性”的条件下，一阶带宽与端到端时延模型给出：
 - 相比全 273 GB/s 容量型内存，存储子系统单位容量加权成本增加约 $40\%$，预计获得约 $2.95$--$3.04\times$ 的解码加速；
@@ -205,19 +207,96 @@ NVIDIA GPU、Google TPU 及部分高性能推理加速器采用 HBM 等高带宽
 
 容量层采用 Flash 时，数据需要经过 DRAM/SRAM staging buffer，迁移粒度按 Flash page、压缩 expert block或连续权重块组织。
 
-### 3.4 软件可见接口
+### 3.4 Expert-object 存储组织与驱动协议
+
+在优选实施例中，容量层的模型参数区只保存当前未驻留在高速层的 tail experts。expert 权重在推理期间只读、形状在模型加载时已知，并且同一层内的 experts 通常具有相同尺寸。因此，容量层可以向驱动暴露 expert-object 逻辑地址空间，而不要求驱动在运行时把每个 expert 拆成通用缓存页进行放置和替换。
+
+对于同一层内等尺寸的 experts，容量层地址可以直接计算为：
+
+$$
+\operatorname{addr}(l,e)
+=
+\operatorname{layer\_base}(l)
++eS_l,
+$$
+
+其中 $l$ 为 Transformer 层编号，$e$ 为该层 expert ID，$S_l$ 为该层单个 expert object 的存储跨度。若不同 experts 的压缩后尺寸不同，则由每层 expert descriptor table 保存起始地址、长度、量化格式、校验信息和介质位置。
+
+expert-object 驱动至少维护：
+
+- `layer_id` 与 `expert_id`；
+- expert object 的起始地址、长度和存储介质；
+- 当前驻留层级、目标高速 slot 与迁移状态；
+- 量化格式、压缩格式、校验码和条带化参数；
+- 可选的预测候选等级和请求有效期。
+
+驱动与控制器之间可以提供以下命令：
+
+- `EXPERT_QUERY(layer_id, expert_id)`：查询 expert 的驻留层级、对象地址和迁移状态；
+- `EXPERT_READ(layer_id, expert_id, target)`：从容量层流式读取完整 expert object，直接送往计算阵列或目标 staging slot；
+- `EXPERT_PROMOTE(layer_id, expert_id, slot_id)`：将 expert object 复制到高速层指定 slot；
+- `EXPERT_COMMIT(layer_id, expert_id, slot_id)`：在传输完成后原子更新逻辑 expert 到高速 slot 的映射；
+- `EXPERT_RELEASE(layer_id, expert_id)`：释放已取消的候选请求或不再使用的 slot。
+
+上述 object 命令是软件与内存控制器之间的逻辑协议。DRAM 介质内部仍按 channel、bank 和 row 工作，Flash 介质内部仍按 page 和 block 工作；控制器负责将一个 expert-object 请求转换为底层连续突发、页读取或跨 channel 条带化请求。由于 expert 权重只读，容量层对象不需要维护通用可写缓存所需的 dirty state 和写回路径。
+
+该组织方式使当前路由结果可以直接从 `(layer_id, expert_id)` 转换为容量层读取请求，并允许控制器针对完整 expert 的顺序读取优化 burst 长度、channel striping、Flash page 合并和错误校验。expert 的物理布局可按层连续排列，也可将单个 expert 跨多个 channels 条带化，以匹配计算阵列的供数宽度。
+
+### 3.5 基于连续路由预测的候选 Expert 预激活
+
+本项目的 Attention-Mean Routing 使用最近多个 token 的 attention output 因果聚合产生路由信号。该信号的跨 token 连续性不仅提高当前高速 slot 的复用概率，也提高下一 token expert 候选集合的可预测性。本项目实验中，下一 token expert 的 Recall@1 约为 $52\%$，Recall@4 约为 $86\%$--$87\%$。因此，软件运行时或驱动可以在当前 token 计算期间，为下一 token 生成按置信度排序的候选集合：
+
+$$
+\mathcal{P}_{t+1}^{(l)}
+=
+\left\{
+(e_1,p_1),(e_2,p_2),\ldots,(e_K,p_K)
+\right\},
+\qquad
+p_1\ge p_2\ge\cdots\ge p_K.
+$$
+
+驱动根据候选等级、当前驻留状态、可用带宽和 staging 容量选择不同强度的预激活动作：
+
+1. **已驻留候选**：保持对应高速 slot 的有效期，避免被其他迁移请求替换；
+2. **高置信度未驻留候选**：发起完整 `EXPERT_PROMOTE`，将 expert object 预取到高速层或 staging slot；
+3. **中等置信度候选**：只激活对应 DRAM bank/row，或预读 expert object 的首个连续块、描述符和量化元数据；
+4. **低置信度候选**：仅在容量控制器请求队列中登记对象地址，不立即消耗数据带宽。
+
+当下一 token 的真实 router 结果产生后：
+
+- 若真实 expert 已完成预取，控制器直接提交对应高速 slot；
+- 若只完成预激活或首块预读，控制器继续传输剩余 expert object；
+- 若候选未命中，驱动取消尚未发出的候选请求，并按真实 `(layer_id, expert_id)` 发起读取；
+- 已经读入但未命中的候选数据可以根据空闲高速容量保留，也可以直接释放。
+
+不同物理介质对应不同的预激活动作：容量层为 DDR/LPDDR 时，可使用 bank/row activation、请求排队和首段突发读取；容量层为 Flash/UFS/NVMe 时，可将候选 expert 的一个或多个 Flash pages 读入 DRAM/SRAM staging；容量层为多通道 DRAM 时，可提前配置 expert object 的 channel striping 和 DMA descriptor。
+
+候选数量和预激活深度由驱动根据预测置信度与误取成本共同决定。令完整 expert 字节数为 $S_e$，对候选 $i$ 实际预读的比例为 $q_i$，则单次预测的预读字节为：
+
+$$
+D_{\text{pre}}
+=
+S_e\sum_{i=1}^{K}q_i.
+$$
+
+驱动可以在满足预读带宽预算 $D_{\text{pre}}\le D_{\text{budget}}$ 的条件下，优先提高高置信度候选的 $q_i$。这种分级预激活避免为全部候选完整复制 expert，同时利用连续路由产生的候选可预测性降低容量层 miss 的启动时延。
+
+### 3.6 软件可见接口
 
 硬件可以向软件暴露：
 
 - `FAST_TIER_MEMORY`：高带宽、小容量地址空间；
 - `CAPACITY_TIER_MEMORY`：低成本、大容量地址空间；
 - 统一虚拟地址与页属性：由页表或对象描述符标记当前物理层级；
-- 复制命令：以 expert、权重页或 KV page 为单位执行层间复制；
+- expert-object 地址空间：以 `(layer_id, expert_id)` 查询、读取、提升和提交只读 expert；
+- 复制命令：以 expert object、权重页或 KV page 为单位执行层间复制；
 - 查询命令：返回对象驻留层级、命中状态和迁移状态。
+- 候选预激活命令：提交下一 token 的候选 expert 列表、置信度、预读深度和请求有效期。
 
 模型加载器可在初始化时完成静态放置：attention/dense 权重、输出头和 KV 预留进入高速层，inactive experts 进入容量层，并在高速层为每层预留若干 expert slots。
 
-### 3.5 物理实施形态
+### 3.7 物理实施形态
 
 | 实施形态 | 高带宽层 | 容量层 | 主要取舍 |
 |---|---|---|---|
@@ -228,16 +307,16 @@ NVIDIA GPU、Google TPU 及部分高性能推理加速器采用 HBM 等高带宽
 
 低容量高带宽堆叠 DRAM 已有端侧协处理器产品作为工程可行性参考。“浅层 HBM”表示减少高速 stack 的容量，同时保留较宽外部接口和 channel 数量；该实现需要存储厂商提供合适的 stack height、die density 或定制 base die，属于更高带宽的可选实施方式，而非本方案成立的必要条件。
 
-### 3.6 硬件执行流程
+### 3.8 软硬件协同执行流程
 
 对每个 decode token：
 
 1. 计算核心从高速层读取 attention/dense 权重和历史 KV，生成 attention 输出并写入新增 KV；
-2. 连续性增强 router 根据当前上下文状态产生 expert ids，映射表查询各 expert 所在层级；
-3. 高速命中的 experts 直接由高速层向计算阵列供数；
-4. 容量层命中的 experts 经容量接口直接供数或进入 staging buffer；
+2. 连续性增强 router 根据当前上下文状态产生当前 expert ID；驱动以 `(layer_id, expert_id)` 查询 expert object 的驻留状态和对象地址；
+3. 高速命中的 expert 直接由高速层向计算阵列供数，容量层命中的 expert 由 object controller 流式读取或提升至 staging slot；
+4. 当前 token 计算期间，预测器生成下一 token 的候选 expert 集合，驱动根据置信度提交保持、预激活、首块预读或完整预取命令；
 5. 计算核心完成 expert GEMV、聚合和残差计算；
-6. 对预计继续使用的 expert，复制引擎可以将其保留或迁入高速层；
+6. 下一 token 的真实路由结果产生后，控制器提交命中候选的高速 slot、继续部分预读请求，或取消未命中候选并读取真实 expert；
 7. 层输出写回高速层中的下一层输入地址，并进入下一层。
 
 ---
@@ -247,7 +326,7 @@ NVIDIA GPU、Google TPU 及部分高性能推理加速器采用 HBM 等高带宽
 | 阶段 | 主要动作 | 大状态流向 | 小状态流向 |
 |---|---|---|---|
 | 1. Attention 与 KV 更新 | 计算当前 token 的 Q/K/V 和 attention 输出 | attention 权重与历史 KV 从高速层进入计算阵列；新增 K/V 写入高速层 | hidden state 从高速层进入计算核心的现有局部存储，query 等结果按正常算子数据流产生 |
-| 2. MoE 路由与层级命中 | 产生 expert ids 并查询存储位置 | 命中高速层时直接进入计算；命中容量层时发起低速读取或迁移 | 路由结果和对象描述符在控制通路中传递 |
+| 2. MoE 路由、对象查询与候选预激活 | 产生当前 expert ID，并生成下一 token 候选集合 | 当前 expert 命中高速层时直接进入计算；命中容量层时按 expert object 发起读取；候选 expert 执行保持、预激活、首块预读或完整预取 | `(layer_id, expert_id)`、对象描述符、候选置信度和请求有效期在控制通路中传递 |
 | 3. MoE Expert 计算 | 计算被选 experts 并聚合输出 | expert 权重从对应存储层进入计算阵列，高速层承担绝大部分字节 | hidden state 沿计算核心的现有数据通路参与各 expert 计算 |
 | 4. 状态保持与下一层推进 | 形成下一层输入并更新驻留状态 | KV 与高频 experts 保持在高速层，inactive experts 留在容量层 | 层输出写回高速层，作为下一层 hidden state |
 
@@ -263,6 +342,10 @@ router 产生当前层的 expert ids。分层内存控制器查询 expert 描述
 - **容量层命中**：容量层控制器读取对应 expert block。该 block 可以直接服务当前计算，也可以进入 staging buffer，并在后续需要持续复用时迁入高速层。
 
 连续性增强路由使多数 token 复用已有高速层 expert slots，从而使容量层承担较大的静态容量，但只承担较少的运行时字节。
+
+在启用 expert-object 驱动的实施例中，当前路由结果以 `(layer_id, expert_id)` 直接查询容量层对象。等尺寸 expert 由固定步长公式生成地址；变长或压缩 expert 由 descriptor table 返回对象起始地址与长度。控制器把一个逻辑 expert-object 请求转换为底层 DRAM bursts 或 Flash page reads。
+
+当前 token 继续计算时，预测器同时生成下一 token 的候选 expert 集合。驱动对已驻留候选延长 slot 有效期，对高置信度候选执行完整预取，对其余候选执行介质预激活或首块预读。下一 token 的真实路由结果产生后，控制器提交命中候选，或取消错误候选并读取真实 expert。
 
 ### 4.3 阶段三：MoE Expert 计算
 
@@ -646,7 +729,10 @@ $$
 6. 分层内存控制器根据对象描述符选择高速读取、容量层直接读取或层间迁移；
 7. 高速层容量根据算法形成的 working set 配置，使约 $10\%$--$40\%$ 的容量覆盖显著更高的请求字节比例；
 8. 高速层在减少容量时仍提供显著高于容量层的聚合带宽；
-9. 物理实现允许高带宽堆叠 DRAM+DDR/LPDDR、宽接口 DRAM+容量 DRAM、HBM+DDR/LPDDR 或三级组合。
+9. 容量层中的 inactive experts 以只读 expert objects 组织，控制器根据 `(layer_id, expert_id)` 和固定步长公式或对象描述符生成物理读取请求；
+10. 软件或驱动向控制器提交下一 token 的候选 expert 集合及置信度，控制器据此执行驻留保持、介质预激活、首块预读或完整 expert-object 预取；
+11. 真实路由结果产生后，控制器提交命中候选的高速 slot、继续部分预读请求，或取消未命中候选；
+12. 物理实现允许高带宽堆叠 DRAM+DDR/LPDDR、宽接口 DRAM+容量 DRAM、HBM+DDR/LPDDR 或三级组合。
 
 方法权利要求可以覆盖：
 
@@ -655,9 +741,13 @@ $$
 3. 使用连续性增强路由产生跨 token 可复用的 expert 选择结果；
 4. 每 token 路由后查询被选 expert 的层级；
 5. 根据命中结果选择高速供数、容量层供数或迁移；
-6. 在连续 token 间保持可复用 expert 的高速驻留。
+6. 在连续 token 间保持可复用 expert 的高速驻留；
+7. 模型加载时按层连续排列等尺寸 inactive experts，或为变长 experts 建立对象描述符表；
+8. 将当前路由结果编码为 `(layer_id, expert_id)`，并以完整 expert object 为逻辑读取、提升和提交单位；
+9. 使用连续路由状态产生下一 token 的候选 expert 集合，并根据置信度及预读带宽预算确定每个候选的预激活深度；
+10. 在真实路由结果产生后提交、继续或取消候选 expert 请求。
 
-现有技术对 tiered memory、hot expert cache、PIM 和模型 offload 已有较强覆盖。可争取的力度来自“**通过连续性增强路由把瞬时稀疏激活转化为可驻留 working set，并由该 working set 的容量比例与请求字节覆盖率共同约束端侧小容量高速层和大容量低速层**”这一算法—硬件闭环，而不是单独主张通用两级存储。
+现有技术对 tiered memory、hot expert cache、PIM 和模型 offload 已有较强覆盖。可争取的组合创新包括：连续性增强路由把瞬时稀疏激活转化为可驻留 working set；容量层利用“只保存只读 inactive experts”这一内容约束建立 expert-object 地址空间；连续路由产生的下一 token 候选集合进一步驱动介质预激活和分级预读。由此形成“**路由连续性与可预测性—expert-object 存储组织—候选驱动的介质操作—高速 slot 提交**”的算法、驱动和硬件介质闭环。
 
 ---
 
@@ -669,8 +759,10 @@ $$
 2. 标准 MoE 只有瞬时稀疏性，频繁变化的 expert 身份不利于小容量高速驻留；本项目的连续性增强路由进一步创造了跨 token 时间局部性；
 3. 本项目自有模型已测得 $92.70\%$ 的 expert 驻留命中率；将该实测值作为条件输入，代入公开 30B-A3B 结构参照模型后，估算约 $16\%$--$20\%$ 的高速容量可覆盖约 $95.49\%$--$96.95\%$ 的当前读取字节；
 4. 加速器据此设置小容量高带宽层和大容量低成本容量层，只为高流量 working set 支付高速存储成本；
-5. 两层可以由高带宽堆叠 DRAM、宽接口 DRAM、DDR/LPDDR、HBM 和 Flash 的不同组合实现，具体介质不是本方案的必要限定；
-6. 在 30B-A3B 规模下，如果本项目模型未来达到同等规模并保持当前 $h=92.70\%$ 的驻留特性，则在 1.5 TB/s 高速层、273 GB/s 容量层、$\beta=0.5$ 时，分层方案预计相对全容量 273 GB/s 内存的端侧基线获得约 $2.95$--$3.04$ 倍端到端加速，相对全容量 1.5 TB/s 高速存储的吞吐损失约为 $6.4\%$--$9.2\%$；
-7. 当高速容量比例为 $20\%$、高速与容量型内存单位容量成本比取中心值 3 时，相关内存子系统成本相对全容量低速内存增加约 $40\%$，相对全容量高速内存降低约 $53.3\%$；该增量只作用于内存子系统，对计算模组和整机成本的影响还要乘以其 BOM 占比并计入双控制器与额外集成成本。
+5. 容量层中的 inactive experts 按只读 expert objects 组织；等尺寸 experts 通过 `(layer_id, expert_id)` 固定步长寻址，变长或压缩 experts 通过对象描述符寻址，驱动以完整 expert 为逻辑管理和传输单位；
+6. 本项目下一 token expert 的 Recall@4 已达到约 $86\%$--$87\%$，驱动可以据此对候选 expert 执行驻留保持、DRAM bank/row 预激活、首块预读或完整预取，并在真实路由结果产生后提交或取消；
+7. 两层可以由高带宽堆叠 DRAM、宽接口 DRAM、DDR/LPDDR、HBM 和 Flash 的不同组合实现，具体介质决定 expert-object 请求最终转换成 DRAM bursts、Flash page reads 或跨 channel DMA；
+8. 在 30B-A3B 规模下，如果本项目模型未来达到同等规模并保持当前 $h=92.70\%$ 的驻留特性，则在 1.5 TB/s 高速层、273 GB/s 容量层、$\beta=0.5$ 时，分层方案预计相对全容量 273 GB/s 内存的端侧基线获得约 $2.95$--$3.04$ 倍端到端加速，相对全容量 1.5 TB/s 高速存储的吞吐损失约为 $6.4\%$--$9.2\%$；
+9. 当高速容量比例为 $20\%$、高速与容量型内存单位容量成本比取中心值 3 时，相关内存子系统成本相对全容量低速内存增加约 $40\%$，相对全容量高速内存降低约 $53.3\%$；该增量只作用于内存子系统，对计算模组和整机成本的影响还要乘以其 BOM 占比并计入双控制器与额外集成成本。
 
-该架构的产品价值是：利用算法创造的特殊 workload，以有限的内存子系统和整机成本增量换取显著的端侧 MoE 解码速度提升。下一步需要用目标芯片的有效带宽、高速存储容量粒度、LPDDR 控制器面积、封装成本、整机 BOM 占比和目标 MoE 的真实 expert 命中轨迹替换本文的一阶假设。
+该架构的产品价值是：利用算法创造的特殊 workload，以有限的内存子系统和整机成本增量换取显著的端侧 MoE 解码速度提升，并将连续路由产生的时间局部性与下一 token 可预测性直接转换为 expert-object 寻址、分级预激活和高速 slot 提交操作。下一步需要用目标芯片的有效带宽、高速存储容量粒度、LPDDR 控制器面积、封装成本、整机 BOM 占比、目标 MoE 的真实 expert 命中轨迹以及不同候选预读深度下的准确读取字节与误取字节替换本文的一阶假设。
